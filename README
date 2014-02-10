@@ -1,0 +1,14 @@
+ygor - Go IRC bot (yes, another one)
+====================================
+
+Ygor is broken into three separate processes, a "body", a "soul" and a
+"minion".
+
+The boby process acts as a conduit for the bots expression on IRC. It relays the i/o
+from/to the IRC server almost as-is. The "soul" process receives i/o and acts
+accordingly. The "minion" is a process receiving order from SQS, this process
+would run on a separate machine (for example to drive music, dashboard, etc.).
+
+The purpose of this design is to have a thin and stable connection layer that
+would rarely change and never disconnect. The personality is modifyable and
+reloadable without having to disconnect the bot.
