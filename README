@@ -4,7 +4,7 @@ ygor - Go IRC bot (yes, another one)
 Ygor is broken into three separate processes, a "body", a "soul" and a
 "minion".
 
-The boby process acts as a conduit for the bots expression on IRC. It relays the i/o
+The body process acts as a conduit for the bots expression on IRC. It relays the i/o
 from/to the IRC server almost as-is. The "soul" process receives i/o and acts
 accordingly. The "minion" is a process receiving order from SQS, this process
 would run on a separate machine (for example to drive music, dashboard, etc.).
