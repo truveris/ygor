@@ -11,10 +11,13 @@ import (
 type SoundBoardModule struct { }
 
 func (module SoundBoardModule) PrivMsg(nick, where, msg string, isAction bool) {
-	if strings.HasPrefix(msg, "ygor: say ") {
+	if strings.HasPrefix(msg, cmd.Nickname+": say ") {
 		sendToMinion(msg[6:])
 		return
 	}
+
+	// Allow both "ygor: tune" and "tune" for those specific keywords.
+	msg = strings.Replace(msg, cmd.Nickname+": ", "", 1)
 
 	switch strings.ToLower(msg) {
 	case "jeopardy":
