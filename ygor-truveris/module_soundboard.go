@@ -22,6 +22,9 @@ type SoundBoardModule struct{}
 // not addressed to this bot, it returns an empty string.
 func AddressedToMe(msg string) string {
 	tokens := reAddressed.FindStringSubmatch(msg)
+	if tokens == nil {
+		return ""
+	}
 
 	if tokens[1] == cmd.Nickname {
 		return tokens[2]
@@ -41,7 +44,7 @@ func getTune(msg string) (string, uint64) {
 	if err != nil {
 		// That really shouldn't happen since the regexp should only
 		// capture uint but we're being cautious.
-		return "", 0
+		return tune, 0
 	}
 
 	return tune, duration
