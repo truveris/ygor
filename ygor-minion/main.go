@@ -24,9 +24,9 @@ package main
 import (
 	"encoding/xml"
 	"errors"
+	"fmt"
 	"github.com/mikedewar/aws4"
 	"io/ioutil"
-	"fmt"
 	"log"
 	"net/url"
 	"os"
@@ -42,7 +42,6 @@ const (
 )
 
 var QueueURL string
-
 
 // struct defining what to extract from the XML document
 type sqsMessage struct {
@@ -140,14 +139,21 @@ func deleteMessage(receipt string) error {
 	return nil
 }
 
-func playTune(filename string) {
+func playTune(filename string, duration string) {
+	var err error
+
 	filepath := "tunes/" + path.Base(filename)
 	if _, err := os.Stat(filepath); err != nil {
 		log.Printf("play-tune bad filename")
 		return
 	}
 
-	err := exec.Command("mplayer", "-really-quiet", filepath).Run()
+	if duration != "" {
+		err = exec.Command("mplayer", "-really-quiet", "-endpos",
+			duration, filepath).Run()
+	} else {
+		err = exec.Command("mplayer", "-really-quiet", filepath).Run()
+	}
 	if err != nil {
 		log.Printf("error starting mplayer")
 	}
@@ -198,7 +204,6 @@ func say(sentence string) {
 	}
 }
 
-
 // Loop until the end of time.
 //
 // In case of error, delay the next loop. Automatically reconnect if everything
@@ -230,7 +235,14 @@ func main() {
 		tokens := strings.Split(body, " ")
 		switch tokens[0] {
 		case "play-tune":
-			playTune(tokens[1])
+			if len(tokens) > 1 {
+				filename := tokens[1]
+				duration := ""
+				if len(tokens) > 2 {
+					duration = tokens[2]
+				}
+				playTune(filename, duration)
+			}
 		case "mac-say":
 			say(strings.Join(tokens[1:], " "))
 		case "say":
