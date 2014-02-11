@@ -113,6 +113,7 @@ func main() {
 	//	registerModule(NeeextModule{})
 
 	registerModule(SoundBoardModule{})
+	registerModule(SayModule{})
 
 	go outgoingHandler()
 	go incomingHandler()
