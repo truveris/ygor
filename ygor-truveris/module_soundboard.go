@@ -62,7 +62,6 @@ func playTune(where string, tune string, duration uint64) {
 	switch tune {
 	case "jeopardy":
 		privAction(where, "queues some elevator music...")
-		sendToMinion("play-tune jeopardy.mp3")
 		sendToMinion(formatPlayTuneCommand("jeopardy.mp3", duration))
 	case "africa":
 		sendToMinion(formatPlayTuneCommand("africa.ogg", duration))
