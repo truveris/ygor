@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	reSoundBoard = regexp.MustCompile(`^(?:\w+ )?(\w+)(?:(?:\s+for)?\s+([0-9]+))?`)
+	reSoundBoard = regexp.MustCompile(`^(?:play )?(\w+)(?:(?:\s+for)?\s+([0-9]+))?`)
 	reStop = regexp.MustCompile(`^st[aho]+p`)
 	reShhh = regexp.MustCompile(`^s+[sh]+`)
 )
@@ -61,12 +61,23 @@ func playTune(where string, tune string, duration uint64) {
 		privMsg(where, "The moonlit wings reflect the stars that guide me towards salvation")
 	case "wagner":
 		sendToMinion(formatPlayTuneCommand("wagner.ogg", duration))
+	// Starcraft
 	case "nuke":
 		sendToMinion(formatPlayTuneCommand("nuke_ready.ogg", duration))
-	case "tmyk":
-		sendToMinion(formatPlayTuneCommand("the-more-you-know.mp3", duration))
 	case "energy":
 		sendToMinion(formatPlayTuneCommand("energy.ogg", duration))
+	// TV Shows
+	case "tmyk":
+		sendToMinion(formatPlayTuneCommand("the-more-you-know.mp3", duration))
+	case "rainbow":
+		sendToMinion(formatPlayTuneCommand("reading_rainbow.mp3", duration))
+	// 2001 Space Odissy
+	case "cantdo":
+		sendToMinion(formatPlayTuneCommand("cantdo.wav", duration))
+	case "dave":
+		sendToMinion(formatPlayTuneCommand("dave.wav", duration))
+	case "error":
+		sendToMinion(formatPlayTuneCommand("error.wav", duration))
 	}
 }
 

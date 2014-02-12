@@ -8,7 +8,9 @@ import (
 )
 
 func TestReSoundBoard(t *testing.T) {
-	tokens := reSoundBoard.FindStringSubmatch("anything")
+	var tokens = make([]string, 0)
+
+	tokens = reSoundBoard.FindStringSubmatch("anything")
 	if tokens == nil {
 		t.Fatal("couldn't match 'anything'")
 	}
@@ -18,19 +20,24 @@ func TestReSoundBoard(t *testing.T) {
 		t.Fatal("couldn't match 'wagner' by itself:", tokens)
 	}
 
-	tokens = reSoundBoard.FindStringSubmatch("blast wagner")
+	tokens = reSoundBoard.FindStringSubmatch("wagner 15")
 	if tokens[1] != "wagner"{
-		t.Fatal("couldn't match 'blast wagner':", tokens)
+		t.Fatal("couldn't match 'wagner 15' by itself:", tokens)
 	}
 
-	tokens = reSoundBoard.FindStringSubmatch("blast wagner 15")
-	if tokens[1] != "wagner" || tokens[2] != "15" {
-		t.Fatal("couldn't match 'blast wagner 15':", tokens)
+	tokens = reSoundBoard.FindStringSubmatch("play wagner")
+	if tokens[1] != "wagner"{
+		t.Fatal("couldn't match 'play wagner':", tokens)
 	}
 
-	tokens = reSoundBoard.FindStringSubmatch("blast wagner for 15s")
+	tokens = reSoundBoard.FindStringSubmatch("play wagner 15")
 	if tokens[1] != "wagner" || tokens[2] != "15" {
-		t.Fatal("couldn't match 'blast wagner for 15s':", tokens)
+		t.Fatal("couldn't match 'play wagner 15':", tokens)
+	}
+
+	tokens = reSoundBoard.FindStringSubmatch("play wagner for 15s")
+	if tokens[1] != "wagner" || tokens[2] != "15" {
+		t.Fatal("couldn't match 'play wagner for 15s':", tokens)
 	}
 }
 
