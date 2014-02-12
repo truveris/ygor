@@ -63,6 +63,8 @@ func playTune(where string, tune string, duration uint64) {
 		sendToMinion(formatPlayTuneCommand("wagner.ogg", duration))
 	case "nuke":
 		sendToMinion(formatPlayTuneCommand("nuke_ready.ogg", duration))
+	case "tmyk":
+		sendToMinion(formatPlayTuneCommand("the-more-you-know.mp3", duration))
 	case "energy":
 		sendToMinion(formatPlayTuneCommand("energy.ogg", duration))
 	}

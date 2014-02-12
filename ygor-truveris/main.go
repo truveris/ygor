@@ -95,6 +95,16 @@ func privAction(channel, msg string) {
 	outgoing <- fmt.Sprintf("PRIVMSG %s :\x01ACTION %s\x01", channel, msg)
 }
 
+func delayedPrivMsg(channel, msg string, waitTime time.Duration) {
+	time.Sleep(waitTime)
+	privMsg(channel, msg)
+}
+
+func delayedPrivAction(channel, msg string, waitTime time.Duration) {
+	time.Sleep(waitTime)
+	privAction(channel, msg)
+}
+
 func registerModule(module Module) {
 	module.Init()
 	modules = append(modules, module)
