@@ -41,12 +41,20 @@ const (
 	SignatureVersion = "4"
 )
 
-var QueueURL string
+var (
+	QueueURL string
+	RunningProcess *os.Process
+)
 
 // struct defining what to extract from the XML document
 type sqsMessage struct {
 	Body          []string `xml:"ReceiveMessageResult>Message>Body"`
 	ReceiptHandle []string `xml:"ReceiveMessageResult>Message>ReceiptHandle"`
+}
+
+type Tune struct {
+	Filename string
+	Duration string
 }
 
 func buildReceiveMessageURL() string {
@@ -139,29 +147,40 @@ func deleteMessage(receipt string) error {
 	return nil
 }
 
-func playTune(filename string, duration string) {
-	var err error
-
-	filepath := "tunes/" + path.Base(filename)
+func playTune(tune Tune) {
+	filepath := "tunes/" + path.Base(tune.Filename)
 	if _, err := os.Stat(filepath); err != nil {
 		log.Printf("play-tune bad filename")
 		return
 	}
 
-	if duration != "" {
-		err = exec.Command("mplayer", "-really-quiet", "-endpos",
-			duration, filepath).Run()
+	var cmd *exec.Cmd
+	if tune.Duration != "" {
+		cmd = exec.Command("mplayer", "-really-quiet", "-endpos",
+			tune.Duration, filepath)
 	} else {
-		err = exec.Command("mplayer", "-really-quiet", filepath).Run()
+		cmd = exec.Command("mplayer", "-really-quiet", filepath)
 	}
+
+	err := cmd.Start()
 	if err != nil {
-		log.Printf("error starting mplayer")
+		log.Printf("error on mplayer Start(): %s", err.Error())
 	}
+
+	RunningProcess = cmd.Process
+
+	err = cmd.Wait()
+	if err != nil {
+		log.Printf("error on mplayer Wait(): %s", err.Error())
+	}
+
+	RunningProcess = nil
 }
 
 // say (for macs)
 func macSay(sentence string) {
-	err := exec.Command("say", sentence).Run()
+	cmd := exec.Command("say", sentence)
+	err := cmd.Start()
 	if err != nil {
 		log.Printf("error starting say")
 	}
@@ -192,6 +211,8 @@ func say(sentence string) {
 		return
 	}
 
+	RunningProcess = cmd_aplay.Process
+
 	err = cmd_espeak.Wait()
 	if err != nil {
 		log.Printf("error on cmd_espeak.Wait(): " + err.Error())
@@ -201,6 +222,38 @@ func say(sentence string) {
 	if err != nil {
 		log.Printf("error on cmd_aplay.Wait(): " + err.Error())
 		return
+	}
+
+	RunningProcess = nil
+}
+
+func fetchMessages(incoming chan string) {
+	for {
+		body, receipt, err := getMessage()
+		if err != nil {
+			log.Printf("error: %s", err.Error())
+			time.Sleep(10 * time.Second)
+		}
+
+		if body == "" {
+			continue
+		}
+
+		deleteMessage(receipt)
+
+		incoming <- body
+	}
+}
+
+func playTunes(tuneInbox chan Tune) {
+	for tune := range tuneInbox {
+		playTune(tune)
+	}
+}
+
+func sayThings(sayInbox chan string) {
+	for sentence := range sayInbox {
+		say(sentence)
 	}
 }
 
@@ -216,37 +269,46 @@ func main() {
 
 	QueueURL = os.Args[1]
 
+	// This is the message box.
+	incoming := make(chan string)
+	go fetchMessages(incoming)
+
+	// This is the music box.
+	tuneInbox := make(chan Tune)
+	go playTunes(tuneInbox)
+
+	// This is the voice box.
+	sayInbox := make(chan string)
+	go sayThings(sayInbox)
+
 	log.Printf("ygor-minion ready!")
 
-	for {
-		body, receipt, err := getMessage()
-		if err != nil {
-			log.Printf("error: %s", err.Error())
-			time.Sleep(10 * time.Second)
-		}
-
-		if body == "" {
-			continue
-		}
-
+	for body := range incoming {
 		log.Printf("got message: \"%s\"", body)
-		deleteMessage(receipt)
 
 		tokens := strings.Split(body, " ")
 		switch tokens[0] {
 		case "play-tune":
 			if len(tokens) > 1 {
-				filename := tokens[1]
-				duration := ""
+				tune := Tune{}
+				tune.Filename = tokens[1]
 				if len(tokens) > 2 {
-					duration = tokens[2]
+					tune.Duration = tokens[2]
 				}
-				playTune(filename, duration)
+				tuneInbox <- tune
 			}
 		case "mac-say":
-			say(strings.Join(tokens[1:], " "))
+			sayInbox <- strings.Join(tokens[1:], " ")
 		case "say":
-			say(strings.Join(tokens[1:], " "))
+			sayInbox <- strings.Join(tokens[1:], " ")
+		case "shutup":
+			if RunningProcess != nil {
+				if err := RunningProcess.Kill(); err != nil {
+					log.Printf("error trying to kill "+
+						"current process: %s",
+						err.Error())
+				}
+			}
 		default:
 			log.Printf("unknown command %s", tokens[0])
 		}
