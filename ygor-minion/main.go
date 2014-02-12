@@ -302,9 +302,11 @@ func main() {
 			// Empty the noise inbox ...
 			log.Printf("deleting %d items from the noise queue",
 				len(noiseInbox))
-			for _ = range noiseInbox {
-				if len(noiseInbox) == 0 {
-					break
+			if len(noiseInbox) > 0 {
+				for _ = range noiseInbox {
+					if len(noiseInbox) == 0 {
+						break
+					}
 				}
 			}
 
