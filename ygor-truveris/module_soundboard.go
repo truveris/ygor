@@ -78,6 +78,11 @@ func playTune(where string, tune string, duration uint64) {
 		sendToMinion(formatPlayTuneCommand("dave.wav", duration))
 	case "error":
 		sendToMinion(formatPlayTuneCommand("error.wav", duration))
+	// AOL
+	case "welcome":
+		sendToMinion(formatPlayTuneCommand("welcome.wav", duration))
+	case "goodbye":
+		sendToMinion(formatPlayTuneCommand("goodbye.wav", duration))
 	}
 }
 
@@ -102,6 +107,12 @@ func (module SoundBoardModule) PrivMsg(nick, where, msg string, isAction bool) {
 	if isShutUpRequest(msg) {
 		shutup(where)
 		return
+	}
+
+	if msg == "play -h" {
+		privMsg(where, "usage: ygor: [play] sound [[for] duration [seconds]]")
+		privMsg(where, "sounds: jeopardy africa wagner nuke energy "+
+			"tmyk rainbow cantdo dave error")
 	}
 
 	tune, duration := getTune(msg)
