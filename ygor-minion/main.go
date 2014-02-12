@@ -52,9 +52,10 @@ type sqsMessage struct {
 	ReceiptHandle []string `xml:"ReceiveMessageResult>Message>ReceiptHandle"`
 }
 
-type Tune struct {
+type Noise struct {
 	Filename string
 	Duration string
+	Sentence string
 }
 
 func buildReceiveMessageURL() string {
@@ -147,7 +148,7 @@ func deleteMessage(receipt string) error {
 	return nil
 }
 
-func playTune(tune Tune) {
+func playTune(tune Noise) {
 	filepath := "tunes/" + path.Base(tune.Filename)
 	if _, err := os.Stat(filepath); err != nil {
 		log.Printf("play-tune bad filename")
@@ -245,15 +246,13 @@ func fetchMessages(incoming chan string) {
 	}
 }
 
-func playTunes(tuneInbox chan Tune) {
-	for tune := range tuneInbox {
-		playTune(tune)
-	}
-}
-
-func sayThings(sayInbox chan string) {
-	for sentence := range sayInbox {
-		say(sentence)
+func playNoise(noiseInbox chan Noise) {
+	for noise := range noiseInbox {
+		if noise.Sentence != "" {
+			say(noise.Sentence)
+		} else {
+			playTune(noise)
+		}
 	}
 }
 
@@ -273,13 +272,11 @@ func main() {
 	incoming := make(chan string)
 	go fetchMessages(incoming)
 
-	// This is the music box.
-	tuneInbox := make(chan Tune)
-	go playTunes(tuneInbox)
-
-	// This is the voice box.
-	sayInbox := make(chan string)
-	go sayThings(sayInbox)
+	// This is the noise box, we keep as much as possible in local memory,
+	// that makes 'shutup' remotely useful. Without buffer we would have to
+	// wait through orders before even reaching the 'shutup' command.
+	noiseInbox := make(chan Noise, 1000)
+	go playNoise(noiseInbox)
 
 	log.Printf("ygor-minion ready!")
 
@@ -290,18 +287,28 @@ func main() {
 		switch tokens[0] {
 		case "play-tune":
 			if len(tokens) > 1 {
-				tune := Tune{}
+				tune := Noise{}
 				tune.Filename = tokens[1]
 				if len(tokens) > 2 {
 					tune.Duration = tokens[2]
 				}
-				tuneInbox <- tune
+				noiseInbox <- tune
 			}
-		case "mac-say":
-			sayInbox <- strings.Join(tokens[1:], " ")
 		case "say":
-			sayInbox <- strings.Join(tokens[1:], " ")
+			noise := Noise{}
+			noise.Sentence = strings.Join(tokens[1:], " ")
+			noiseInbox <- noise
 		case "shutup":
+			// Empty the noise inbox ...
+			log.Printf("deleting %d items from the noise queue",
+				len(noiseInbox))
+			for _ = range noiseInbox {
+				if len(noiseInbox) == 0 {
+					break
+				}
+			}
+
+			// ... then kill whatever is currently running.
 			if RunningProcess != nil {
 				if err := RunningProcess.Kill(); err != nil {
 					log.Printf("error trying to kill "+

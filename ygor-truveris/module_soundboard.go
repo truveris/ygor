@@ -13,25 +13,11 @@ import (
 
 var (
 	reSoundBoard = regexp.MustCompile(`^(?:\w+ )?(\w+)(?:(?:\s+for)?\s+([0-9]+))?`)
-	reAddressed = regexp.MustCompile(`^(\w+)[:,.]+\s+(.*)`)
+	reStop = regexp.MustCompile(`^st[aho]+p`)
+	reShhh = regexp.MustCompile(`^s+[sh]+`)
 )
 
 type SoundBoardModule struct{}
-
-// Returns the PRIVMSG without the nickname prefix if any, if the message was
-// not addressed to this bot, it returns an empty string.
-func AddressedToMe(msg string) string {
-	tokens := reAddressed.FindStringSubmatch(msg)
-	if tokens == nil {
-		return ""
-	}
-
-	if tokens[1] == cmd.Nickname {
-		return tokens[2]
-	}
-
-	return ""
-}
 
 func getTune(msg string) (string, uint64) {
 	tokens := reSoundBoard.FindStringSubmatch(msg)
@@ -82,8 +68,26 @@ func playTune(where string, tune string, duration uint64) {
 	}
 }
 
+func isShutUpRequest(msg string) bool {
+	msg = strings.ToLower(msg)
+	if reStop.MatchString(msg) || reShhh.MatchString(msg) {
+		return true
+	}
+	return false
+}
+
+func shutup(where string) {
+	sendToMinion("shutup")
+	privMsg(where, "ok...")
+}
+
 func (module SoundBoardModule) PrivMsg(nick, where, msg string, isAction bool) {
 	if msg = AddressedToMe(msg); msg == "" {
+		return
+	}
+
+	if isShutUpRequest(msg) {
+		shutup(where)
 		return
 	}
 
