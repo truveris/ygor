@@ -9,9 +9,9 @@ import (
 
 type SayModule struct { }
 
-func (module SayModule) PrivMsg(nick, where, msg string, isAction bool) {
-	if strings.HasPrefix(msg, cmd.Nickname+": say ") {
-		sendToMinion(msg[6:])
+func (module SayModule) PrivMsg(msg *PrivMsg) {
+	if strings.HasPrefix(msg.Body, cmd.Nickname+": say ") {
+		SendToMinion(msg.Body[6:])
 	}
 }
 

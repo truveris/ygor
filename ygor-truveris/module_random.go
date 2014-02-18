@@ -20,7 +20,8 @@ var (
 )
 
 type RandomModule struct {
-	Markov *Chain
+	Markov      *Chain
+	LastChannel string
 }
 
 func (module RandomModule) MakeSentence() string {
@@ -107,6 +108,10 @@ func (module RandomModule) recordPrivMsg(nick, msg string, isAction bool) {
 
 // React to PRIVMSG (channel or direct).
 func (module RandomModule) PrivMsg(nick, where, msg string, isAction bool) {
+	if nick != cmd.Nickname {
+		module.LastChannel = where
+	}
+
 	module.recordPrivMsg(nick, msg, isAction)
 
 	// We only care for messages addressed to us.
@@ -134,7 +139,7 @@ func (module RandomModule) Ticker() {
 	for _ = range ticker {
 		if rand.Float64() < chances {
 			text := module.MakeSentence()
-			privMsg(channel, text)
+			privMsg(module.LastChannel, text)
 		}
 	}
 }

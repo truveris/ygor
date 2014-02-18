@@ -1,9 +1,12 @@
 // Copyright (c) 2014 Bertrand Janin <b@janin.com>
 // Use of this source code is governed by the ISC license in the LICENSE file.
 
+// TODO: replace the owner messages to DebugChannel.
+
 package main
 
 import (
+	"fmt"
 	"github.com/mikedewar/aws4"
 	"io/ioutil"
 	"net/url"
@@ -35,23 +38,28 @@ func getClient() *aws4.Client {
 }
 
 // Send a message to our friendly minion via its SQS queue.
-func sendToMinion(msg string) {
+func SendToMinion(msg string) {
+	if cfg.Debug {
+		fmt.Printf("[SQS-SendToMinion] %s\n", msg)
+		return
+	}
+
 	client := getClient()
 	data := buildSendMessageData(msg)
 
 	resp, err := client.Post(cfg.QueueURL, ContentType,
 		strings.NewReader(data))
 	if err != nil {
-		privMsg(owner, err.Error())
+		privMsg(cfg.Owner, err.Error())
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		privMsg(owner, err.Error())
+		privMsg(cfg.Owner, err.Error())
 	}
 
 	if resp.StatusCode != 200 {
-		privMsg(owner, string(body))
+		privMsg(cfg.Owner, string(body))
 	}
 }

@@ -8,15 +8,11 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"regexp"
 	"strings"
 	"time"
 )
 
 var (
-	channel = "#dev"
-	owner   = "b"
-
 	// Used to synchronize line output.
 	outgoing = make(chan string)
 
@@ -25,13 +21,10 @@ var (
 
 	// All the modules currently registered.
 	modules = make([]Module, 0)
-
-	// Detect input patterns.
-	rePrivMsg = regexp.MustCompile(`^:([^!]+)![^@]+@[^\s]+\sPRIVMSG\s([^\s]+)\s:(.*)`)
 )
 
 type Module interface {
-	PrivMsg(nick, where, msg string, isAction bool)
+	PrivMsg(msg *PrivMsg)
 	Init()
 }
 
@@ -54,6 +47,8 @@ func outgoingHandler() {
 // Feed the incoming channel with lines read from stdin.
 func incomingHandler() {
 	br := bufio.NewReader(os.Stdin)
+
+	OuterLoop:
 	for {
 		line, err := br.ReadString('\n')
 		if err != nil {
@@ -61,19 +56,24 @@ func incomingHandler() {
 		}
 		line = strings.TrimSpace(line)
 
-		// PRIVMSG
-		tokens := rePrivMsg.FindStringSubmatch(line)
-		if tokens != nil {
-			nick, where, msg := tokens[1], tokens[2], tokens[3]
-			isAction := false
-			if strings.HasPrefix(msg, "\x01ACTION ") {
-				msg = msg[8 : len(msg)-1]
-				isAction = true
-			}
-			for _, module := range modules {
-				module.PrivMsg(nick, where, msg, isAction)
-			}
+		msg := NewPrivMsg(line)
+		if msg == nil {
 			continue
+		}
+
+		for _, cmd := range RegisteredCommands {
+			if cmd.IsAddressed != msg.IsAddressed {
+				continue
+			}
+			if cmd.Name != msg.Command {
+				continue
+			}
+			cmd.Function(msg.Channel, msg.Args)
+			continue OuterLoop
+		}
+
+		for _, module := range modules {
+			module.PrivMsg(msg)
 		}
 	}
 }
@@ -114,21 +114,26 @@ func main() {
 	parseCommandLine()
 	parseConfigFile()
 
-	//	if cfg.MarkovDataPath != "" {
-	//		chain := initializeMarkovChain()
-	//		registerModule(RandomModule{Markov: chain})
-	//	}
+	// if cfg.MarkovDataPath != "" {
+	// 	chain := initializeMarkovChain()
+	// 	registerModule(RandomModule{Markov: chain})
+	// }
 	//
-	//	registerModule(RepeatModule{})
-	//	registerModule(NeeextModule{})
+	// registerModule(RepeatModule{})
+	// registerModule(NeeextModule{})
 
-	registerModule(SoundBoardModule{})
+	registerModule(AliasModule{})
 	registerModule(SayModule{})
+	registerModule(ShutUpModule{})
+	registerModule(SoundBoardModule{})
 
 	go outgoingHandler()
 	go incomingHandler()
 
-	outgoing <- "JOIN " + channel
+	// Auto-join all the configured channels.
+	for _, channel := range cfg.Channels {
+		outgoing <- "JOIN " + channel
+	}
 
-	panic(<-eof)
+	fmt.Printf("terminating: %s\n", <-eof)
 }

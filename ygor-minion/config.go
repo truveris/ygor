@@ -5,13 +5,8 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/jessevdk/go-flags"
 	"os"
 )
-
-type Cmd struct {
-	Nickname string `long:"nickname" description:"Bot's nickname" default:"ygor"`
-}
 
 type Cfg struct {
 	AwsAccessKeyId     string
@@ -21,30 +16,11 @@ type Cfg struct {
 	// In Debug-mode, this program will not attempt to communicate with any
 	// external systems (e.g. SQS and will print everything to stdout).
 	Debug		   bool
-
-	// Default channel. This is to be replaced by an array of channels
-	Channels []string
-
-	// Who is allowed to do special commands.
-	Owner string
 }
 
 var (
-	cmd = Cmd{}
 	cfg = Cfg{}
 )
-
-// Parse the command line arguments and return the soul program's path/name
-// (only argument).
-func parseCommandLine() {
-	flagParser := flags.NewParser(&cmd, flags.PassDoubleDash)
-	_, err := flagParser.Parse()
-	if err != nil {
-		println("error: " + err.Error())
-		flagParser.WriteHelp(os.Stderr)
-		os.Exit(1)
-	}
-}
 
 // Look in the current directory for an config.json file.
 func parseConfigFile() {

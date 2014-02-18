@@ -8,7 +8,7 @@
 // text. They should take the form of a command and its parameters, for
 // example:
 //
-// 	play-tune valkyries.mp3
+// 	play valkyries.mp3
 //
 // The cost of one ygor-minion in SQS is less than a dollar a year, at one
 // query per 20 seconds:
@@ -22,145 +22,30 @@
 package main
 
 import (
-	"encoding/xml"
-	"errors"
+	"bufio"
 	"fmt"
-	"github.com/mikedewar/aws4"
-	"io/ioutil"
+	"runtime"
 	"log"
-	"net/url"
 	"os"
 	"os/exec"
-	"path"
 	"strings"
 	"time"
 )
 
-const (
-	APIVersion       = "2012-11-05"
-	SignatureVersion = "4"
-)
-
 var (
-	QueueURL string
 	RunningProcess *os.Process
 )
 
-// struct defining what to extract from the XML document
-type sqsMessage struct {
-	Body          []string `xml:"ReceiveMessageResult>Message>Body"`
-	ReceiptHandle []string `xml:"ReceiveMessageResult>Message>ReceiptHandle"`
-}
-
 type Noise struct {
-	Filename string
+	Path     string
 	Duration string
 	Sentence string
 }
 
-func buildReceiveMessageURL() string {
-	query := url.Values{}
-	query.Set("Action", "ReceiveMessage")
-	// query.Set("AttributeName", "All")
-	query.Set("Version", APIVersion)
-	query.Set("SignatureVersion", SignatureVersion)
-	query.Set("WaitTimeSeconds", "20")
-	query.Set("MaxNumberOfMessages", "1")
-	url := QueueURL + "?" + query.Encode()
-	return url
-}
-
-func buildDeleteMessageURL(receipt string) string {
-	query := url.Values{}
-	query.Set("Action", "DeleteMessage")
-	query.Set("ReceiptHandle", receipt)
-	query.Set("Version", APIVersion)
-	query.Set("SignatureVersion", SignatureVersion)
-	url := QueueURL + "?" + query.Encode()
-	return url
-}
-
-// Return a client ready to use with the proper auth parameters.
-func getClient() *aws4.Client {
-	accessKey := os.Getenv("AWS_ACCESS_KEY_ID")
-	if accessKey == "" {
-		log.Fatal("missing AWS_ACCESS_KEY_ID")
-	}
-
-	secretKey := os.Getenv("AWS_SECRET_ACCESS_KEY")
-	if secretKey == "" {
-		log.Fatal("missing AWS_SECRET_ACCESS_KEY")
-	}
-
-	keys := &aws4.Keys{AccessKey: accessKey, SecretKey: secretKey}
-
-	return &aws4.Client{Keys: keys}
-}
-
-// Return a single message body, with its ReceiptHandle. A lack of message is
-// not considered an error but both strings will be empty.
-func getMessage() (string, string, error) {
-	var m sqsMessage
-
-	client := getClient()
-	url := buildReceiveMessageURL()
-
-	resp, err := client.Get(url)
-	if err != nil {
-		return "", "", err
-	}
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", "", err
-	}
-
-	if resp.StatusCode != 200 {
-		return "", "", errors.New(string(body))
-	}
-
-	err = xml.Unmarshal(body, &m)
-	if err != nil {
-		return "", "", err
-	}
-
-	// The API call is build to only return one or zero messages.
-	if len(m.Body) < 1 {
-		return "", "", nil
-	}
-	message := m.Body[0]
-	receipt := m.ReceiptHandle[0]
-
-	return message, receipt, nil
-}
-
-func deleteMessage(receipt string) error {
-	client := getClient()
-	url := buildDeleteMessageURL(receipt)
-
-	resp, err := client.Get(url)
-	if err != nil {
-		return err
-	}
-	resp.Body.Close()
-
-	return nil
-}
-
 func playTune(tune Noise) {
-	filepath := "tunes/" + path.Base(tune.Filename)
-	if _, err := os.Stat(filepath); err != nil {
-		log.Printf("play-tune bad filename")
+	cmd := mplayer(tune)
+	if cmd == nil {
 		return
-	}
-
-	var cmd *exec.Cmd
-	if tune.Duration != "" {
-		cmd = exec.Command("mplayer", "-really-quiet", "-endpos",
-			tune.Duration, filepath)
-	} else {
-		cmd = exec.Command("mplayer", "-really-quiet", filepath)
 	}
 
 	err := cmd.Start()
@@ -185,11 +70,24 @@ func macSay(sentence string) {
 	if err != nil {
 		log.Printf("error starting say")
 	}
+
+	RunningProcess = cmd.Process
+
+	err = cmd.Wait()
+	if err != nil {
+		log.Printf("error on cmd.Wait(): " + err.Error())
+		return
+	}
 }
 
 // espeak | aplay (for linux)
 func say(sentence string) {
 	var err error
+
+	if runtime.GOOS == "darwin" {
+		macSay(sentence)
+		return
+	}
 
 	cmd_espeak := exec.Command("espeak", "-ven-us+f2", "--stdout",
 		sentence, "-a", "300", "-s", "130")
@@ -228,6 +126,34 @@ func say(sentence string) {
 	RunningProcess = nil
 }
 
+func playNoise(noiseInbox chan Noise) {
+	for noise := range noiseInbox {
+		if noise.Sentence != "" {
+			say(noise.Sentence)
+		} else {
+			playTune(noise)
+		}
+	}
+}
+
+// This is used for debugging.
+//
+// It fetches queue messages from stdin instead of AWS SQS.
+//
+func fetchMessagesFromStdin(incoming chan string) {
+	br := bufio.NewReader(os.Stdin)
+
+	for {
+		line, err := br.ReadString('\n')
+		if err != nil {
+			log.Fatal("terminating: " + err.Error())
+		}
+		line = strings.TrimSpace(line)
+
+		incoming <- line
+	}
+}
+
 func fetchMessages(incoming chan string) {
 	for {
 		body, receipt, err := getMessage()
@@ -246,31 +172,25 @@ func fetchMessages(incoming chan string) {
 	}
 }
 
-func playNoise(noiseInbox chan Noise) {
-	for noise := range noiseInbox {
-		if noise.Sentence != "" {
-			say(noise.Sentence)
-		} else {
-			playTune(noise)
-		}
-	}
-}
-
 // Loop until the end of time.
 //
 // In case of error, delay the next loop. Automatically reconnect if everything
 // goes fine (for 0 or 1 message).
 func main() {
-	if len(os.Args) != 2 {
-		fmt.Printf("usage: ygor-minion queue-url\n")
+	if len(os.Args) != 1 {
+		fmt.Printf("usage: ygor-minion\n")
 		os.Exit(1)
 	}
 
-	QueueURL = os.Args[1]
+	parseConfigFile()
 
 	// This is the message box.
 	incoming := make(chan string)
-	go fetchMessages(incoming)
+	if cfg.Debug {
+		go fetchMessagesFromStdin(incoming)
+	} else {
+		go fetchMessages(incoming)
+	}
 
 	// This is the noise box, we keep as much as possible in local memory,
 	// that makes 'shutup' remotely useful. Without buffer we would have to
@@ -285,10 +205,10 @@ func main() {
 
 		tokens := strings.Split(body, " ")
 		switch tokens[0] {
-		case "play-tune":
+		case "play", "play-tune":
 			if len(tokens) > 1 {
 				tune := Noise{}
-				tune.Filename = tokens[1]
+				tune.Path = tokens[1]
 				if len(tokens) > 2 {
 					tune.Duration = tokens[2]
 				}

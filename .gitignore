@@ -7,3 +7,5 @@ ygor-minion/env
 data
 *.log
 *.sh
+config.json
+aliases.cfg

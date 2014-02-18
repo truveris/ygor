@@ -12,13 +12,12 @@ import (
 )
 
 var (
-	reSoundBoard = regexp.MustCompile(`^(?:play )?(\w+)(?:(?:\s+for)?\s+([0-9]+))?`)
-	reStop = regexp.MustCompile(`^st[aho]+p`)
-	reShhh = regexp.MustCompile(`^s+[sh]+`)
+	reSoundBoard = regexp.MustCompile(`^(\w+)(?:(?:\s+for)?\s+([0-9]+))?`)
 )
 
 type SoundBoardModule struct{}
 
+// Extract the tune and duration from an IRC line.
 func getTune(msg string) (string, uint64) {
 	tokens := reSoundBoard.FindStringSubmatch(msg)
 	if tokens == nil {
@@ -38,19 +37,44 @@ func getTune(msg string) (string, uint64) {
 
 func formatPlayTuneCommand(filename string, duration uint64) string {
 	if duration > 0 {
-		return fmt.Sprintf("play-tune %s %d", filename, duration)
+		return fmt.Sprintf("play %s %d", filename, duration)
 	} else {
-		return fmt.Sprintf("play-tune %s", filename)
+		return fmt.Sprintf("play %s", filename)
 	}
 }
 
-func playTune(where string, tune string, duration uint64) {
-	switch tune {
-	case "jeopardy":
-		privAction(where, "queues some elevator music...")
-		sendToMinion(formatPlayTuneCommand("jeopardy.mp3", duration))
-	case "africa":
-		sendToMinion(formatPlayTuneCommand("africa.ogg", duration))
+func (module SoundBoardModule) PrivMsg(msg *PrivMsg) {
+	if isShutUpRequest(msg.Body) {
+		shutup(msg.Channel)
+		return
+	}
+}
+
+func Play(where string, params []string) {
+	var duration uint64 = 0
+	var err error
+
+	if len(params) == 0 {
+		privMsg(where, "usage: play sound [duration]")
+		return
+	}
+
+	if len(params) > 1 {
+		duration, err = strconv.ParseUint(params[1], 10, 8)
+		if err != nil {
+			duration = 0
+		}
+	}
+
+	SendToMinion(formatPlayTuneCommand(params[0], duration))
+}
+
+func PlayAfrica(where string, params []string) {
+	params = append([]string{"africa.mp3"}, params...)
+
+	Play(where, params)
+
+	go func() {
 		time.Sleep(2 * time.Second)
 		privAction(where, "hears the drums echoing tonight,")
 		time.Sleep(5 * time.Second)
@@ -59,69 +83,19 @@ func playTune(where string, tune string, duration uint64) {
 		privMsg(where, "She's coming in the 12:30 flight")
 		time.Sleep(3 * time.Second)
 		privMsg(where, "The moonlit wings reflect the stars that guide me towards salvation")
-	case "wagner":
-		sendToMinion(formatPlayTuneCommand("wagner.ogg", duration))
-	// Starcraft
-	case "nuke":
-		sendToMinion(formatPlayTuneCommand("nuke_ready.ogg", duration))
-	case "energy":
-		sendToMinion(formatPlayTuneCommand("energy.ogg", duration))
-	// TV Shows
-	case "tmyk":
-		sendToMinion(formatPlayTuneCommand("the-more-you-know.mp3", duration))
-	case "rainbow":
-		sendToMinion(formatPlayTuneCommand("reading_rainbow.mp3", duration))
-	// 2001 Space Odissy
-	case "cantdo":
-		sendToMinion(formatPlayTuneCommand("cantdo.wav", duration))
-	case "dave":
-		sendToMinion(formatPlayTuneCommand("dave.wav", duration))
-	case "error":
-		sendToMinion(formatPlayTuneCommand("error.wav", duration))
-	// AOL
-	case "welcome":
-		sendToMinion(formatPlayTuneCommand("welcome.wav", duration))
-	case "goodbye":
-		sendToMinion(formatPlayTuneCommand("goodbye.wav", duration))
-	}
+	}()
 }
 
-func isShutUpRequest(msg string) bool {
-	msg = strings.ToLower(msg)
-	if reStop.MatchString(msg) || reShhh.MatchString(msg) {
-		return true
-	}
-	return false
+func PlayJeopardy(where string, params []string) {
+	params = append([]string{"jeopardy.mp3"}, params...)
+
+	privAction(where, "queues some elevator music...")
+	Play(where, params)
 }
 
-func shutup(where string) {
-	sendToMinion("shutup")
-	privMsg(where, "ok...")
-}
-
-func (module SoundBoardModule) PrivMsg(nick, where, msg string, isAction bool) {
-	if msg = AddressedToMe(msg); msg == "" {
-		return
-	}
-
-	if isShutUpRequest(msg) {
-		shutup(where)
-		return
-	}
-
-	if msg == "play -h" {
-		privMsg(where, "usage: ygor: [play] sound [[for] duration [seconds]]")
-		privMsg(where, "sounds: jeopardy africa wagner nuke energy "+
-			"tmyk rainbow cantdo dave error")
-	}
-
-	tune, duration := getTune(msg)
-	if tune == "" {
-		return
-	}
-
-	playTune(where, tune, duration)
-}
 
 func (module SoundBoardModule) Init() {
+	RegisterCommand(NewCommandFromFunction("play", Play))
+	RegisterCommand(NewCommandFromFunction("africa", PlayAfrica))
+	RegisterCommand(NewCommandFromFunction("jeopardy", PlayJeopardy))
 }

@@ -12,21 +12,23 @@ import (
 
 type NeeextModule struct {
 	LastSpeaker string
+	LastChannel string
 }
 
 func (module NeeextModule) PrivMsg(nick, where, msg string, isAction bool) {
 	if nick != cmd.Nickname && nick != module.LastSpeaker {
 		module.LastSpeaker = nick
+		module.LastChannel = where
 	}
 }
 
 func (module NeeextModule) Gibberish() {
-	privAction(channel, "stares at "+module.LastSpeaker+"...")
+	privAction(module.LastChannel, "stares at "+module.LastSpeaker+"...")
 	time.Sleep(2 * time.Second)
 	if rand.Float64() > 0.5 {
-		privMsg(channel, "NEXT!!")
+		privMsg(module.LastChannel, "NEXT!!")
 	} else {
-		privMsg(channel, "CHICKEN SANDWICH!!")
+		privMsg(module.LastChannel, "CHICKEN SANDWICH!!")
 	}
 }
 
