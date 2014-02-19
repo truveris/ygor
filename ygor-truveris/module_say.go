@@ -10,8 +10,9 @@ import (
 type SayModule struct { }
 
 func (module SayModule) PrivMsg(msg *PrivMsg) {
-	if strings.HasPrefix(msg.Body, cmd.Nickname+": say ") {
-		SendToMinion(msg.Body[6:])
+	// Turn that shit into a command.
+	if msg.IsAddressed && strings.HasPrefix(msg.Body, "say ") {
+		SendToMinion(msg.Body)
 	}
 }
 
