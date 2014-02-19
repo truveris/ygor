@@ -135,6 +135,5 @@ func main() {
 		outgoing <- "JOIN " + channel
 	}
 
-	// XXX: send that to debug channel
-	// fmt.Printf("terminating: %s\n", <-eof)
+	panic(<-eof)
 }
