@@ -1,0 +1,23 @@
+Short term
+----------
+ - [minion] know how to change the web page on screen.
+ - [truveris] know what pi to talk to depending on the channel it was requested from (e.g. #board, #dev2, #ops).
+ - [minion] look for 403 forbidden.
+ - [truveris] run a routine to check the validity of the URL before sending it to the minion.
+
+Mid term
+--------
+ - [module_markov] record conversations to the chain.
+ - [module_markov] do not remember lines with funny chars.
+ - [module_markov] if we don't know a word, try to get it from reddit.
+ - [module_markov] write a tool that parses the front page a a subreddit's comments.
+ - [module_markov] make the markov chains channel specific
+ - [module_markov] detect different types of questions.
+ - [soul] save conversations to file too.
+
+Long term
+---------
+ - [soul] resolve sites like imdb
+ - [soul] who's logged on lab
+ - [soul] keep track of the channel activity volume (and shut up when silent)
+ - [soul] know about the hot topics

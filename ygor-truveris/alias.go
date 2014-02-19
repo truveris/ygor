@@ -25,20 +25,6 @@ var (
 	LastMod time.Time
 )
 
-// Return the concatenated value (command + args).
-// func (alias *Alias) GetValue() string {
-// 	var valueList []string
-// 
-// 	if alias.Command != "" {
-// 		valueList = append(valueList, alias.Command)
-// 	}
-// 	if len(alias.Args) > 0 {
-// 		valueList = append(valueList, alias.Args...)
-// 	}
-// 
-// 	return strings.Join(valueList, " ")
-// }
-
 // Generate a simple line for persistence, with new-line.
 func (alias *Alias) GetLine() string {
 	return fmt.Sprintf("%s\t%s\n", alias.Name, alias.Value)
@@ -126,5 +112,6 @@ func reloadAliases() {
 		AddAlias(tokens[0], tokens[1])
 	}
 
-	fmt.Printf("(Re-)loaded %d aliases.\n", len(Aliases))
+	// XXX send that to debug channel
+	// fmt.Printf("(Re-)loaded %d aliases.\n", len(Aliases))
 }
