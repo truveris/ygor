@@ -43,12 +43,7 @@ func formatPlayTuneCommand(filename string, duration uint64) string {
 	}
 }
 
-func (module SoundBoardModule) PrivMsg(msg *PrivMsg) {
-	if isShutUpRequest(msg.Body) {
-		shutup(msg.Channel)
-		return
-	}
-}
+func (module SoundBoardModule) PrivMsg(msg *PrivMsg) { }
 
 func Play(where string, params []string) {
 	var duration uint64 = 0
