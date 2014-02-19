@@ -70,7 +70,7 @@ func Play(where string, params []string) {
 }
 
 func PlayAfrica(where string, params []string) {
-	params = append([]string{"africa.mp3"}, params...)
+	params = append([]string{"africa.ogg"}, params...)
 
 	Play(where, params)
 
