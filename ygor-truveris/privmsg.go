@@ -13,7 +13,7 @@ var (
 	rePrivMsg = regexp.MustCompile(`^:([^!]+)![^@]+@[^\s]+\sPRIVMSG\s([^\s]+)\s:(.*)`)
 
 	// Detect if we are addressed to.
-	reAddressed = regexp.MustCompile(`^(\w+)[:,.]+\s*(.*)`)
+	reAddressed = regexp.MustCompile(`^(\w+)[:,. ]+\s*(.*)`)
 )
 
 type PrivMsg struct {
