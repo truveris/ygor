@@ -84,6 +84,11 @@ func macSay(sentence string) {
 func say(sentence string) {
 	var err error
 
+	if cfg.Debug {
+		log.Printf("say(%s)", sentence)
+		return
+	}
+
 	if runtime.GOOS == "darwin" {
 		macSay(sentence)
 		return

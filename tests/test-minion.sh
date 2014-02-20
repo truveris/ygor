@@ -56,6 +56,7 @@ test_command "say something"
 cat > test.expected <<EOF
 ygor-minion ready!
 got message: "say something"
+say(something)
 terminating: EOF
 EOF
 assert_output && pass
