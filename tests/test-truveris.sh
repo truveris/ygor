@@ -60,6 +60,26 @@ EOF
 assert_output && pass
 
 
+announce "change this alias"
+test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play things.ogg"
+cat > test.expected <<EOF
+JOIN #test
+JOIN #ygor
+PRIVMSG #test :ok (replaced)
+EOF
+assert_output && pass
+
+
+announce "get this updated alias"
+test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla"
+cat > test.expected <<EOF
+JOIN #test
+JOIN #ygor
+PRIVMSG #test :'blabla' is an alias for 'play things.ogg'
+EOF
+assert_output && pass
+
+
 announce "get unknown alias"
 test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias whatevs"
 cat > test.expected <<EOF

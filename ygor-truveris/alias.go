@@ -21,7 +21,7 @@ const (
 )
 
 var (
-	Aliases = make(map[string]Alias)
+	Aliases = make(map[string]*Alias)
 	LastMod time.Time
 )
 
@@ -59,7 +59,7 @@ func GetAlias(name string) *Alias {
 
 	for _, alias := range Aliases {
 		if alias.Name == name {
-			return &alias
+			return alias
 		}
 	}
 
@@ -67,7 +67,7 @@ func GetAlias(name string) *Alias {
 }
 
 func AddAlias(name, value string) {
-	alias := Alias{}
+	alias := &Alias{}
 	alias.Name = name
 	alias.Value = value
 	Aliases[alias.Name] = alias
@@ -89,7 +89,7 @@ func SaveAliases() {
 }
 
 func reloadAliases() {
-	Aliases = make(map[string]Alias)
+	Aliases = make(map[string]*Alias)
 
 	file, err := os.Open(AliasFilename)
 	if err != nil {
