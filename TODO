@@ -1,6 +1,5 @@
 Short term
 ----------
- - [minion] know how to change the web page on screen.
  - [truveris] know what pi to talk to depending on the channel it was requested from (e.g. #board, #dev2, #ops).
  - [minion] look for 403 forbidden.
  - [truveris] run a routine to check the validity of the URL before sending it to the minion.

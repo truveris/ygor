@@ -80,7 +80,7 @@ EOF
 assert_output && pass
 
 
-announce "test alias with percent sign"
+announce "alias with percent sign"
 test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias 60% play stuff"
 test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias 60%"
 cat > test.expected <<EOF
@@ -91,7 +91,7 @@ EOF
 assert_output && pass
 
 
-announce "test say stuff"
+announce "say stuff"
 test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: say stuff"
 cat > test.expected <<EOF
 JOIN #test
@@ -101,12 +101,34 @@ EOF
 assert_output && pass
 
 
-announce "test use alias"
+announce "use alias"
 test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: 60%"
 cat > test.expected <<EOF
 JOIN #test
 JOIN #ygor
 [SQS-SendToMinion] play stuff
+EOF
+assert_output && pass
+
+
+announce "sshhhh"
+test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: sshhhh"
+cat > test.expected <<EOF
+JOIN #test
+JOIN #ygor
+[SQS-SendToMinion] shutup
+PRIVMSG #test :ok...
+EOF
+assert_output && pass
+
+
+announce "xombrero"
+test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: xombrero open http://www.truveris.com/"
+cat > test.expected <<EOF
+JOIN #test
+JOIN #ygor
+[SQS-SendToMinion] xombrero open http://www.truveris.com/
+PRIVMSG #test :sure
 EOF
 assert_output && pass
 

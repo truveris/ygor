@@ -24,122 +24,12 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"runtime"
 	"log"
+	"net"
 	"os"
-	"os/exec"
 	"strings"
 	"time"
 )
-
-var (
-	RunningProcess *os.Process
-)
-
-type Noise struct {
-	Path     string
-	Duration string
-	Sentence string
-}
-
-func playTune(tune Noise) {
-	cmd := mplayer(tune)
-	if cmd == nil {
-		return
-	}
-
-	err := cmd.Start()
-	if err != nil {
-		log.Printf("error on mplayer Start(): %s", err.Error())
-	}
-
-	RunningProcess = cmd.Process
-
-	err = cmd.Wait()
-	if err != nil {
-		log.Printf("error on mplayer Wait(): %s", err.Error())
-	}
-
-	RunningProcess = nil
-}
-
-// say (for macs)
-func macSay(sentence string) {
-	cmd := exec.Command("say", sentence)
-	err := cmd.Start()
-	if err != nil {
-		log.Printf("error starting say")
-	}
-
-	RunningProcess = cmd.Process
-
-	err = cmd.Wait()
-	if err != nil {
-		log.Printf("error on cmd.Wait(): " + err.Error())
-		return
-	}
-}
-
-// espeak | aplay (for linux)
-func say(sentence string) {
-	var err error
-
-	if cfg.Debug {
-		log.Printf("say(%s)", sentence)
-		return
-	}
-
-	if runtime.GOOS == "darwin" {
-		macSay(sentence)
-		return
-	}
-
-	cmd_espeak := exec.Command("espeak", "-ven-us+f2", "--stdout",
-		sentence, "-a", "300", "-s", "130")
-	cmd_aplay := exec.Command("aplay")
-
-	cmd_aplay.Stdin, err = cmd_espeak.StdoutPipe()
-	if err != nil {
-		log.Printf("error on cmd_espeak.StdoutPipe(): " + err.Error())
-		return
-	}
-
-	err = cmd_espeak.Start()
-	if err != nil {
-		log.Printf("error on cmd_espeak.Start(): " + err.Error())
-		return
-	}
-	err = cmd_aplay.Start()
-	if err != nil {
-		log.Printf("error on cmd_aplay.Start(): " + err.Error())
-		return
-	}
-
-	RunningProcess = cmd_aplay.Process
-
-	err = cmd_espeak.Wait()
-	if err != nil {
-		log.Printf("error on cmd_espeak.Wait(): " + err.Error())
-		return
-	}
-	err = cmd_aplay.Wait()
-	if err != nil {
-		log.Printf("error on cmd_aplay.Wait(): " + err.Error())
-		return
-	}
-
-	RunningProcess = nil
-}
-
-func playNoise(noiseInbox chan Noise) {
-	for noise := range noiseInbox {
-		if noise.Sentence != "" {
-			say(noise.Sentence)
-		} else {
-			playTune(noise)
-		}
-	}
-}
 
 // This is used for debugging.
 //
@@ -177,6 +67,20 @@ func fetchMessages(incoming chan string) {
 	}
 }
 
+// Separate command and data.
+func SplitBody(body string) (string, string) {
+	var command, data string
+
+	tokens := strings.SplitN(body, " ", 2)
+
+	command = tokens[0]
+	if len(tokens) > 1 {
+		data = tokens[1]
+	}
+
+	return command, data
+}
+
 // Loop until the end of time.
 //
 // In case of error, delay the next loop. Automatically reconnect if everything
@@ -208,21 +112,33 @@ func main() {
 	for body := range incoming {
 		log.Printf("got message: \"%s\"", body)
 
-		tokens := strings.Split(body, " ")
-		switch tokens[0] {
+		command, data := SplitBody(body)
+
+		switch command {
 		case "play", "play-tune":
-			if len(tokens) > 1 {
+			if data != "" {
+				tokens := strings.Split(data, " ")
 				tune := Noise{}
-				tune.Path = tokens[1]
-				if len(tokens) > 2 {
-					tune.Duration = tokens[2]
+				tune.Path = tokens[0]
+				if len(tokens) > 1 {
+					tune.Duration = tokens[1]
 				}
 				noiseInbox <- tune
 			}
 		case "say":
 			noise := Noise{}
-			noise.Sentence = strings.Join(tokens[1:], " ")
+			noise.Sentence = data
 			noiseInbox <- noise
+		case "xombrero":
+			// Send a message to xombrero via its unix socket.
+			conn, err := net.Dial("unix", cfg.XombreroSocket)
+			if err != nil {
+				log.Printf("unable to connect to xombrero: %s",
+					err.Error())
+				continue
+			}
+			fmt.Fprintf(conn, "%s", data)
+			conn.Close()
 		case "shutup":
 			// Empty the noise inbox ...
 			log.Printf("deleting %d items from the noise queue",
@@ -244,7 +160,7 @@ func main() {
 				}
 			}
 		default:
-			log.Printf("unknown command %s", tokens[0])
+			log.Printf("unknown command %s", command)
 		}
 	}
 }

@@ -129,6 +129,7 @@ func main() {
 	registerModule(SayModule{})
 	registerModule(ShutUpModule{})
 	registerModule(SoundBoardModule{})
+	registerModule(XombreroModule{})
 
 	go outgoingHandler()
 	go incomingHandler()
