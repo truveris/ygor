@@ -4,36 +4,12 @@
 package main
 
 import (
-	"regexp"
-	"strings"
 	"time"
 	"strconv"
 	"fmt"
 )
 
-var (
-	reSoundBoard = regexp.MustCompile(`^(\w+)(?:(?:\s+for)?\s+([0-9]+))?`)
-)
-
 type SoundBoardModule struct{}
-
-// Extract the tune and duration from an IRC line.
-func getTune(msg string) (string, uint64) {
-	tokens := reSoundBoard.FindStringSubmatch(msg)
-	if tokens == nil {
-		return "", 0
-	}
-
-	tune := strings.ToLower(tokens[1])
-	duration, err := strconv.ParseUint(tokens[2], 10, 8)
-	if err != nil {
-		// That really shouldn't happen since the regexp should only
-		// capture uint but we're being cautious.
-		return tune, 0
-	}
-
-	return tune, duration
-}
 
 func formatPlayTuneCommand(filename string, duration uint64) string {
 	if duration > 0 {

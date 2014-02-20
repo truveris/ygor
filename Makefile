@@ -9,7 +9,7 @@ ygor-truveris/ygor-truveris:
 ygor-minion/ygor-minion:
 	cd ygor-minion && make
 
-test:
+test: ygor/ygor ygor-truveris/ygor-truveris ygor-minion/ygor-minion
 	cd tests/ && make test
 
 clean:
