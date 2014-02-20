@@ -38,10 +38,6 @@ type Module interface {
 // more natural.
 func outgoingHandler() {
 	for msg := range outgoing {
-		// Do not slow down typing in debug/test mode.
-		if !cfg.Debug {
-			time.Sleep(time.Duration(len(msg)*10) * time.Millisecond)
-		}
 		io.WriteString(os.Stdout, msg)
 		io.WriteString(os.Stdout, "\n")
 	}
