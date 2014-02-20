@@ -1,5 +1,5 @@
 {
-	"Channels": ["#test"],
+	"Channels": ["#test", "#ygor"],
 	"Owner": "test",
 	"AwsAccessKeyId": "AAAAAAAAAAAAAAAAAAAA",
 	"AwsSecretAccessKey": "////////////////////////////////////////",

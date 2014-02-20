@@ -5,7 +5,7 @@
 # $1 command
 cmd() {
 	echo "$@"
-	sleep 1
+	sleep 0.5
 }
 
 # $1 command
@@ -72,4 +72,4 @@ EOF
 assert_output && pass
 
 
-rm -f test.output test.expected test.diff
+cleanup

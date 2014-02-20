@@ -28,6 +28,10 @@ remove_timestamp() {
 	sed 's/^....\/..\/.. ..:..:.. //g'
 }
 
+cleanup() {
+	rm -f test.stdout test.output test.stderr test.diff aliases.cfg test.expected
+}
+
 # $1 - file to test, typically test.stdout or test.stderr
 assert_generic() {
 	if diff $1 test.expected > test.diff; then

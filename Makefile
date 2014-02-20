@@ -1,7 +1,7 @@
-all: ygor-body/ygor-body ygor-truveris/ygor-truveris ygor-minion/ygor-minion
+all: ygor/ygor ygor-truveris/ygor-truveris ygor-minion/ygor-minion
 
-ygor-body/ygor-body:
-	cd ygor-body && make
+ygor/ygor:
+	cd ygor && make
 
 ygor-truveris/ygor-truveris:
 	cd ygor-truveris && make
@@ -9,7 +9,10 @@ ygor-truveris/ygor-truveris:
 ygor-minion/ygor-minion:
 	cd ygor-minion && make
 
+test:
+	cd tests/ && make test
+
 clean:
-	cd ygor-body && make clean
+	cd ygor && make clean
 	cd ygor-truveris && make clean
 	cd ygor-minion && make clean
