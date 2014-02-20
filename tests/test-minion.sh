@@ -4,8 +4,9 @@
 
 # $1 command
 cmd() {
+	sleep 0.1
 	echo "$@"
-	sleep 0.5
+	sleep 0.1
 }
 
 # $1 command
