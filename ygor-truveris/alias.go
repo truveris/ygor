@@ -21,7 +21,7 @@ const (
 )
 
 var (
-	Aliases map[string]Alias
+	Aliases = make(map[string]Alias)
 	LastMod time.Time
 )
 
@@ -75,15 +75,17 @@ func AddAlias(name, value string) {
 
 // Save all the aliases to disk.
 func SaveAliases() {
-	file, err := os.OpenFile(AliasFilename, os.O_WRONLY, 0644)
+	file, err := os.OpenFile(AliasFilename, os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		// TODO debug channel
 		return
 	}
+	defer file.Close()
 
 	for _, alias := range Aliases {
 		file.Write([]byte(alias.GetLine()))
 	}
+
 }
 
 func reloadAliases() {
