@@ -19,22 +19,33 @@ test_command() {
 }
 
 
-announce "playing missing file"
+announce "playing bad path"
 test_command "play not_a_file.ogg"
 cat > test.expected <<EOF
 ygor-minion ready!
 got message: "play not_a_file.ogg"
-play: stat error: bad filename
+play: path should contain a folder
+terminating: EOF
+EOF
+assert_output && pass
+
+
+announce "playing missing file"
+test_command "play tune/not_a_file.ogg"
+cat > test.expected <<EOF
+ygor-minion ready!
+got message: "play tune/not_a_file.ogg"
+play: file not found (tune/not_a_file.ogg)
 terminating: EOF
 EOF
 assert_output && pass
 
 
 announce "playing existing file"
-test_command "play test.mp3"
+test_command "play tunes/test.mp3"
 cat > test.expected <<EOF
 ygor-minion ready!
-got message: "play test.mp3"
+got message: "play tunes/test.mp3"
 play: path: tunes/test.mp3
 terminating: EOF
 EOF
@@ -42,10 +53,10 @@ assert_output && pass
 
 
 announce "playing existing file with duration"
-test_command "play test.mp3 5"
+test_command "play tunes/test.mp3 5"
 cat > test.expected <<EOF
 ygor-minion ready!
-got message: "play test.mp3 5"
+got message: "play tunes/test.mp3 5"
 play: path: tunes/test.mp3
 terminating: EOF
 EOF

@@ -138,6 +138,7 @@ func main() {
 				continue
 			}
 			fmt.Fprintf(conn, "%s", data)
+			conn.Write([]byte("\x00"))
 			conn.Close()
 		case "shutup":
 			// Empty the noise inbox ...

@@ -93,9 +93,15 @@ func mplayer(tune Noise) *exec.Cmd {
 			file.Close()
 		}
 	} else {
-		filepath = "tunes/" + path.Base(tune.Path)
+		// This path dance should avoid abuses.
+		folder, filename := path.Split(tune.Path)
+		if folder == "" {
+			log.Printf("play: path should contain a folder")
+			return nil
+		}
+		filepath = path.Join(path.Base(folder), filename)
 		if _, err := os.Stat(filepath); err != nil {
-			log.Printf("play: stat error: bad filename")
+			log.Printf("play: file not found (%s)", filepath)
 			return nil
 		}
 	}
@@ -104,6 +110,11 @@ func mplayer(tune Noise) *exec.Cmd {
 
 	if cfg.Debug {
 		return exec.Command("echo", tune.Duration, filepath)
+	}
+
+	// FIXME find a way to implement duration...
+	if strings.HasPrefix("video", filepath) {
+		return exec.Command("omxplayer", filepath)
 	}
 
 	if tune.Duration != "" {
