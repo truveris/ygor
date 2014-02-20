@@ -115,7 +115,7 @@ func connectionReader(conn net.Conn, incoming chan string, disconnect chan strin
 			// channel.
 			if strings.Index(data, "PING :") == 0 {
 				r := strings.Replace(data, "PING", "PONG", 1)
-				fmt.Fprintf(conn, r)
+				fmt.Fprintf(conn, "%s", r)
 				continue
 			}
 
@@ -138,8 +138,7 @@ func connectionWriter(conn net.Conn, outgoing chan string) {
 			ConnectionState = CS_WAITING_FOR_HELLO
 		case CS_LIVE:
 			for msg := range outgoing {
-				msg = msg + "\r\n"
-				fmt.Fprintf(conn, msg)
+				fmt.Fprintf(conn, "%s\r\n", msg)
 			}
 		// Standby
 		default:
