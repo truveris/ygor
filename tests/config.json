@@ -1,6 +1,7 @@
 {
 	"Channels": ["#test", "#ygor"],
 	"Owner": "test",
+	"Ignore": ["douchebot"],
 	"AwsAccessKeyId": "AAAAAAAAAAAAAAAAAAAA",
 	"AwsSecretAccessKey": "////////////////////////////////////////",
 	"QueueURL": "http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion",

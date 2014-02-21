@@ -60,6 +60,13 @@ func incomingHandler() {
 			continue
 		}
 
+		// Check if we should ignore this message.
+		for _, ignore := range cfg.Ignore {
+			if ignore == msg.Nick {
+				continue OuterLoop
+			}
+		}
+
 		for _, cmd := range RegisteredCommands {
 			if cmd.IsAddressed != msg.IsAddressed {
 				continue

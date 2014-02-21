@@ -144,6 +144,15 @@ EOF
 assert_output && pass
 
 
+announce "sshhhh by ignored nick"
+test_line ":douchebot!dev@truveris.com PRIVMSG #test :whygore: sshhhh"
+cat > test.expected <<EOF
+JOIN #test
+JOIN #ygor
+EOF
+assert_output && pass
+
+
 announce "xombrero"
 test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: xombrero open http://www.truveris.com/"
 cat > test.expected <<EOF

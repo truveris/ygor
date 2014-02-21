@@ -27,6 +27,9 @@ type Cfg struct {
 
 	// Who is allowed to do special commands.
 	Owner string
+
+	// Any chatter from these nicks will be dropped.
+	Ignore []string
 }
 
 var (
