@@ -7,6 +7,7 @@ package main
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -65,6 +66,8 @@ func AliasesCmdFunc(where string, params []string) {
 	for _, alias := range Aliases {
 		aliases = append(aliases, alias.Name)
 	}
+
+	sort.Strings(aliases)
 
 	privMsg(where, "known aliases: "+strings.Join(aliases, ", "))
 }

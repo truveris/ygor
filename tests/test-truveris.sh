@@ -90,12 +90,14 @@ EOF
 assert_output && pass
 
 
-announce "list all known aliases"
+announce "list all known aliases alphabetically"
+test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias zelda play zelda.ogg"
+test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias beer play beer.ogg"
 test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: aliases"
 cat > test.expected <<EOF
 JOIN #test
 JOIN #ygor
-PRIVMSG #test :known aliases: blabla
+PRIVMSG #test :known aliases: beer, blabla, zelda
 EOF
 assert_output && pass
 
