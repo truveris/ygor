@@ -113,7 +113,7 @@ func mplayer(tune Noise) *exec.Cmd {
 	}
 
 	// FIXME find a way to implement duration...
-	if strings.HasPrefix("video", filepath) {
+	if strings.HasPrefix(filepath, "video") {
 		return exec.Command("omxplayer", filepath)
 	}
 
