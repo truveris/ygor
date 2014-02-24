@@ -41,7 +41,7 @@ func Play(where string, params []string) {
 }
 
 func PlayAfrica(where string, params []string) {
-	params = append([]string{"africa.ogg"}, params...)
+	params = append([]string{"tunes/africa.ogg"}, params...)
 
 	Play(where, params)
 
@@ -58,7 +58,7 @@ func PlayAfrica(where string, params []string) {
 }
 
 func PlayJeopardy(where string, params []string) {
-	params = append([]string{"jeopardy.mp3"}, params...)
+	params = append([]string{"tunes/jeopardy.mp3"}, params...)
 
 	privAction(where, "queues some elevator music...")
 	Play(where, params)
