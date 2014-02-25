@@ -7,7 +7,7 @@ var (
 	RegisteredCommands = make(map[string]Command)
 )
 
-type CommandFunction func(string, []string)
+type CommandFunction func(*PrivMsg)
 
 type ToggleFunction func(*PrivMsg) bool
 
@@ -31,6 +31,34 @@ type Command struct {
 
 	// Set to true of this command can be issued in a channel.
 	AllowChannel bool
+}
+
+// Check if the given message matches the command.
+func (cmd Command) MessageMatches(msg *PrivMsg) bool {
+	// Not even the right command.
+	if cmd.ToggleFunction != nil {
+		if !cmd.ToggleFunction(msg) {
+			return false
+		}
+	} else if cmd.Name != msg.Command {
+		return false
+	}
+
+	if cmd.Addressed != msg.Addressed {
+		return false
+	}
+
+	// The owner can run any commands in private.
+	if msg.IsFromOwner() {
+		return true
+	}
+
+	// Some users may as well run direct commands.
+	if !cmd.AllowDirect && msg.Direct {
+		return false
+	}
+
+	return true
 }
 
 // Return a registered command or nil.

@@ -21,47 +21,47 @@ func formatPlayTuneCommand(filename string, duration uint64) string {
 
 func (module SoundBoardModule) PrivMsg(msg *PrivMsg) {}
 
-func Play(where string, params []string) {
+func Play(msg *PrivMsg) {
 	var duration uint64 = 0
 	var err error
 
-	if len(params) == 0 {
-		privMsg(where, "usage: play sound [duration]")
+	if len(msg.Args) == 0 {
+		privMsg(msg.ReplyTo, "usage: play sound [duration]")
 		return
 	}
 
-	if len(params) > 1 {
-		duration, err = strconv.ParseUint(params[1], 10, 8)
+	if len(msg.Args) > 1 {
+		duration, err = strconv.ParseUint(msg.Args[1], 10, 8)
 		if err != nil {
 			duration = 0
 		}
 	}
 
-	SendToMinion(formatPlayTuneCommand(params[0], duration))
+	SendToMinion(formatPlayTuneCommand(msg.Args[0], duration))
 }
 
-func PlayAfrica(where string, params []string) {
-	params = append([]string{"tunes/africa.ogg"}, params...)
+func PlayAfrica(msg *PrivMsg) {
+	msg.Args = append([]string{"tunes/africa.ogg"}, msg.Args...)
 
-	Play(where, params)
+	Play(msg)
 
 	go func() {
 		time.Sleep(2 * time.Second)
-		privAction(where, "hears the drums echoing tonight,")
+		privAction(msg.ReplyTo, "hears the drums echoing tonight,")
 		time.Sleep(5 * time.Second)
-		privMsg(where, "But she hears only whispers of some quiet conversation")
+		privMsg(msg.ReplyTo, "But she hears only whispers of some quiet conversation")
 		time.Sleep(9 * time.Second)
-		privMsg(where, "She's coming in the 12:30 flight")
+		privMsg(msg.ReplyTo, "She's coming in the 12:30 flight")
 		time.Sleep(3 * time.Second)
-		privMsg(where, "The moonlit wings reflect the stars that guide me towards salvation")
+		privMsg(msg.ReplyTo, "The moonlit wings reflect the stars that guide me towards salvation")
 	}()
 }
 
-func PlayJeopardy(where string, params []string) {
-	params = append([]string{"tunes/jeopardy.mp3"}, params...)
+func PlayJeopardy(msg *PrivMsg) {
+	msg.Args = append([]string{"tunes/jeopardy.mp3"}, msg.Args...)
 
-	privAction(where, "queues some elevator music...")
-	Play(where, params)
+	privAction(msg.ReplyTo, "queues some elevator music...")
+	Play(msg)
 }
 
 func (module SoundBoardModule) Init() {

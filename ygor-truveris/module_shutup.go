@@ -32,9 +32,9 @@ func isShutUpRequest(msg *PrivMsg) bool {
 	return false
 }
 
-func ShutUpCommand(where string, params []string) {
+func ShutUpCommand(msg *PrivMsg) {
 	SendToMinion("shutup")
-	privMsg(where, "ok...")
+	privMsg(msg.ReplyTo, "ok...")
 }
 
 func (module ShutUpModule) Init() {

@@ -15,51 +15,50 @@ type AliasModule struct{}
 
 func (module AliasModule) PrivMsg(msg *PrivMsg) {}
 
-func AliasCmdFunc(where string, params []string) {
-	if len(params) == 0 {
-		privMsg(where, "usage: alias name [command [params ...]]")
+func AliasCmdFunc(msg *PrivMsg) {
+	if len(msg.Args) == 0 {
+		privMsg(msg.ReplyTo, "usage: alias name [command [params ...]]")
 		return
 	}
 
-	name := params[0]
+	name := msg.Args[0]
 	alias := GetAlias(name)
 
 	// Request the value of an alias.
-	if len(params) == 1 {
+	if len(msg.Args) == 1 {
 		if alias == nil {
-			privMsg(where, "error: unknown alias")
+			privMsg(msg.ReplyTo, "error: unknown alias")
 			return
 		}
-		msg := fmt.Sprintf("'%s' is an alias for '%s'", alias.Name,
-			alias.Value)
-		privMsg(where, msg)
+		privMsg(msg.ReplyTo, fmt.Sprintf("'%s' is an alias for '%s'",
+			alias.Name, alias.Value))
 		return
 	}
 
 	// Set a new alias.
 	cmd := GetCommand(name)
 	if cmd != nil {
-		msg := fmt.Sprintf("error: '%s' is already a command", name)
-		privMsg(where, msg)
+		privMsg(msg.ReplyTo, fmt.Sprintf("error: '%s' is already a"+
+			" command", name))
 		return
 	}
 
 	if alias == nil {
-		AddAlias(name, strings.Join(params[1:], " "))
-		privMsg(where, "ok (created)")
+		AddAlias(name, strings.Join(msg.Args[1:], " "))
+		privMsg(msg.ReplyTo, "ok (created)")
 	} else {
-		alias.Value = strings.Join(params[1:], " ")
-		privMsg(where, "ok (replaced)")
+		alias.Value = strings.Join(msg.Args[1:], " ")
+		privMsg(msg.ReplyTo, "ok (replaced)")
 	}
 
 	SaveAliases()
 }
 
-func AliasesCmdFunc(where string, params []string) {
+func AliasesCmdFunc(msg *PrivMsg) {
 	var aliases []string
 
-	if len(params) != 0 {
-		privMsg(where, "usage: aliases")
+	if len(msg.Args) != 0 {
+		privMsg(msg.ReplyTo, "usage: aliases")
 		return
 	}
 
@@ -69,7 +68,7 @@ func AliasesCmdFunc(where string, params []string) {
 
 	sort.Strings(aliases)
 
-	privMsg(where, "known aliases: "+strings.Join(aliases, ", "))
+	privMsg(msg.ReplyTo, "known aliases: "+strings.Join(aliases, ", "))
 }
 
 func (module AliasModule) Init() {

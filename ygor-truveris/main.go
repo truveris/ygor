@@ -68,20 +68,11 @@ OuterLoop:
 		}
 
 		for _, cmd := range RegisteredCommands {
-			if cmd.Addressed != msg.Addressed {
+			if !cmd.MessageMatches(msg) {
 				continue
 			}
-			if !cmd.AllowDirect && msg.Direct {
-				continue
-			}
-			if cmd.ToggleFunction != nil {
-				if !cmd.ToggleFunction(msg) {
-					continue
-				}
-			} else if cmd.Name != msg.Command {
-				continue
-			}
-			cmd.Function(msg.Recipient, msg.Args)
+
+			cmd.Function(msg)
 			continue OuterLoop
 		}
 

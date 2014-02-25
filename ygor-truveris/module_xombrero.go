@@ -11,14 +11,14 @@ type XombreroModule struct{}
 
 func (module XombreroModule) PrivMsg(msg *PrivMsg) {}
 
-func XombreroFunc(where string, params []string) {
-	if len(params) == 0 {
-		privMsg(where, "usage: xombrero [command [param ...]]")
+func XombreroFunc(msg *PrivMsg) {
+	if len(msg.Args) == 0 {
+		privMsg(msg.ReplyTo, "usage: xombrero [command [param ...]]")
 		return
 	}
 
-	SendToMinion("xombrero " + strings.Join(params, " "))
-	privMsg(where, "sure")
+	SendToMinion("xombrero " + strings.Join(msg.Args, " "))
+	privMsg(msg.ReplyTo, "sure")
 }
 
 func (module XombreroModule) Init() {

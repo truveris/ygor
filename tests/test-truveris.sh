@@ -162,6 +162,17 @@ EOF
 assert_output && pass
 
 
+announce "sshhhh privately (owner)"
+test_line ":hippalectryon!hippalectryon@truveris.com PRIVMSG whygore :whygore: sshhhh"
+cat > test.expected <<EOF
+JOIN #test
+JOIN #ygor
+[SQS-SendToMinion] shutup
+PRIVMSG hippalectryon :ok...
+EOF
+assert_output && pass
+
+
 announce "xombrero"
 test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: xombrero open http://www.truveris.com/"
 cat > test.expected <<EOF

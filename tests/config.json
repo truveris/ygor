@@ -1,6 +1,6 @@
 {
 	"Channels": ["#test", "#ygor"],
-	"Owner": "test",
+	"Owner": "hippalectryon",
 	"Ignore": ["douchebot"],
 	"AwsAccessKeyId": "AAAAAAAAAAAAAAAAAAAA",
 	"AwsSecretAccessKey": "////////////////////////////////////////",

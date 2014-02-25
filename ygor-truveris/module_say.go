@@ -11,8 +11,8 @@ type SayModule struct{}
 
 func (module SayModule) PrivMsg(msg *PrivMsg) {}
 
-func SayCommand(where string, params []string) {
-	body := "say " + strings.Join(params, " ")
+func SayCommand(msg *PrivMsg) {
+	body := "say " + strings.Join(msg.Args, " ")
 	SendToMinion(body)
 }
 
