@@ -16,6 +16,8 @@ type AliasModule struct{}
 func (module AliasModule) PrivMsg(msg *PrivMsg) {}
 
 func AliasCmdFunc(msg *PrivMsg) {
+	var outputMsg string
+
 	if len(msg.Args) == 0 {
 		privMsg(msg.ReplyTo, "usage: alias name [command [params ...]]")
 		return
@@ -45,13 +47,18 @@ func AliasCmdFunc(msg *PrivMsg) {
 
 	if alias == nil {
 		AddAlias(name, strings.Join(msg.Args[1:], " "))
-		privMsg(msg.ReplyTo, "ok (created)")
+		outputMsg = "ok (created)"
 	} else {
 		alias.Value = strings.Join(msg.Args[1:], " ")
-		privMsg(msg.ReplyTo, "ok (replaced)")
+		outputMsg = "ok (replaced)"
 	}
 
-	SaveAliases()
+	err := SaveAliases()
+	if err != nil {
+		outputMsg = "failed: "+err.Error()
+	}
+
+	privMsg(msg.ReplyTo, outputMsg)
 }
 
 func AliasesCmdFunc(msg *PrivMsg) {

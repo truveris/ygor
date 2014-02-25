@@ -25,6 +25,10 @@ type Cfg struct {
 	// Default channel. This is to be replaced by an array of channels
 	Channels []string
 
+	// Debug channel. The bot will try to send debug information to this
+	// channel in lieu of log file.
+	DebugChannel string
+
 	// Who is allowed to do special commands.
 	Owner string
 

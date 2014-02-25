@@ -1,5 +1,6 @@
 {
-	"Channels": ["#test", "#ygor"],
+	"Channels": ["#test"],
+	"DebugChannel": "#ygor",
 	"Owner": "hippalectryon",
 	"Ignore": ["douchebot"],
 	"AwsAccessKeyId": "AAAAAAAAAAAAAAAAAAAA",

@@ -74,17 +74,18 @@ func AddAlias(name, value string) {
 }
 
 // Save all the aliases to disk.
-func SaveAliases() {
+func SaveAliases() error {
 	file, err := os.OpenFile(AliasFilename, os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
-		// TODO debug channel
-		return
+		return err
 	}
 	defer file.Close()
 
 	for _, alias := range Aliases {
 		file.Write([]byte(alias.GetLine()))
 	}
+
+	return nil
 
 }
 
@@ -114,6 +115,5 @@ func reloadAliases() {
 		AddAlias(tokens[0], tokens[1])
 	}
 
-	// XXX send that to debug channel
-	// fmt.Printf("(Re-)loaded %d aliases.\n", len(Aliases))
+	Debug(fmt.Sprintf("loaded %d aliases", len(Aliases)))
 }

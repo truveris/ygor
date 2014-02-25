@@ -1,4 +1,9 @@
 #!/bin/sh
+#
+# Tests in this file are separated by two blank lines. Each test is
+# self-sufficient and should cleanup after itself (use the cleanup function).
+# No state should be maintained between each.
+#
 
 . ./_functions.sh
 
@@ -21,6 +26,9 @@ test_line() {
 }
 
 
+cleanup
+
+
 announce "auto-joins"
 test_line ""
 cat > test.expected <<EOF
@@ -28,6 +36,7 @@ JOIN #test
 JOIN #ygor
 EOF
 assert_output && pass
+cleanup
 
 
 announce "unknown chatter"
@@ -37,10 +46,10 @@ JOIN #test
 JOIN #ygor
 EOF
 assert_output && pass
+cleanup
 
 
 announce "set a new alias"
-rm -f aliases.cfg
 test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play stuff.ogg"
 cat > test.expected <<EOF
 JOIN #test
@@ -48,39 +57,63 @@ JOIN #ygor
 PRIVMSG #test :ok (created)
 EOF
 assert_output && pass
+cleanup
+
+
+announce "set a new alias (permission error)"
+touch aliases.cfg
+chmod 000 aliases.cfg
+test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play stuff.ogg"
+cat > test.expected <<EOF
+JOIN #test
+JOIN #ygor
+PRIVMSG #test :failed: open aliases.cfg: permission denied
+EOF
+assert_output && pass
+cleanup
 
 
 announce "get this new alias"
+test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play stuff.ogg"
 test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla"
 cat > test.expected <<EOF
 JOIN #test
 JOIN #ygor
+PRIVMSG #ygor :loaded 1 aliases
 PRIVMSG #test :'blabla' is an alias for 'play stuff.ogg'
 EOF
 assert_output && pass
+cleanup
 
 
 announce "change this alias"
+test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play stuff.ogg"
 test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play things.ogg"
 cat > test.expected <<EOF
 JOIN #test
 JOIN #ygor
+PRIVMSG #ygor :loaded 1 aliases
 PRIVMSG #test :ok (replaced)
 EOF
 assert_output && pass
+cleanup
 
 
 announce "get this updated alias"
+test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play stuff.ogg"
+test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play things.ogg"
 test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla"
 cat > test.expected <<EOF
 JOIN #test
 JOIN #ygor
+PRIVMSG #ygor :loaded 1 aliases
 PRIVMSG #test :'blabla' is an alias for 'play things.ogg'
 EOF
 assert_output && pass
+cleanup
 
 
-announce "get unknown alias"
+announce "get unknown alias (empty registry)"
 test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias whatevs"
 cat > test.expected <<EOF
 JOIN #test
@@ -88,18 +121,36 @@ JOIN #ygor
 PRIVMSG #test :error: unknown alias
 EOF
 assert_output && pass
+cleanup
+
+
+announce "get unknown alias (non-empty registry)"
+test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play stuff.ogg"
+test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias things play things.ogg"
+test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias whatevs"
+cat > test.expected <<EOF
+JOIN #test
+JOIN #ygor
+PRIVMSG #ygor :loaded 2 aliases
+PRIVMSG #test :error: unknown alias
+EOF
+assert_output && pass
+cleanup
 
 
 announce "list all known aliases alphabetically"
+test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play stuff.ogg"
 test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias zelda play zelda.ogg"
 test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias beer play beer.ogg"
 test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: aliases"
 cat > test.expected <<EOF
 JOIN #test
 JOIN #ygor
+PRIVMSG #ygor :loaded 3 aliases
 PRIVMSG #test :known aliases: beer, blabla, zelda
 EOF
 assert_output && pass
+cleanup
 
 
 announce "alias with percent sign"
@@ -108,9 +159,11 @@ test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias 60%"
 cat > test.expected <<EOF
 JOIN #test
 JOIN #ygor
+PRIVMSG #ygor :loaded 1 aliases
 PRIVMSG #test :'60%' is an alias for 'play stuff'
 EOF
 assert_output && pass
+cleanup
 
 
 announce "say stuff"
@@ -121,16 +174,20 @@ JOIN #ygor
 [SQS-SendToMinion] say stuff
 EOF
 assert_output && pass
+cleanup
 
 
 announce "use alias"
+test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias 60% play stuff"
 test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: 60%"
 cat > test.expected <<EOF
 JOIN #test
 JOIN #ygor
+PRIVMSG #ygor :loaded 1 aliases
 [SQS-SendToMinion] play stuff
 EOF
 assert_output && pass
+cleanup
 
 
 announce "sshhhh"
@@ -142,6 +199,7 @@ JOIN #ygor
 PRIVMSG #test :ok...
 EOF
 assert_output && pass
+cleanup
 
 
 announce "sshhhh by ignored nick"
@@ -151,6 +209,7 @@ JOIN #test
 JOIN #ygor
 EOF
 assert_output && pass
+cleanup
 
 
 announce "sshhhh privately (not owner)"
@@ -160,6 +219,7 @@ JOIN #test
 JOIN #ygor
 EOF
 assert_output && pass
+cleanup
 
 
 announce "sshhhh privately (owner)"
@@ -171,6 +231,7 @@ JOIN #ygor
 PRIVMSG hippalectryon :ok...
 EOF
 assert_output && pass
+cleanup
 
 
 announce "xombrero"
@@ -182,6 +243,4 @@ JOIN #ygor
 PRIVMSG #test :sure
 EOF
 assert_output && pass
-
-
 cleanup

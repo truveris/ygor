@@ -114,6 +114,18 @@ func registerModule(module Module) {
 	modules = append(modules, module)
 }
 
+func joinChannel(channel string) {
+	outgoing <- "JOIN " + channel
+}
+
+// Send the message to the configured debug channel if any.
+func Debug(msg string) {
+	if cfg.DebugChannel == "" {
+		return
+	}
+	privMsg(cfg.DebugChannel, msg)
+}
+
 func main() {
 	parseCommandLine()
 	parseConfigFile()
@@ -137,7 +149,11 @@ func main() {
 
 	// Auto-join all the configured channels.
 	for _, channel := range cfg.Channels {
-		outgoing <- "JOIN " + channel
+		joinChannel(channel)
+	}
+
+	if cfg.DebugChannel != "" {
+		joinChannel(cfg.DebugChannel)
 	}
 
 	fmt.Fprintf(os.Stderr, "terminating: %s\n", <-eof)
