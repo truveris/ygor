@@ -9,19 +9,24 @@ import (
 
 type XombreroModule struct{}
 
-func (module XombreroModule) PrivMsg(msg *PrivMsg) { }
+func (module XombreroModule) PrivMsg(msg *PrivMsg) {}
 
-func Xombrero(where string, params []string) {
+func XombreroFunc(where string, params []string) {
 	if len(params) == 0 {
 		privMsg(where, "usage: xombrero [command [param ...]]")
 		return
 	}
 
-	SendToMinion("xombrero "+strings.Join(params, " "))
+	SendToMinion("xombrero " + strings.Join(params, " "))
 	privMsg(where, "sure")
 }
 
-
 func (module XombreroModule) Init() {
-	RegisterCommand(NewCommandFromFunction("xombrero", Xombrero))
+	RegisterCommand(Command{
+		Name:         "xombrero",
+		Function:     XombreroFunc,
+		Addressed:    true,
+		AllowDirect:  false,
+		AllowChannel: true,
+	})
 }

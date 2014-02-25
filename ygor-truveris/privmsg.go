@@ -17,13 +17,30 @@ var (
 )
 
 type PrivMsg struct {
+	// Who sent the message.
 	Nick string
-	Channel string
+
+	// Where the message was sent to.
+	Recipient string
+
+	// Who to reply to.
+	ReplyTo string
+
+	// The whole message, minus the nickname if the message is addressed.
 	Body string
-	IsAction bool
-	IsAddressed bool
+
+	// Message received in the form of a /ME action.
+	Action bool
+
+	// The bot was addressed with its name as prefix (e.g. ygor: bla).
+	Addressed bool
+
+	// The bot was contacted directly instead of through a channel.
+	Direct bool
+
+	// Store the command and its arguments if relevant.
 	Command string
-	Args []string
+	Args    []string
 }
 
 func NewPrivMsg(line string) *PrivMsg {
@@ -33,22 +50,31 @@ func NewPrivMsg(line string) *PrivMsg {
 	}
 
 	msg := &PrivMsg{
-		Nick: tokens[1],
-		Channel: tokens[2],
-		Body: tokens[3],
+		Nick:      tokens[1],
+		Recipient: tokens[2],
+		ReplyTo:   tokens[2],
+		Body:      tokens[3],
+		Addressed: false,
+		Direct:    false,
 	}
 
 	if strings.HasPrefix(msg.Body, "\x01ACTION ") {
 		msg.Body = msg.Body[8 : len(msg.Body)-1]
-		msg.IsAction = true
+		msg.Action = true
+	}
+
+	// Message sent directly to the bot (not through a channel).
+	if msg.Recipient == cmd.Nickname {
+		msg.Addressed = true
+		msg.Direct = true
+		msg.ReplyTo = msg.Nick
 	}
 
 	// If the message is addressed (e.g. "ygor: hi"), remove the prefix
 	// from the body and flag this message.
-	msg.IsAddressed = false
 	tokens = reAddressed.FindStringSubmatch(msg.Body)
 	if tokens != nil && tokens[1] == cmd.Nickname {
-		msg.IsAddressed = true
+		msg.Addressed = true
 		msg.Body = tokens[2]
 	}
 
@@ -73,4 +99,15 @@ func NewPrivMsg(line string) *PrivMsg {
 	}
 
 	return msg
+}
+
+// Check if this message was sent from the owner.
+// FIXME: there are a hundred better ways to detect who is the owner.
+func (msg *PrivMsg) IsFromOwner() bool {
+	if msg.Nick == cfg.Owner {
+		return true
+	}
+
+	return false
+
 }

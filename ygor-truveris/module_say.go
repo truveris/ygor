@@ -7,14 +7,21 @@ import (
 	"strings"
 )
 
-type SayModule struct { }
+type SayModule struct{}
 
-func (module SayModule) PrivMsg(msg *PrivMsg) {
-	// Turn that shit into a command.
-	if msg.IsAddressed && strings.HasPrefix(msg.Body, "say ") {
-		SendToMinion(msg.Body)
-	}
+func (module SayModule) PrivMsg(msg *PrivMsg) {}
+
+func SayCommand(where string, params []string) {
+	body := "say " + strings.Join(params, " ")
+	SendToMinion(body)
 }
 
 func (module SayModule) Init() {
+	RegisterCommand(Command{
+		Name:         "say",
+		Function:     SayCommand,
+		Addressed:    true,
+		AllowDirect:  false,
+		AllowChannel: true,
+	})
 }

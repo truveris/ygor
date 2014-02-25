@@ -73,6 +73,19 @@ func AliasesCmdFunc(where string, params []string) {
 }
 
 func (module AliasModule) Init() {
-	RegisterCommand(NewCommandFromFunction("alias", AliasCmdFunc))
-	RegisterCommand(NewCommandFromFunction("aliases", AliasesCmdFunc))
+	RegisterCommand(Command{
+		Name:         "alias",
+		Function:     AliasCmdFunc,
+		Addressed:    true,
+		AllowDirect:  false,
+		AllowChannel: true,
+	})
+
+	RegisterCommand(Command{
+		Name:         "aliases",
+		Function:     AliasesCmdFunc,
+		Addressed:    true,
+		AllowDirect:  true,
+		AllowChannel: true,
+	})
 }

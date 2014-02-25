@@ -7,7 +7,7 @@ import (
 	"fmt"
 )
 
-type RepeatModule struct { }
+type RepeatModule struct{}
 
 func (module RepeatModule) PrivMsg(nick, where, msg string, isAction bool) {
 	if isAction {

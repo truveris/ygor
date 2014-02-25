@@ -47,7 +47,7 @@ func outgoingHandler() {
 func incomingHandler() {
 	br := bufio.NewReader(os.Stdin)
 
-	OuterLoop:
+OuterLoop:
 	for {
 		line, err := br.ReadString('\n')
 		if err != nil {
@@ -68,13 +68,20 @@ func incomingHandler() {
 		}
 
 		for _, cmd := range RegisteredCommands {
-			if cmd.IsAddressed != msg.IsAddressed {
+			if cmd.Addressed != msg.Addressed {
 				continue
 			}
-			if cmd.Name != msg.Command {
+			if !cmd.AllowDirect && msg.Direct {
 				continue
 			}
-			cmd.Function(msg.Channel, msg.Args)
+			if cmd.ToggleFunction != nil {
+				if !cmd.ToggleFunction(msg) {
+					continue
+				}
+			} else if cmd.Name != msg.Command {
+				continue
+			}
+			cmd.Function(msg.Recipient, msg.Args)
 			continue OuterLoop
 		}
 

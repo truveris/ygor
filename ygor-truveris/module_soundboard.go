@@ -4,9 +4,9 @@
 package main
 
 import (
-	"time"
-	"strconv"
 	"fmt"
+	"strconv"
+	"time"
 )
 
 type SoundBoardModule struct{}
@@ -19,7 +19,7 @@ func formatPlayTuneCommand(filename string, duration uint64) string {
 	}
 }
 
-func (module SoundBoardModule) PrivMsg(msg *PrivMsg) { }
+func (module SoundBoardModule) PrivMsg(msg *PrivMsg) {}
 
 func Play(where string, params []string) {
 	var duration uint64 = 0
@@ -64,9 +64,28 @@ func PlayJeopardy(where string, params []string) {
 	Play(where, params)
 }
 
-
 func (module SoundBoardModule) Init() {
-	RegisterCommand(NewCommandFromFunction("play", Play))
-	RegisterCommand(NewCommandFromFunction("africa", PlayAfrica))
-	RegisterCommand(NewCommandFromFunction("jeopardy", PlayJeopardy))
+	RegisterCommand(Command{
+		Name:         "play",
+		Function:     Play,
+		Addressed:    true,
+		AllowDirect:  false,
+		AllowChannel: true,
+	})
+
+	RegisterCommand(Command{
+		Name:         "africa",
+		Function:     PlayAfrica,
+		Addressed:    false,
+		AllowDirect:  false,
+		AllowChannel: true,
+	})
+
+	RegisterCommand(Command{
+		Name:         "jeopardy",
+		Function:     PlayJeopardy,
+		Addressed:    false,
+		AllowDirect:  false,
+		AllowChannel: true,
+	})
 }

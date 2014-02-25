@@ -6,7 +6,7 @@
 package main
 
 type ScoredWord struct {
-	word string
+	word  string
 	score int
 }
 
