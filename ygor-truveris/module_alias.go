@@ -11,7 +11,20 @@ import (
 	"strings"
 )
 
+var (
+	nils := []string{"None", "nil", "null", "void"}
+)
+
 type AliasModule struct{}
+
+func contains(where []string, search string) bool {
+	for _, item := range where {
+		if item == search {
+			return true
+		}
+	}
+	return false
+}
 
 func (module AliasModule) PrivMsg(msg *PrivMsg) {}
 
@@ -47,6 +60,9 @@ func AliasCmdFunc(where string, params []string) {
 	if alias == nil {
 		AddAlias(name, strings.Join(params[1:], " "))
 		privMsg(where, "ok (created)")
+	} else if contains(nils, name) {
+		DeleteAlias(name)
+		privMsg(where, "ok (deleted)")
 	} else {
 		alias.Value = strings.Join(params[1:], " ")
 		privMsg(where, "ok (replaced)")

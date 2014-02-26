@@ -73,6 +73,10 @@ func AddAlias(name, value string) {
 	Aliases[alias.Name] = alias
 }
 
+func DeleteAlias(name) {
+	delete(Aliases, name)
+}
+
 // Save all the aliases to disk.
 func SaveAliases() {
 	file, err := os.OpenFile(AliasFilename, os.O_WRONLY|os.O_CREATE, 0644)
