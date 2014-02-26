@@ -1,4 +1,4 @@
-// Copyright (c) 2014 Bertrand Janin <b@janin.com>
+// Copyright 2014, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 //
 // Copyright 2011 The Go Authors.  All rights reserved.
