@@ -44,7 +44,9 @@ func (cmd Command) MessageMatches(msg *PrivMsg) bool {
 		return false
 	}
 
-	if cmd.Addressed != msg.Addressed {
+	// Only filter out if the command is expecting an addressed message and
+	// the message isn't.
+	if cmd.Addressed && !msg.Addressed {
 		return false
 	}
 
