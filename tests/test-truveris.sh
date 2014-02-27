@@ -14,9 +14,23 @@ cmd() {
 	sleep 0.1
 }
 
+# Pass a line to ygor-truveris waiting a little bit before and after.
 # $1 command
 test_line() {
 	cmd "$@" \
+		| ../ygor-truveris/ygor-truveris --nickname=whygore \
+		2> test.stderr \
+		> test.output
+	if [ "$?" != 0 ]; then
+		fail "wrong return code (check test.stderr)"
+	fi
+}
+
+
+# Pass a line to ygor-truveris without delays.
+# $1 command
+run_line() {
+	echo "$@" \
 		| ../ygor-truveris/ygor-truveris --nickname=whygore \
 		2> test.stderr \
 		> test.output
@@ -74,7 +88,7 @@ cleanup
 
 
 announce "get this new alias"
-test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play stuff.ogg"
+run_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play stuff.ogg"
 test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla"
 cat > test.expected <<EOF
 JOIN #test
@@ -87,7 +101,7 @@ cleanup
 
 
 announce "change this alias"
-test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play stuff.ogg"
+run_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play stuff.ogg"
 test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play things.ogg"
 cat > test.expected <<EOF
 JOIN #test
@@ -100,8 +114,8 @@ cleanup
 
 
 announce "get this updated alias"
-test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play stuff.ogg"
-test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play things.ogg"
+run_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play stuff.ogg"
+run_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play things.ogg"
 test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla"
 cat > test.expected <<EOF
 JOIN #test
@@ -125,8 +139,8 @@ cleanup
 
 
 announce "get unknown alias (non-empty registry)"
-test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play stuff.ogg"
-test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias things play things.ogg"
+run_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play stuff.ogg"
+run_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias things play things.ogg"
 test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias whatevs"
 cat > test.expected <<EOF
 JOIN #test
@@ -139,9 +153,9 @@ cleanup
 
 
 announce "list all known aliases alphabetically"
-test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play stuff.ogg"
-test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias zelda play zelda.ogg"
-test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias beer play beer.ogg"
+run_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play stuff.ogg"
+run_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias zelda play zelda.ogg"
+run_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias beer play beer.ogg"
 test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: aliases"
 cat > test.expected <<EOF
 JOIN #test
@@ -153,8 +167,25 @@ assert_output && pass
 cleanup
 
 
+announce "list aliases by pages of 400 bytes at most"
+for each in 0 1 2 3 4 5 6 7 8 9 A B C D E F G H I J K L M N O P Q R S T U V W X Y Z; do
+	run_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias randomlongaliasfromhell$each play stuff.ogg"
+done
+test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: aliases"
+cat > test.expected <<EOF
+JOIN #test
+JOIN #ygor
+PRIVMSG #ygor :loaded 36 aliases
+PRIVMSG #test :known aliases: randomlongaliasfromhell0, randomlongaliasfromhell1, randomlongaliasfromhell2, randomlongaliasfromhell3, randomlongaliasfromhell4, randomlongaliasfromhell5, randomlongaliasfromhell6, randomlongaliasfromhell7, randomlongaliasfromhell8, randomlongaliasfromhell9, randomlongaliasfromhellA, randomlongaliasfromhellB, randomlongaliasfromhellC, randomlongaliasfromhellD, randomlongaliasfromhellE, randomlongaliasfromhellF, randomlongaliasfromhellG
+PRIVMSG #test :... randomlongaliasfromhellH, randomlongaliasfromhellI, randomlongaliasfromhellJ, randomlongaliasfromhellK, randomlongaliasfromhellL, randomlongaliasfromhellM, randomlongaliasfromhellN, randomlongaliasfromhellO, randomlongaliasfromhellP, randomlongaliasfromhellQ, randomlongaliasfromhellR, randomlongaliasfromhellS, randomlongaliasfromhellT, randomlongaliasfromhellU, randomlongaliasfromhellV, randomlongaliasfromhellW, randomlongaliasfromhellX
+PRIVMSG #test :... randomlongaliasfromhellY, randomlongaliasfromhellZ
+EOF
+assert_output && pass
+cleanup
+
+
 announce "alias with percent sign"
-test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias 60% play stuff"
+run_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias 60% play stuff"
 test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias 60%"
 cat > test.expected <<EOF
 JOIN #test
@@ -178,7 +209,7 @@ cleanup
 
 
 announce "use alias"
-test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias 60% play stuff"
+run_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias 60% play stuff"
 test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: 60%"
 cat > test.expected <<EOF
 JOIN #test

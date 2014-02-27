@@ -11,10 +11,16 @@ import (
 	"strings"
 )
 
+const (
+	// 512 should be standard but some irc servers are not happy with 480
+	MaxCharsPerPage = 444
+)
+
 type AliasModule struct{}
 
 func (module AliasModule) PrivMsg(msg *PrivMsg) {}
 
+// Command used to set a new alias.
 func AliasCmdFunc(msg *PrivMsg) {
 	var outputMsg string
 
@@ -61,6 +67,39 @@ func AliasCmdFunc(msg *PrivMsg) {
 	privMsg(msg.ReplyTo, outputMsg)
 }
 
+// Take a list of a
+func getPagesOfAliases(aliases []string) []string {
+	length := 0
+	pages := make([]string, 0)
+
+	for i := 0; i < len(aliases); {
+		var page []string
+
+		if length > 0 {
+			length += len(", ")
+		}
+
+		length += len(aliases[i])
+
+		if length > MaxCharsPerPage {
+			page, aliases = aliases[:i], aliases[i:]
+			pages = append(pages, strings.Join(page, ", "))
+			length = 0
+			i = 0
+			continue
+		}
+
+		i++
+	}
+
+	if length > 0 {
+		pages = append(pages, strings.Join(aliases, ", "))
+	}
+
+	return pages
+}
+
+// List all known aliases, by pages.
 func AliasesCmdFunc(msg *PrivMsg) {
 	var aliases []string
 
@@ -74,8 +113,15 @@ func AliasesCmdFunc(msg *PrivMsg) {
 	}
 
 	sort.Strings(aliases)
-
-	privMsg(msg.ReplyTo, "known aliases: "+strings.Join(aliases, ", "))
+	first := true
+	for _, page := range getPagesOfAliases(aliases) {
+		if first {
+			privMsg(msg.ReplyTo, "known aliases: "+page)
+			first = false
+		} else {
+			privMsg(msg.ReplyTo, "... "+page)
+		}
+	}
 }
 
 func (module AliasModule) Init() {
