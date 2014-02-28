@@ -295,6 +295,16 @@ assert_output && pass
 cleanup
 
 
+announce "stopwhining"
+test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: stopwhining"
+cat > test.expected <<EOF
+JOIN #test
+JOIN #ygor
+EOF
+assert_output && pass
+cleanup
+
+
 announce "sshhhh by ignored nick"
 test_line ":douchebot!dev@truveris.com PRIVMSG #test :whygore: sshhhh"
 cat > test.expected <<EOF
