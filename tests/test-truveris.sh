@@ -210,10 +210,12 @@ assert_output && pass
 
 announce "try to delete a non-existing alias"
 rm -f aliases.cfg
+test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias notblabla play stuff.ogg"
 test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: unalias blabla"
 cat > test.expected <<EOF
 JOIN #test
 JOIN #ygor
+PRIVMSG #ygor :loaded 1 aliases
 PRIVMSG #test :error: unknown alias
 EOF
 assert_output && pass
@@ -228,9 +230,11 @@ test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla"
 cat > test.expected <<EOF
 JOIN #test
 JOIN #ygor
+PRIVMSG #ygor :loaded 0 aliases
 PRIVMSG #test :error: unknown alias
 EOF
 assert_output && pass
+cleanup
 
 
 announce "say stuff"
@@ -249,7 +253,7 @@ test_line ":jimmy!dev@truveris.com PRIVMSG #stuff :whygore: say stuff"
 cat > test.expected <<EOF
 JOIN #test
 JOIN #ygor
-PRIVMSG #ygor :error: #stuff has no queue configured
+PRIVMSG #ygor :error: #stuff has no queue(s) configured
 EOF
 assert_output && pass
 cleanup

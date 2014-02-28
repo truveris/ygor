@@ -17,6 +17,6 @@
 	"Ignore": ["douchebot"],
 	"AwsAccessKeyId": "AAAAAAAAAAAAAAAAAAAA",
 	"AwsSecretAccessKey": "////////////////////////////////////////",
-	"Debug": true
+	"Test": true
 }
 
