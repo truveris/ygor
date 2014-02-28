@@ -67,7 +67,7 @@ func AliasCmdFunc(msg *PrivMsg) {
 	privMsg(msg.ReplyTo, outputMsg)
 }
 
-// Take a list of a
+// Take a list of aliases, return joined pages.
 func getPagesOfAliases(aliases []string) []string {
 	length := 0
 	pages := make([]string, 0)
@@ -99,7 +99,25 @@ func getPagesOfAliases(aliases []string) []string {
 	return pages
 }
 
-// List all known aliases, by pages.
+func UnAliasCmdFunc(msg *PrivMsg) {
+	if len(msg.Args) != 1 {
+		privMsg(msg.ReplyTo, "usage: unalias name")
+		return
+	}
+
+	name := msg.Args[0]
+	alias := GetAlias(name)
+
+	if alias == nil {
+		privMsg(msg.ReplyTo, "error: unknown alias")
+		return
+	} else {
+		DeleteAlias(name)
+		privMsg(msg.ReplyTo, "ok (deleted)")
+	}
+	SaveAliases()
+}
+
 func AliasesCmdFunc(msg *PrivMsg) {
 	var aliases []string
 
@@ -128,6 +146,14 @@ func (module AliasModule) Init() {
 	RegisterCommand(Command{
 		Name:         "alias",
 		Function:     AliasCmdFunc,
+		Addressed:    true,
+		AllowDirect:  false,
+		AllowChannel: true,
+	})
+
+	RegisterCommand(Command{
+		Name:         "unalias",
+		Function:     UnAliasCmdFunc,
 		Addressed:    true,
 		AllowDirect:  false,
 		AllowChannel: true,

@@ -18,7 +18,7 @@ type Command struct {
 	// If this command should be triggered by regexp.
 	ToggleFunction ToggleFunction
 
-	// Functin executed when the name is called.
+	// Function executed when the name is called.
 	Function CommandFunction
 
 	// Define whether we expect this command to be run with the nickname as

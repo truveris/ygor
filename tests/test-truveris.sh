@@ -197,6 +197,42 @@ assert_output && pass
 cleanup
 
 
+announce "unalias usage"
+rm -f aliases.cfg
+test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: unalias"
+cat > test.expected <<EOF
+JOIN #test
+JOIN #ygor
+PRIVMSG #test :usage: unalias name
+EOF
+assert_output && pass
+
+
+announce "try to delete a non-existing alias"
+rm -f aliases.cfg
+test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: unalias blabla"
+cat > test.expected <<EOF
+JOIN #test
+JOIN #ygor
+PRIVMSG #test :error: unknown alias
+EOF
+assert_output && pass
+
+
+announce "delete an existing alias"
+rm -f aliases.cfg
+test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play stuff.ogg"
+test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: unalias blabla"
+# make sure it has really gone
+test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla"
+cat > test.expected <<EOF
+JOIN #test
+JOIN #ygor
+PRIVMSG #test :error: unknown alias
+EOF
+assert_output && pass
+
+
 announce "say stuff"
 test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: say stuff"
 cat > test.expected <<EOF

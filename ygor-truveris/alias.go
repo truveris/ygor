@@ -37,7 +37,7 @@ func (alias *Alias) SplitValue() (string, []string) {
 
 // Check if the alias file has been updated. It also returns false if we can't
 // read the file.
-func aliasesNeedReload() bool {
+func AliasesNeedReload() bool {
 	si, err := os.Stat(AliasFilename)
 	if err != nil {
 		return false
@@ -53,8 +53,8 @@ func aliasesNeedReload() bool {
 }
 
 func GetAlias(name string) *Alias {
-	if aliasesNeedReload() {
-		reloadAliases()
+	if AliasesNeedReload() {
+		ReloadAliases()
 	}
 
 	for _, alias := range Aliases {
@@ -73,23 +73,32 @@ func AddAlias(name, value string) {
 	Aliases[alias.Name] = alias
 }
 
+func DeleteAlias(name string) {
+	delete(Aliases, name)
+}
+
 // Save all the aliases to disk.
 func SaveAliases() error {
-	file, err := os.OpenFile(AliasFilename, os.O_WRONLY|os.O_CREATE, 0644)
+	// Maybe an easier way is to use ioutil.WriteFile
+	file, err := os.OpenFile(AliasFilename, os.O_TRUNC|os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
 
+	if len(Aliases) == 0 {
+		file.WriteString("\n")
+		return nil
+	}
+
 	for _, alias := range Aliases {
-		file.Write([]byte(alias.GetLine()))
+		file.WriteString(alias.GetLine())
 	}
 
 	return nil
-
 }
 
-func reloadAliases() {
+func ReloadAliases() {
 	Aliases = make(map[string]*Alias)
 
 	file, err := os.Open(AliasFilename)
