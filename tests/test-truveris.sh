@@ -208,6 +208,17 @@ assert_output && pass
 cleanup
 
 
+announce "say stuff (wrong channel)"
+test_line ":jimmy!dev@truveris.com PRIVMSG #stuff :whygore: say stuff"
+cat > test.expected <<EOF
+JOIN #test
+JOIN #ygor
+PRIVMSG #ygor :error: #stuff has no queue configured
+EOF
+assert_output && pass
+cleanup
+
+
 announce "use alias"
 run_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias 60% play stuff"
 test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: 60%"
@@ -253,16 +264,16 @@ assert_output && pass
 cleanup
 
 
-announce "sshhhh privately (owner)"
-test_line ":hippalectryon!hippalectryon@truveris.com PRIVMSG whygore :whygore: sshhhh"
-cat > test.expected <<EOF
-JOIN #test
-JOIN #ygor
-[SQS-SendToMinion] shutup
-PRIVMSG hippalectryon :ok...
-EOF
-assert_output && pass
-cleanup
+# announce "sshhhh privately (owner)"
+# test_line ":hippalectryon!hippalectryon@truveris.com PRIVMSG whygore :whygore: sshhhh"
+# cat > test.expected <<EOF
+# JOIN #test
+# JOIN #ygor
+# [SQS-SendToMinion] shutup
+# PRIVMSG hippalectryon :ok...
+# EOF
+# assert_output && pass
+# cleanup
 
 
 announce "xombrero"

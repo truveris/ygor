@@ -13,17 +13,20 @@ type Cmd struct {
 	Nickname string `long:"nickname" description:"Bot's nickname" default:"ygor"`
 }
 
+type ChannelCfg struct {
+	QueueURL           string
+}
+
 type Cfg struct {
 	AwsAccessKeyId     string
 	AwsSecretAccessKey string
-	QueueURL           string
 
 	// In Debug-mode, this program will not attempt to communicate with any
 	// external systems (e.g. SQS and will print everything to stdout).
 	Debug bool
 
 	// Default channel. This is to be replaced by an array of channels
-	Channels []string
+	Channels map[string]ChannelCfg
 
 	// Debug channel. The bot will try to send debug information to this
 	// channel in lieu of log file.
@@ -47,7 +50,7 @@ func parseCommandLine() {
 	flagParser := flags.NewParser(&cmd, flags.PassDoubleDash)
 	_, err := flagParser.Parse()
 	if err != nil {
-		println("error: " + err.Error())
+		println("command line error: " + err.Error())
 		flagParser.WriteHelp(os.Stderr)
 		os.Exit(1)
 	}
@@ -57,13 +60,13 @@ func parseCommandLine() {
 func parseConfigFile() {
 	file, err := os.Open("config.json")
 	if err != nil {
-		println("error: " + err.Error())
+		println("config error: " + err.Error())
 		os.Exit(1)
 	}
 	decoder := json.NewDecoder(file)
 	err = decoder.Decode(&cfg)
 	if err != nil {
-		println("error: " + err.Error())
+		println("config error: " + err.Error())
 		os.Exit(1)
 	}
 }

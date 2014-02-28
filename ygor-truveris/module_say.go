@@ -13,7 +13,7 @@ func (module SayModule) PrivMsg(msg *PrivMsg) {}
 
 func SayCommand(msg *PrivMsg) {
 	body := "say " + strings.Join(msg.Args, " ")
-	SendToMinion(body)
+	SendToMinion(msg.ReplyTo, body)
 }
 
 func (module SayModule) Init() {

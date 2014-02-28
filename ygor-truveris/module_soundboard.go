@@ -37,7 +37,7 @@ func Play(msg *PrivMsg) {
 		}
 	}
 
-	SendToMinion(formatPlayTuneCommand(msg.Args[0], duration))
+	SendToMinion(msg.ReplyTo, formatPlayTuneCommand(msg.Args[0], duration))
 }
 
 func PlayAfrica(msg *PrivMsg) {

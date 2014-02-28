@@ -17,7 +17,7 @@ func XombreroFunc(msg *PrivMsg) {
 		return
 	}
 
-	SendToMinion("xombrero " + strings.Join(msg.Args, " "))
+	SendToMinion(msg.ReplyTo, "xombrero " + strings.Join(msg.Args, " "))
 	privMsg(msg.ReplyTo, "sure")
 }
 

@@ -1,11 +1,22 @@
 {
-	"Channels": ["#test"],
+	"Minions": {
+		"pi1": {
+			"QueueURL": "http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion-pi1"
+		},
+		"pi2": {
+			"QueueURL": "http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion-pi2"
+		}
+	},
+	"Channels": {
+		"#test": {
+			"QueueURL": "http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion"
+		}
+	},
 	"DebugChannel": "#ygor",
 	"Owner": "hippalectryon",
 	"Ignore": ["douchebot"],
 	"AwsAccessKeyId": "AAAAAAAAAAAAAAAAAAAA",
 	"AwsSecretAccessKey": "////////////////////////////////////////",
-	"QueueURL": "http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion",
 	"Debug": true
 }
 

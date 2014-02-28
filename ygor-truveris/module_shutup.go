@@ -33,7 +33,7 @@ func isShutUpRequest(msg *PrivMsg) bool {
 }
 
 func ShutUpCommand(msg *PrivMsg) {
-	SendToMinion("shutup")
+	SendToMinion(msg.ReplyTo, "shutup")
 	privMsg(msg.ReplyTo, "ok...")
 }
 

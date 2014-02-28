@@ -38,28 +38,37 @@ func getClient() *aws4.Client {
 }
 
 // Send a message to our friendly minion via its SQS queue.
-func SendToMinion(msg string) {
+func SendToMinion(channel, msg string) {
+	client := getClient()
+	data := buildSendMessageData(msg)
+	channelCfg, exists := cfg.Channels[channel]
+	if !exists {
+		Debug("error: "+channel+" has no queue(s) configured")
+		return
+	}
+
 	if cfg.Debug {
 		fmt.Printf("[SQS-SendToMinion] %s\n", msg)
 		return
 	}
 
-	client := getClient()
-	data := buildSendMessageData(msg)
-
-	resp, err := client.Post(cfg.QueueURL, ContentType,
+	resp, err := client.Post(channelCfg.QueueURL, ContentType,
 		strings.NewReader(data))
 	if err != nil {
-		privMsg(cfg.Owner, err.Error())
+		Debug("error sending to minion: "+err.Error())
+		return
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		privMsg(cfg.Owner, err.Error())
+		Debug("error sending to minion: "+err.Error())
+		return
 	}
 
 	if resp.StatusCode != 200 {
-		privMsg(cfg.Owner, string(body))
+		Debug("error sending to minion: "+string(body))
+		return
 	}
 }
+

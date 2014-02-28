@@ -154,8 +154,8 @@ func main() {
 	go incomingHandler()
 
 	// Auto-join all the configured channels.
-	for _, channel := range cfg.Channels {
-		joinChannel(channel)
+	for name := range cfg.Channels {
+		joinChannel(name)
 	}
 
 	if cfg.DebugChannel != "" {
