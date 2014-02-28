@@ -51,6 +51,13 @@ func AliasCmdFunc(msg *PrivMsg) {
 		return
 	}
 
+	cmd = GetCommand(msg.Args[1])
+	if cmd == nil {
+		privMsg(msg.ReplyTo, fmt.Sprintf("error: '%s' is not a valid "+
+			"command", msg.Args[1]))
+		return
+	}
+
 	if alias == nil {
 		AddAlias(name, strings.Join(msg.Args[1:], " "))
 		outputMsg = "ok (created)"
@@ -61,7 +68,7 @@ func AliasCmdFunc(msg *PrivMsg) {
 
 	err := SaveAliases()
 	if err != nil {
-		outputMsg = "failed: " + err.Error()
+		outputMsg = "error: " + err.Error()
 	}
 
 	privMsg(msg.ReplyTo, outputMsg)

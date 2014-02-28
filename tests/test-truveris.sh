@@ -74,6 +74,17 @@ assert_output && pass
 cleanup
 
 
+announce "set a new alias (bad command)"
+test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla playz stuff.ogg"
+cat > test.expected <<EOF
+JOIN #test
+JOIN #ygor
+PRIVMSG #test :error: 'playz' is not a valid command
+EOF
+assert_output && pass
+cleanup
+
+
 announce "set a new alias (permission error)"
 touch aliases.cfg
 chmod 000 aliases.cfg
@@ -81,7 +92,7 @@ test_line ":jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play stu
 cat > test.expected <<EOF
 JOIN #test
 JOIN #ygor
-PRIVMSG #test :failed: open aliases.cfg: permission denied
+PRIVMSG #test :error: open aliases.cfg: permission denied
 EOF
 assert_output && pass
 cleanup
