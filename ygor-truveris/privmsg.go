@@ -109,5 +109,4 @@ func (msg *PrivMsg) IsFromOwner() bool {
 	}
 
 	return false
-
 }

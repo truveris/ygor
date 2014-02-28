@@ -1,17 +1,47 @@
 ygor - Go IRC bot (yes, another one)
 ====================================
 
-Ygor is broken into three separate processes, a "body", a "soul" and a
-"minion".
+Ygor provides the tools to break down your bot into three separate processes, a
+"body", a "soul" and a "minion:
 
-The body process acts as a conduit for the bots expression on IRC. It relays the i/o
-from/to the IRC server almost as-is. The "soul" process receives i/o and acts
-accordingly. The "minion" is a process receiving order from SQS, this process
-would run on a separate machine (for example to drive music, dashboard, etc.).
+  body: permanent connection to the IRC server, the body is a minimal IRC
+      client that relays most of the I/O to the soul. In theory you could use
+      only this part of the ygor project and place any executable behind it as
+      soul.  Since this process handles the PING your bot will remain online
+      even if your backend process has completely failed.
+
+  soul: this process takes IRC line as stdin and provides responses on stdout.
+      You can find an example of our bot's soul in the 'ygor-truveris' folder.
+
+  minion: separate process receiving commands from the soul, through SQS. You
+      would typically run these on separate machines like raspberry pis, TVs,
+      dashboards, etc. It can drive the playback of audio, video and use the
+      local "say" or "espeak" to communicate with humans around.
 
 The purpose of this design is to have a thin and stable connection layer that
 would rarely change and never disconnect. The personality is modifyable and
 reloadable without having to disconnect the bot.
+
+
+How to start it
+===============
+Assuming everything is compiled:
+
+    ./ygor --hostname=localhost:6667 ./ygor-truveris | tee -a ygor.log
+
+
+Building a soul
+===============
+You can use the github.com/truveris/ygor-truveris repository as an example.
+
+
+How to restart the soul
+=======================
+
+If you soul program is called 'ygor-truveris', just do:
+
+    pkill ygor-truveris
+
 
 AWS Policies
 ============

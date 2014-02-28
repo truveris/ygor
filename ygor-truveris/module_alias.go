@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	// 512 should be standard but some irc servers are not happy with 480
+	// That should be plenty for most IRC servers to handle.
 	MaxCharsPerPage = 444
 )
 
@@ -61,7 +61,7 @@ func AliasCmdFunc(msg *PrivMsg) {
 
 	err := SaveAliases()
 	if err != nil {
-		outputMsg = "failed: "+err.Error()
+		outputMsg = "failed: " + err.Error()
 	}
 
 	privMsg(msg.ReplyTo, outputMsg)

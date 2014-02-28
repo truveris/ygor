@@ -1,16 +1,15 @@
 // Copyright 2014, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 
-// TODO: replace the owner messages to DebugChannel.
-
 package main
 
 import (
 	"fmt"
-	"github.com/mikedewar/aws4"
 	"io/ioutil"
 	"net/url"
 	"strings"
+
+	"github.com/mikedewar/aws4"
 )
 
 const (
@@ -19,6 +18,7 @@ const (
 	ContentType      = "application/x-www-form-urlencoded"
 )
 
+// Construct the URL for a SendMessage command.
 func buildSendMessageData(msg string) string {
 	query := url.Values{}
 	query.Set("Action", "SendMessage")
@@ -43,7 +43,7 @@ func SendToMinion(channel, msg string) {
 	data := buildSendMessageData(msg)
 	channelCfg, exists := cfg.Channels[channel]
 	if !exists {
-		Debug("error: "+channel+" has no queue(s) configured")
+		Debug("error: " + channel + " has no queue(s) configured")
 		return
 	}
 
@@ -55,20 +55,19 @@ func SendToMinion(channel, msg string) {
 	resp, err := client.Post(channelCfg.QueueURL, ContentType,
 		strings.NewReader(data))
 	if err != nil {
-		Debug("error sending to minion: "+err.Error())
+		Debug("error sending to minion: " + err.Error())
 		return
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		Debug("error sending to minion: "+err.Error())
+		Debug("error sending to minion: " + err.Error())
 		return
 	}
 
 	if resp.StatusCode != 200 {
-		Debug("error sending to minion: "+string(body))
+		Debug("error sending to minion: " + string(body))
 		return
 	}
 }
-

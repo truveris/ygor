@@ -5,8 +5,9 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/jessevdk/go-flags"
 	"os"
+
+	"github.com/jessevdk/go-flags"
 )
 
 type Cmd struct {
@@ -14,7 +15,7 @@ type Cmd struct {
 }
 
 type ChannelCfg struct {
-	QueueURL           string
+	QueueURL string
 }
 
 type Cfg struct {
