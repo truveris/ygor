@@ -9,8 +9,8 @@ import (
 )
 
 var (
-	reStop = regexp.MustCompile(`^st[aho]+p`)
-	reShhh = regexp.MustCompile(`^s+[sh]+`)
+	reStop = regexp.MustCompile(`^st[aho]+p\b`)
+	reShhh = regexp.MustCompile(`^s+[sh]+\b`)
 )
 
 type ShutUpModule struct{}

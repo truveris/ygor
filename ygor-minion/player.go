@@ -110,7 +110,7 @@ func mplayer(tune Noise) *exec.Cmd {
 
 	log.Printf("play: path: %s", filepath)
 
-	if cfg.Debug {
+	if cfg.Test {
 		return exec.Command("echo", tune.Duration, filepath)
 	}
 

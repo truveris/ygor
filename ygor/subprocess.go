@@ -55,7 +55,7 @@ func buildCommandLineArguments() []string {
 
 // Infinitely respawn a soul process until the body seems to have passed away
 // (pipes are cut off).
-func spawnHandlerProcess(incoming chan string, outgoing chan string) error {
+func spawnHandlerProcess(incoming chan string, outgoing chan string) {
 	for {
 		cmdArgs := buildCommandLineArguments()
 		logger("[body] (re-)spawning soul: %s", cmdArgs)
@@ -87,6 +87,4 @@ func spawnHandlerProcess(incoming chan string, outgoing chan string) error {
 
 		cmd.Wait()
 	}
-
-	return nil
 }
