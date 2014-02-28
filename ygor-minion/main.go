@@ -95,7 +95,7 @@ func main() {
 
 	// This is the message box.
 	incoming := make(chan string)
-	if cfg.Debug {
+	if cfg.Test {
 		go fetchMessagesFromStdin(incoming)
 	} else {
 		go fetchMessages(incoming)

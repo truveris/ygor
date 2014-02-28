@@ -30,7 +30,7 @@ func macSay(sentence string) {
 func say(sentence string) {
 	var err error
 
-	if cfg.Debug {
+	if cfg.Test {
 		log.Printf("say(%s)", sentence)
 		return
 	}

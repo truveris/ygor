@@ -13,9 +13,11 @@ type Cfg struct {
 	AwsSecretAccessKey string
 	QueueURL           string
 
-	// In Debug-mode, this program will not attempt to communicate with any
+	// In Test-mode, this program will not attempt to communicate with any
 	// external systems (e.g. SQS and will print everything to stdout).
-	Debug		   bool
+	// Additionally, all delays are reduced to a minimum to speed up the
+	// test suite.
+	Test bool
 
 	XombreroSocket	   string
 }
