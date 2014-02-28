@@ -47,7 +47,7 @@ func SendToMinion(channel, msg string) {
 		return
 	}
 
-	if cfg.Debug {
+	if cfg.Test {
 		fmt.Printf("[SQS-SendToMinion] %s\n", msg)
 		return
 	}

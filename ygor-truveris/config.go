@@ -18,24 +18,29 @@ type ChannelCfg struct {
 }
 
 type Cfg struct {
+	// Credentials used to write to the minion queues and read from the
+	// soul queue.
 	AwsAccessKeyId     string
 	AwsSecretAccessKey string
 
 	// In Debug-mode, this program will not attempt to communicate with any
 	// external systems (e.g. SQS and will print everything to stdout).
-	Debug bool
+	// Additionally, all delays are reduced to a minimum to speed up the
+	// test suite.
+	Test bool
 
-	// Default channel. This is to be replaced by an array of channels
+	// All the configured channels. The soul will JOIN every single one of
+	// them and will push minion commands to the configured associated
+	// minion.
 	Channels map[string]ChannelCfg
 
-	// Debug channel. The bot will try to send debug information to this
-	// channel in lieu of log file.
+	// Try to send debug information to this channel in lieu of log file.
 	DebugChannel string
 
 	// Who is allowed to do special commands.
 	Owner string
 
-	// Any chatter from these nicks will be dropped.
+	// Any chatter from these nicks will be dropped (other bots).
 	Ignore []string
 }
 

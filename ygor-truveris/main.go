@@ -91,8 +91,8 @@ func privMsg(channel, msg string) {
 		}
 		outgoing <- fmt.Sprintf("PRIVMSG %s :%s", channel, lines[i])
 
-		// Make debug and test mode faster.
-		if cfg.Debug {
+		// Make test mode faster.
+		if cfg.Test {
 			time.Sleep(50 * time.Millisecond)
 		} else {
 			time.Sleep(500 * time.Millisecond)
