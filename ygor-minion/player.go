@@ -48,6 +48,8 @@ func downloadFile(url, filepath string) error {
 		return err
 	}
 
+	defer resp.Body.Close()
+
 	file, err := os.Create(filepath)
 	if err != nil {
 		return err
