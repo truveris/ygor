@@ -6,6 +6,3 @@ go:
 
 install:
   - go get github.com/jessevdk/go-flags
-  - go get github.com/mikedewar/aws4
-
-script: make test

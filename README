@@ -27,7 +27,7 @@ How to start it
 ===============
 Assuming everything is compiled:
 
-    ./ygor --hostname=localhost:6667 ./ygor-truveris | tee -a ygor.log
+    ygor --hostname=localhost:6667 ygor-truveris | tee -a ygor.log
 
 
 Building a soul
@@ -35,49 +35,15 @@ Building a soul
 You can use the github.com/truveris/ygor-truveris repository as an example.
 
 
+Building a minion
+=================
+You can use the github.com/truveris/ygor-minion repository as an example.
+
+
 How to restart the soul
 =======================
 
-If you soul program is called 'ygor-truveris', just do:
+If you soul program is called 'ygor-truveris', just kill it and ygor will
+restart it:
 
     pkill ygor-truveris
-
-
-AWS Policies
-============
-
-For the ygor-minion user:
-
-	{
-	  "Version": "2012-10-17",
-	  "Statement": [
-	    {
-	      "Sid": "StmtNNNNNNNNNNNNN",
-	      "Effect": "Allow",
-	      "Action": [
-	        "sqs:ReceiveMessage", "sqs:DeleteMessage"
-	      ],
-	      "Resource": [
-	        "arn:aws:sqs:us-east-1:XXXXXXXXXXXX:ygor-minion-hostname"
-	      ]
-	    }
-	  ]
-	}
-
-For the soul user:
-
-	{
-	  "Version": "2012-10-17",
-	  "Statement": [
-	    {
-	      "Sid": "StmtNNNNNNNNNNNNN",
-	      "Effect": "Allow",
-	      "Action": [
-	        "sqs:SendMessage"
-	      ],
-	      "Resource": [
-	        "arn:aws:sqs:us-east-1:XXXXXXXXXXXX:ygor-minion-hostname"
-	      ]
-	    }
-	  ]
-	}

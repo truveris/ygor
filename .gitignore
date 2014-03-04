@@ -1,9 +1,4 @@
 ygor/ygor
-ygor-truveris/ygor-truveris
-ygor-minion/ygor-minion
-ygor-minion/*.gz
-ygor-minion/tunes/*
-ygor-minion/env
 data
 *.log
 *.sh
