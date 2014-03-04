@@ -32,13 +32,13 @@ func MD5(url string) string {
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
-func getRemoteSize(url string) int64 {
+func getRemoteSize(url string) (int64, error) {
 	resp, err := http.Head(url)
 	if err != nil {
-		return 0
+		return 0, err
 	}
 
-	return resp.ContentLength
+	return resp.ContentLength, nil
 }
 
 // Download the given URL to the given filepath.
@@ -67,10 +67,10 @@ func mplayer(tune Noise) *exec.Cmd {
 
 	if PathIsHttp(tune.Path) {
 		log.Printf("play: path is http")
-		size := getRemoteSize(tune.Path)
-		if size == 0 {
-			log.Printf("play: unable to read HTTP length")
-			// say("unable to read HTTP length")
+		size, err := getRemoteSize(tune.Path)
+		if err != nil {
+			log.Printf("play: unable to read HTTP length: %s",
+				err.Error())
 			return nil
 		}
 

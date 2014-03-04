@@ -1,7 +1,7 @@
 // Copyright 2014, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 
-package main
+package ygor
 
 import (
 	"regexp"
@@ -43,7 +43,7 @@ type PrivMsg struct {
 	Args    []string
 }
 
-func NewPrivMsg(line string) *PrivMsg {
+func NewPrivMsg(line, currentNick string) *PrivMsg {
 	tokens := rePrivMsg.FindStringSubmatch(line)
 	if tokens == nil {
 		return nil
@@ -64,7 +64,7 @@ func NewPrivMsg(line string) *PrivMsg {
 	}
 
 	// Message sent directly to the bot (not through a channel).
-	if msg.Recipient == cmd.Nickname {
+	if msg.Recipient == currentNick {
 		msg.Addressed = true
 		msg.Direct = true
 		msg.ReplyTo = msg.Nick
@@ -73,7 +73,7 @@ func NewPrivMsg(line string) *PrivMsg {
 	// If the message is addressed (e.g. "ygor: hi"), remove the prefix
 	// from the body and flag this message.
 	tokens = reAddressed.FindStringSubmatch(msg.Body)
-	if tokens != nil && tokens[1] == cmd.Nickname {
+	if tokens != nil && tokens[1] == currentNick {
 		msg.Addressed = true
 		msg.Body = tokens[2]
 	}
@@ -99,14 +99,4 @@ func NewPrivMsg(line string) *PrivMsg {
 	}
 
 	return msg
-}
-
-// Check if this message was sent from the owner.
-// FIXME: there are a hundred better ways to detect who is the owner.
-func (msg *PrivMsg) IsFromOwner() bool {
-	if msg.Nick == cfg.Owner {
-		return true
-	}
-
-	return false
 }

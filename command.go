@@ -1,7 +1,7 @@
 // Copyright 2014, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 
-package main
+package ygor
 
 var (
 	RegisteredCommands = make(map[string]Command)
@@ -34,7 +34,7 @@ type Command struct {
 }
 
 // Check if the given message matches the command.
-func (cmd Command) MessageMatches(msg *PrivMsg) bool {
+func (cmd Command) MessageMatches(msg *PrivMsg, ownerNick string) bool {
 	// Not even the right command.
 	if cmd.ToggleFunction != nil {
 		if !cmd.ToggleFunction(msg) {
@@ -51,7 +51,7 @@ func (cmd Command) MessageMatches(msg *PrivMsg) bool {
 	}
 
 	// The owner can run any commands in private.
-	if msg.IsFromOwner() {
+	if msg.Nick == ownerNick {
 		return true
 	}
 

@@ -1,7 +1,7 @@
 // Copyright 2014, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 
-package main
+package ygor
 
 import (
 	"bufio"
@@ -123,6 +123,4 @@ func ReloadAliases() {
 
 		AddAlias(tokens[0], tokens[1])
 	}
-
-	Debug(fmt.Sprintf("loaded %d aliases", len(Aliases)))
 }
