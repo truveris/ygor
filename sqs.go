@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/mikedewar/aws4"
 )
@@ -29,6 +30,10 @@ type SQSClient struct {
 type SQSMessage struct {
 	Body          []string `xml:"ReceiveMessageResult>Message>Body"`
 	ReceiptHandle []string `xml:"ReceiveMessageResult>Message>ReceiptHandle"`
+}
+
+type CreateQueueResponse struct {
+	QueueURL      string `xml:"CreateQueueResult>QueueUrl"`
 }
 
 // Build the data portion of a Message POST API call.
@@ -63,6 +68,45 @@ func (client *SQSClient) BuildDeleteMessageURL(queueURL, receipt string) string 
 	query.Set("SignatureVersion", SQSSignatureVersion)
 	url := queueURL + "?" + query.Encode()
 	return url
+}
+
+// Build the URL to conduct a CreateMessage GET API call.
+func (client *SQSClient) BuildCreateQueueURL(baseURL, name string) string {
+	query := url.Values{}
+	query.Set("Action", "CreateQueue")
+	query.Set("QueueName", name)
+	query.Set("Attribute.1.Name", "MaximumMessageSize")
+	query.Set("Attribute.1.Value", "4096")
+	query.Set("Attribute.2.Name", "ReceiveMessageWaitTimeSeconds")
+	query.Set("Attribute.2.Value", "20")
+	query.Set("Attribute.3.Name", "VisibilityTimeout")
+	query.Set("Attribute.3.Value", "10")
+	query.Set("Attribute.4.Name", "MessageRetentionPeriod")
+	query.Set("Attribute.4.Value", "300")
+	query.Set("Version", SQSAPIVersion)
+	query.Set("SignatureVersion", SQSSignatureVersion)
+	url := baseURL + "?" + query.Encode()
+	return url
+}
+
+// Loop for ever feeding the given channel with all the message on
+// the queue. This is meant to be used as a go routine.
+func (client *SQSClient) QueueToChannel(queueURL string, c chan string) {
+	for {
+		body, receipt, err := client.GetMessage(queueURL)
+		if err != nil {
+			c <- "error " + err.Error()
+			time.Sleep(10 * time.Second)
+		}
+
+		if body == "" {
+			continue
+		}
+
+		client.DeleteMessage(queueURL, receipt)
+
+		c <- body
+	}
 }
 
 // Simple wrapper around the aws4 client Post() but less verbose.
@@ -131,7 +175,57 @@ func (client *SQSClient) DeleteMessage(queueURL, receipt string) error {
 	if err != nil {
 		return err
 	}
-	resp.Body.Close()
+	defer resp.Body.Close()
 
 	return nil
+}
+
+// Conduct a SendMessage API call (POST) on the given queue.
+func (client *SQSClient) SendMessage(queueURL, message string) error {
+	data := client.BuildSendMessageData(message)
+
+	resp, err := client.Post(queueURL, data)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode != 200 {
+		return errors.New(string(body))
+	}
+
+	return nil
+}
+
+// Create a queue and return its URL.
+func (client *SQSClient) CreateQueue(baseURL, name string) (string, error) {
+	var parsedResponse CreateQueueResponse
+	url := client.BuildCreateQueueURL(baseURL, name)
+
+	resp, err := client.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	if resp.StatusCode != 200 {
+		return "", errors.New(string(body))
+	}
+
+	err = xml.Unmarshal(body, &parsedResponse)
+	if err != nil {
+		return "", err
+	}
+
+	return parsedResponse.QueueURL, nil
 }
