@@ -10,7 +10,6 @@ import (
 	"net/url"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/mikedewar/aws4"
 )
@@ -87,26 +86,6 @@ func (client *SQSClient) BuildCreateQueueURL(baseURL, name string) string {
 	query.Set("SignatureVersion", SQSSignatureVersion)
 	url := baseURL + "?" + query.Encode()
 	return url
-}
-
-// Loop for ever feeding the given channel with all the message on
-// the queue. This is meant to be used as a go routine.
-func (client *SQSClient) QueueToChannel(queueURL string, c chan string) {
-	for {
-		body, receipt, err := client.GetMessage(queueURL)
-		if err != nil {
-			c <- "error " + err.Error()
-			time.Sleep(10 * time.Second)
-		}
-
-		if body == "" {
-			continue
-		}
-
-		client.DeleteMessage(queueURL, receipt)
-
-		c <- body
-	}
 }
 
 // Simple wrapper around the aws4 client Post() but less verbose.
