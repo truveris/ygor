@@ -16,13 +16,14 @@ type Alias struct {
 	Value string
 }
 
-const (
-	AliasFilename = "aliases.cfg"
-)
-
 var (
-	Aliases = make(map[string]*Alias)
-	LastMod time.Time
+	// This is a default value, it can be changed with the SetAliasFilePath
+	// function.
+	aliasFilePath = "aliases.cfg"
+
+	// TODO: make this private at some point...
+	Aliases       = make(map[string]*Alias)
+	LastMod       time.Time
 )
 
 // Generate a simple line for persistence, with new-line.
@@ -38,7 +39,7 @@ func (alias *Alias) SplitValue() (string, []string) {
 // Check if the alias file has been updated. It also returns false if we can't
 // read the file.
 func AliasesNeedReload() bool {
-	si, err := os.Stat(AliasFilename)
+	si, err := os.Stat(aliasFilePath)
 	if err != nil {
 		return false
 	}
@@ -80,7 +81,7 @@ func DeleteAlias(name string) {
 // Save all the aliases to disk.
 func SaveAliases() error {
 	// Maybe an easier way is to use ioutil.WriteFile
-	file, err := os.OpenFile(AliasFilename, os.O_TRUNC|os.O_WRONLY|os.O_CREATE, 0644)
+	file, err := os.OpenFile(aliasFilePath, os.O_TRUNC|os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		return err
 	}
@@ -101,7 +102,7 @@ func SaveAliases() error {
 func ReloadAliases() {
 	Aliases = make(map[string]*Alias)
 
-	file, err := os.Open(AliasFilename)
+	file, err := os.Open(aliasFilePath)
 	if err != nil {
 		return
 	}
@@ -123,4 +124,8 @@ func ReloadAliases() {
 
 		AddAlias(tokens[0], tokens[1])
 	}
+}
+
+func SetAliasFilePath(path string) {
+	aliasFilePath = path
 }
