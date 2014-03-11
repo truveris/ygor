@@ -7,9 +7,10 @@ import (
 	"encoding/xml"
 	"errors"
 	"io/ioutil"
-	"net/url"
 	"net/http"
+	"net/url"
 	"strings"
+	"time"
 
 	"github.com/mikedewar/aws4"
 )
@@ -32,7 +33,7 @@ type SQSMessage struct {
 }
 
 type CreateQueueResponse struct {
-	QueueURL      string `xml:"CreateQueueResult>QueueUrl"`
+	QueueURL string `xml:"CreateQueueResult>QueueUrl"`
 }
 
 // Build the data portion of a Message POST API call.
@@ -207,4 +208,24 @@ func (client *SQSClient) CreateQueue(baseURL, name string) (string, error) {
 	}
 
 	return parsedResponse.QueueURL, nil
+}
+
+// Loop for ever feeding the given channel with all the message on
+// the queue. This is meant to be used as a go routine.
+func (client *SQSClient) QueueToChannel(queueURL string, c chan string) {
+	for {
+		body, receipt, err := client.GetMessage(queueURL)
+		if err != nil {
+			c <- "error " + err.Error()
+			time.Sleep(10 * time.Second)
+		}
+
+		if body == "" {
+			continue
+		}
+
+		client.DeleteMessage(queueURL, receipt)
+
+		c <- body
+	}
 }
