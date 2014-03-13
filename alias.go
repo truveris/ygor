@@ -22,8 +22,8 @@ var (
 	aliasFilePath = "aliases.cfg"
 
 	// TODO: make this private at some point...
-	Aliases       = make(map[string]*Alias)
-	LastMod       time.Time
+	Aliases        = make(map[string]*Alias)
+	AliasesLastMod time.Time
 )
 
 // Generate a simple line for persistence, with new-line.
@@ -45,8 +45,8 @@ func AliasesNeedReload() bool {
 	}
 
 	// First update or the file was modified after the last update.
-	if LastMod.IsZero() || si.ModTime().After(LastMod) {
-		LastMod = si.ModTime()
+	if AliasesLastMod.IsZero() || si.ModTime().After(AliasesLastMod) {
+		AliasesLastMod = si.ModTime()
 		return true
 	}
 

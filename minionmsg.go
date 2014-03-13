@@ -23,13 +23,18 @@ type MinionMsg struct {
 }
 
 func NewMinionMsg(line string) *MinionMsg {
-	msg := &MinionMsg{
-		Body:      line,
+	tokens := reMinionMsg.FindStringSubmatch(line)
+	if tokens == nil {
+		return nil
 	}
 
-	tokens := strings.Split(msg.Body, " ")
+	msg := &MinionMsg{
+		Body: tokens[1],
+	}
+
+	tokens = strings.Split(msg.Body, " ")
 	msg.Command = tokens[0]
-	if len(tokens) > 1 {
+	if len(tokens) > 2 {
 		msg.Args = append(msg.Args, tokens[1:]...)
 	}
 
