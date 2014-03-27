@@ -10,6 +10,7 @@
 package ygor
 
 import (
+	"errors"
 	"regexp"
 	"strings"
 )
@@ -20,8 +21,13 @@ var (
 )
 
 type MinionMsg struct {
-	// Name of the minion sending this message.
+	// Name of the minion sending this message. This value is populated
+	// from the registry, only if we can find a matching entry using the
+	// UserID.
 	Name string
+
+	// User sending the message. This value is authenticated.
+	UserID string
 
 	// The body of the message as received from the minion.
 	Body string
@@ -31,14 +37,14 @@ type MinionMsg struct {
 	Args    []string
 }
 
-func NewMinionMsg(line string) *MinionMsg {
+func NewMinionMsg(line string) (*MinionMsg, error) {
 	tokens := reMinionMsg.FindStringSubmatch(line)
 	if tokens == nil {
-		return nil
+		return nil, errors.New("not a proper MINIONMSG")
 	}
 
 	msg := &MinionMsg{
-		Name: tokens[1],
+		UserID: tokens[1],
 		Body: tokens[2],
 	}
 
@@ -48,5 +54,18 @@ func NewMinionMsg(line string) *MinionMsg {
 		msg.Args = append(msg.Args, tokens[1:]...)
 	}
 
-	return msg
+	// At the time of registration, we cannot guarantee that a name is
+	// available, skip the minion lookup entirely.
+	if msg.Command == "register" {
+		return msg, nil
+	}
+
+	minion, err := GetMinionByUserID(msg.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	msg.Name = minion.Name
+
+	return msg, nil
 }

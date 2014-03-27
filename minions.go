@@ -94,6 +94,23 @@ func GetMinion(name string) (*Minion, error) {
 	return nil, errors.New("minion not found")
 }
 
+func GetMinionByUserID(userID string) (*Minion, error) {
+	if MinionsNeedReload() {
+		err := ReloadMinions()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	for _, minion := range Minions {
+		if minion.UserID == userID {
+			return minion, nil
+		}
+	}
+
+	return nil, errors.New("minion not found")
+}
+
 // Register a minion.
 func RegisterMinion(name, queueURL, userID string) error {
 	err := AddMinion(name, queueURL, userID, time.Now())
