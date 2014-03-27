@@ -25,11 +25,18 @@ type SQSClient struct {
 	Aws4Client *aws4.Client
 }
 
+type SQSMessage struct {
+	Body          string
+	ReceiptHandle string
+	UserID        string
+}
+
 // struct defining what to extract from the XML document received in response
 // to the GetMessage API call.
-type SQSMessage struct {
-	Body          []string `xml:"ReceiveMessageResult>Message>Body"`
-	ReceiptHandle []string `xml:"ReceiveMessageResult>Message>ReceiptHandle"`
+type XMLSQSMessage struct {
+	Bodies         []string `xml:"ReceiveMessageResult>Message>Body"`
+	ReceiptHandles []string `xml:"ReceiveMessageResult>Message>ReceiptHandle"`
+	Values         []string `xml:"ReceiveMessageResult>Message>Attribute>Value"`
 }
 
 type CreateQueueResponse struct {
@@ -50,7 +57,7 @@ func (client *SQSClient) BuildSendMessageData(msg string) string {
 func (client *SQSClient) BuildReceiveMessageURL(queueURL string) string {
 	query := url.Values{}
 	query.Set("Action", "ReceiveMessage")
-	// query.Set("AttributeName", "All")
+	query.Set("AttributeName", "SenderId")
 	query.Set("Version", SQSAPIVersion)
 	query.Set("SignatureVersion", SQSSignatureVersion)
 	query.Set("WaitTimeSeconds", "20")
@@ -111,39 +118,43 @@ func NewSQSClient(awsAccessKeyId, awsSecretAccessKey string) *SQSClient {
 
 // Return a single message body, with its ReceiptHandle. A lack of message is
 // not considered an error but both strings will be empty.
-func (client *SQSClient) GetMessage(queueURL string) (string, string, error) {
-	var m SQSMessage
+func (client *SQSClient) GetMessage(queueURL string) (*SQSMessage, error) {
+	var m XMLSQSMessage
 
 	url := client.BuildReceiveMessageURL(queueURL)
 
 	resp, err := client.Get(url)
 	if err != nil {
-		return "", "", err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return "", "", err
+		return nil, err
 	}
 
 	if resp.StatusCode != 200 {
-		return "", "", errors.New(string(body))
+		return nil, errors.New(string(body))
 	}
 
 	err = xml.Unmarshal(body, &m)
 	if err != nil {
-		return "", "", err
+		return nil, err
 	}
 
 	// The API call is build to only return one or zero messages.
-	if len(m.Body) < 1 {
-		return "", "", nil
+	if len(m.Bodies) != 1 || len(m.Values) != 1 {
+		return nil, nil
 	}
-	message := m.Body[0]
-	receipt := m.ReceiptHandle[0]
 
-	return message, receipt, nil
+	msg := &SQSMessage{
+		Body:          m.Bodies[0],
+		ReceiptHandle: m.ReceiptHandles[0],
+		UserID:        m.Values[0],
+	}
+
+	return msg, nil
 }
 
 // Conduct a DeleteMessage API call on the given queue, using the receipt
@@ -212,20 +223,20 @@ func (client *SQSClient) CreateQueue(baseURL, name string) (string, error) {
 
 // Loop for ever feeding the given channel with all the message on
 // the queue. This is meant to be used as a go routine.
-func (client *SQSClient) QueueToChannel(queueURL string, c chan string) {
+func (client *SQSClient) QueueToChannel(queueURL string, c chan SQSMessage) {
 	for {
-		body, receipt, err := client.GetMessage(queueURL)
+		msg, err := client.GetMessage(queueURL)
 		if err != nil {
-			c <- "error " + err.Error()
+			c <- SQSMessage{Body: "error " + err.Error()}
 			time.Sleep(10 * time.Second)
 		}
 
-		if body == "" {
+		if msg == nil || msg.Body == "" {
 			continue
 		}
 
-		client.DeleteMessage(queueURL, receipt)
+		client.DeleteMessage(queueURL, msg.ReceiptHandle)
 
-		c <- body
+		c <- *msg
 	}
 }
