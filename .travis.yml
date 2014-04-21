@@ -2,7 +2,12 @@ language: go
 
 go:
   - 1.1
+  - 1.2
   - tip
 
 install:
   - go get github.com/jessevdk/go-flags
+  - go get github.com/mikedewar/aws4
+  - go get github.com/truveris/ygor
+  - go get github.com/truveris/sqs
+  - go get github.com/truveris/sqs/sqschan

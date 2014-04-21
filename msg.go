@@ -3,21 +3,33 @@
 
 package ygor
 
-const (
-	MsgTypeUnknown   = iota
-	MsgTypePrivMsg   = iota
-	MsgTypeMinionMsg = iota
+import (
+	"github.com/truveris/sqs"
 )
 
-// Return the message type.
-func GetMsgType(line string) int {
-	if rePrivMsg.FindStringSubmatch(line) != nil {
-		return MsgTypePrivMsg
-	}
+type MsgType int
 
-	if reMinionMsg.FindStringSubmatch(line) != nil {
-		return MsgTypeMinionMsg
-	}
+const (
+	MsgTypeUnknown    MsgType = iota
+	MsgTypeIRCChannel MsgType = iota
+	MsgTypeIRCPrivate MsgType = iota
+	MsgTypeAPI        MsgType = iota
+	MsgTypeMinion     MsgType = iota
+)
 
-	return MsgTypeUnknown
+type Message struct {
+	Type       MsgType
+	SQSMessage *sqs.Message
+	UserID     string
+	Command    string
+	Body       string
+	// In the case of an IRC message, this is a nickname.
+	ReplyTo    string
+	Args       []string
+}
+
+func NewMessage() *Message {
+	msg := &Message{}
+	msg.Type = MsgTypeUnknown
+	return msg
 }

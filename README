@@ -1,49 +1,66 @@
-ygor - Go IRC bot (yes, another one)
-====================================
+ygor - Truveris' Go Office Butler
+=================================
 
-Ygor provides the tools to break down your bot into three separate processes, a
-"body", a "soul" and a "minion:
+Ygor provides access to devices such as TVs from our internal IRC channel and
+mobile phones, it makes it easy to share a picture or sound with everyone and
+permits a large amount of trolling.
 
-  body: permanent connection to the IRC server, the body is a minimal IRC
-      client that relays most of the I/O to the soul. In theory you could use
-      only this part of the ygor project and place any executable behind it as
-      soul.  Since this process handles the PING your bot will remain online
-      even if your backend process has completely failed.
+All the process in this system communicate via AWS SQS. Here is the break down
+of the processes:
 
-  soul: this process takes IRC line as stdin and provides responses on stdout.
-      You can find an example of our bot's soul in the 'ygor-truveris' folder.
+  ygord: central part of the system it takes instructions from various sources
+         (IRC, web/API) and sends commands to its minions accordingly. It keeps
+	 a registration of all of them and knows where each minion belong (e.g.
+	 which room and IRC channel).
 
-  minion: separate process receiving commands from the soul, through SQS. You
-      would typically run these on separate machines like raspberry pis, TVs,
-      dashboards, etc. It can drive the playback of audio, video and use the
-      local "say" or "espeak" to communicate with humans around.
+  ygorlet: process receiving commands from ygord, through SQS. We run one
+	 ygorlet per controlled device and uses raspberry pis for that purpose.
+	 You can then connect this little machine to a TV, speakers, large
+	 monitor, alarm system, etc. It can drive the playback of audio, video
+	 via mplayer/omxplayer and use the local "say" or "espeak" to
+	 communicate with humans around.
 
-The purpose of this design is to have a thin and stable connection layer that
-would rarely change and never disconnect. The personality is modifyable and
-reloadable without having to disconnect the bot.
+ygord does not connect to IRC by itself, since it could become a rather large
+part of the system, it could crash and restart the bot. Instead ygord receive
+all its IRC traffic through SQS as well, you can use the following project to
+route your IRC traffic properly:
 
+	https://github.com/truveris/sqs-irc-gateway
 
-How to start it
-===============
-Assuming everything is compiled:
-
-    ygor --hostname=localhost:6667 ygor-truveris | tee -a ygor.log
-
-
-Building a soul
-===============
-You can use the github.com/truveris/ygor-truveris repository as an example.
+This allows you to modify the personality/setting of the bot and restart it
+without dissconnecting/reconnecting your bot.
 
 
-Building a minion
+How to start
+============
+Both directories come with an example configuration file, copy it and fill in
+all the information, then you can start both processes without paramters.
+
+
+How to restart it
 =================
-You can use the github.com/truveris/ygor-minion repository as an example.
+If you use supervisord, you can just run the following command:
+
+    sudo supervisorctl restart ygord
+    -or-
+    sudo supervisorctl restart ygorlet
 
 
-How to restart the soul
-=======================
+Why use SQS instead of X
+========================
+Using SQS means we don't have to worry about having all the components on the
+same network, we only need to make sure they have access to SQS. Additionally,
+SQS allows us to manage auth easily from IAM.
 
-If you soul program is called 'ygor-truveris', just kill it and ygor will
-restart it:
+ygord could in theory accept TCP connections and provide authentication to all
+the ygorlets and IRC feeds, patches/forks are welcome.
 
-    pkill ygor-truveris
+
+Why use such a plain-text line-based protocol instead of XML, JSON, X?
+======================================================================
+It's great to be able to debug your minion and control it from the command
+line, for example:
+
+    ygorlet -i
+    > play stuff
+    *plays stuff*

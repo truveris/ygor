@@ -1,0 +1,13 @@
+# TODO
+
+ - Remember the user id and refuse all messages for this minion.
+ - define the alias and minions file path in the configuration file.
+ - run a routine to check the validity of the URL before sending it to the
+   minion.
+ - Validate the configuration (e.g. minion name should be [a-z0-9]+..)
+ - LogFile parameter to dump everything to disk as well.
+ - Imdb module (find film, get title from URL, etc.)
+ - Count how many people are online.
+ - play random image or sound
+ - play youtube
+ - Look for 403 forbidden when caching.

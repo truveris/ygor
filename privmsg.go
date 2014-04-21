@@ -43,7 +43,7 @@ type PrivMsg struct {
 	Args    []string
 }
 
-func NewPrivMsg(line, currentNick string) *PrivMsg {
+func NewPrivMsg(line, nick string) *PrivMsg {
 	tokens := rePrivMsg.FindStringSubmatch(line)
 	if tokens == nil {
 		return nil
@@ -64,7 +64,7 @@ func NewPrivMsg(line, currentNick string) *PrivMsg {
 	}
 
 	// Message sent directly to the bot (not through a channel).
-	if msg.Recipient == currentNick {
+	if msg.Recipient == nick {
 		msg.Addressed = true
 		msg.Direct = true
 		msg.ReplyTo = msg.Nick
@@ -73,7 +73,7 @@ func NewPrivMsg(line, currentNick string) *PrivMsg {
 	// If the message is addressed (e.g. "ygor: hi"), remove the prefix
 	// from the body and flag this message.
 	tokens = reAddressed.FindStringSubmatch(msg.Body)
-	if tokens != nil && tokens[1] == currentNick {
+	if tokens != nil && tokens[1] == nick {
 		msg.Addressed = true
 		msg.Body = tokens[2]
 	}
