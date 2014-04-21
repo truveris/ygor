@@ -1,0 +1,16 @@
+{
+	"Channels": {
+		"#test": {
+			"Minions": ["pi1", "pi2"]
+		}
+	},
+	"AdminChannel": "#ygor",
+	"Ignore": ["douchebot"],
+	"AWSRegionCode": "us-east-1",
+	"AWSAccessKeyId": "AAAAAAAAAAAAAAAAAAAA",
+	"AWSSecretAccessKey": "////////////////////////////////////////",
+	"IRCNickname": "whygore",
+	"QueueName": "ygord-incoming",
+	"TestMode": true
+}
+
