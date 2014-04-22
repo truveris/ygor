@@ -5,8 +5,10 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/truveris/sqs"
+	"github.com/truveris/sqs/sqschan"
 	"github.com/truveris/ygor"
 )
 
@@ -84,4 +86,65 @@ func SendToQueue(queueURL, msg string) error {
 	SendToQueueUsingClient(client, queueURL, msg)
 
 	return nil
+}
+
+func StartMinionAdapter(client *sqs.Client) (<-chan error, error) {
+	errch := make(chan error, 0)
+
+	ch, sqserrch, err := sqschan.Incoming(client, cfg.QueueName)
+	if err != nil {
+		return nil, err
+	}
+
+	go func() {
+		for {
+			select {
+			case sqsmsg := <-ch:
+				msg := NewMessageFromMinionSQS(sqsmsg)
+				InputQueue <- msg
+				err := client.DeleteMessage(sqsmsg)
+				if err != nil {
+					errch <- err
+				}
+			case err := <-sqserrch:
+				errch <- err
+			}
+		}
+	}()
+
+	return errch, nil
+}
+
+func MinionMessageHandler(msg *ygor.Message) {
+	for _, cmd := range ygor.RegisteredCommands {
+		if !cmd.MinionMessageMatches(msg) {
+			continue
+		}
+
+		if cmd.MinionMsgFunction == nil {
+			Debug("unhandled minion message: " + msg.Body)
+			continue
+		}
+
+		cmd.MinionMsgFunction(msg)
+		break
+	}
+}
+
+func NewMessageFromMinionLine(line string) *ygor.Message {
+	msg := ygor.NewMessage()
+	msg.Type = ygor.MsgTypeMinion
+	msg.Body = line
+
+	args := strings.Split(line, " ")
+	msg.Command = args[0]
+	msg.Args = args[1:]
+
+	return msg
+}
+
+func NewMessageFromMinionSQS(sqsmsg *sqs.Message) *ygor.Message {
+	msg := NewMessageFromMinionLine(sqsmsg.Body)
+	msg.UserID = sqsmsg.UserID
+	return msg
 }

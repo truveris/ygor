@@ -21,7 +21,6 @@ func (module ShutUpModule) PrivMsg(msg *ygor.PrivMsg) {}
 
 func isShutUpRequest(msg *ygor.Message) bool {
 	body := strings.ToLower(msg.Body)
-	println(body)
 	if reStop.MatchString(body) {
 		return true
 	}

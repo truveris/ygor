@@ -8,8 +8,8 @@ import (
 	"errors"
 	"os"
 
-	"github.com/truveris/ygor"
 	"github.com/jessevdk/go-flags"
+	"github.com/truveris/ygor"
 )
 
 type Cmd struct {
@@ -124,8 +124,8 @@ func (channelCfg *ChannelCfg) GetQueueURLs() ([]string, error) {
 }
 
 // Look in the current directory for an config.json file.
-func parseConfigFile() error {
-	file, err := os.Open("config.json")
+func ParseConfigFile() error {
+	file, err := os.Open(cmd.ConfigFile)
 	if err != nil {
 		return err
 	}
@@ -188,7 +188,7 @@ func GetChannelsByMinionName(name string) []string {
 
 // Parse the command line arguments and return the soul program's path/name
 // (only argument).
-func parseCommandLine() {
+func ParseCommandLine() {
 	flagParser := flags.NewParser(&cmd, flags.PassDoubleDash)
 	_, err := flagParser.Parse()
 	if err != nil {
@@ -197,4 +197,3 @@ func parseCommandLine() {
 		os.Exit(1)
 	}
 }
-

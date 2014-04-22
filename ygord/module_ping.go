@@ -8,9 +8,9 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"time"
-	"log"
 
 	"github.com/truveris/ygor"
 )
@@ -101,7 +101,7 @@ func (module *PingModule) PongCmdFunc(msg *ygor.Message) {
 	var name string
 	minion, err := ygor.GetMinionByUserID(msg.UserID)
 	if err != nil {
-		name = "no name ("+msg.UserID+")"
+		name = "no name (" + msg.UserID + ")"
 	} else {
 		name = minion.Name
 	}

@@ -4,8 +4,10 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/truveris/sqs"
 	"github.com/truveris/sqs/sqschan"
@@ -16,6 +18,24 @@ var (
 	IRCOutgoing = make(chan string, 0)
 	IRCNickname string
 )
+
+// Send a message to a channel.
+func IRCPrivMsg(channel, msg string) {
+	lines := strings.Split(msg, "\n")
+	for i := 0; i < len(lines); i++ {
+		if lines[i] == "" {
+			continue
+		}
+		IRCOutgoing <- fmt.Sprintf("PRIVMSG %s :%s", channel, lines[i])
+
+		// Make test mode faster.
+		if cfg.TestMode {
+			time.Sleep(50 * time.Millisecond)
+		} else {
+			time.Sleep(500 * time.Millisecond)
+		}
+	}
+}
 
 func NewMessageFromPrivMsg(privmsg *ygor.PrivMsg) *ygor.Message {
 	msg := ygor.NewMessage()
@@ -73,7 +93,7 @@ func ConvertIRCMessage(client *sqs.Client, sqsmsg *sqs.Message) error {
 	if msg == nil {
 		log.Printf("unhandled message: %s", sqsmsg.Body)
 	} else {
-		inputQueue <- msg
+		InputQueue <- msg
 	}
 
 	err := client.DeleteMessage(sqsmsg)
@@ -127,7 +147,7 @@ func ircOutgoingHandler(client *sqs.Client) (<-chan error, error) {
 }
 
 // Start the incoming and outgoing handlers and multiplex their error channels.
-func startIRCHandlers(client *sqs.Client) (chan error, error) {
+func StartIRCAdapter(client *sqs.Client) (chan error, error) {
 	errch := make(chan error, 0)
 
 	incerrch, err := ircIncomingHandler(client)
@@ -150,5 +170,64 @@ func startIRCHandlers(client *sqs.Client) (chan error, error) {
 		}
 	}()
 
+	autojoin()
+
 	return errch, nil
+}
+
+func IRCMessageHandler(msg *ygor.Message) {
+	for _, cmd := range ygor.RegisteredCommands {
+		if !cmd.IRCMessageMatches(msg) {
+			continue
+		}
+
+		if cmd.PrivMsgFunction == nil {
+			Debug("unhandled IRC message: " + msg.Body)
+			continue
+		}
+
+		cmd.PrivMsgFunction(msg)
+		break
+	}
+}
+
+// Send an action message to a channel.
+func privAction(channel, msg string) {
+	IRCOutgoing <- fmt.Sprintf("PRIVMSG %s :\x01ACTION %s\x01", channel, msg)
+}
+
+func delayedPrivMsg(channel, msg string, waitTime time.Duration) {
+	time.Sleep(waitTime)
+	IRCPrivMsg(channel, msg)
+}
+
+func delayedPrivAction(channel, msg string, waitTime time.Duration) {
+	time.Sleep(waitTime)
+	privAction(channel, msg)
+}
+
+func JoinChannel(channel string) {
+	IRCOutgoing <- "JOIN " + channel
+}
+
+// Send the message to the configured debug channel if any.
+func Debug(msg string) {
+	if cfg.AdminChannel == "" {
+		return
+	}
+	IRCPrivMsg(cfg.AdminChannel, msg)
+}
+
+// Auto-join all the configured channels.
+func autojoin() {
+	// Make test mode faster.
+	if cfg.TestMode {
+		time.Sleep(50 * time.Millisecond)
+	} else {
+		time.Sleep(500 * time.Millisecond)
+	}
+
+	for _, c := range cfg.GetAutoJoinChannels() {
+		JoinChannel(c)
+	}
 }

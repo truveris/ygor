@@ -1,7 +1,9 @@
 ygord/ygord
 ygorlet/ygorlet
+ygorlet/tunes
 data
 *.log
 *.sh
-config.json
-aliases.cfg
+*.json
+*.conf
+*.cfg
