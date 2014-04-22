@@ -10,6 +10,8 @@
 	"AWSAccessKeyId": "AAAAAAAAAAAAAAAAAAAA",
 	"AWSSecretAccessKey": "////////////////////////////////////////",
 	"IRCNickname": "whygore",
+	"IRCIncomingQueueName": "ygor-irc-incoming",
+	"IRCOutgoingQueueName": "ygor-irc-outgoing",
 	"QueueName": "ygord-incoming",
 	"TestMode": true
 }

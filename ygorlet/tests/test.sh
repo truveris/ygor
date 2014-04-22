@@ -7,7 +7,7 @@ test_command "whatevz anything goes"
 cat > test.expected <<EOF
 bobert-von-cheesecake ready
 sending to soul: register bobert-von-cheesecake fake-queue
-unknown command: { whatevz anything goes  fakeUserID}
+unknown command: &{ whatevz anything goes  fakeUserID}
 terminating: EOF
 EOF
 assert_output && pass

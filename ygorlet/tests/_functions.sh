@@ -104,7 +104,7 @@ cmd() {
 # $1 command
 test_command() {
 	cmd "$@" \
-		| ../ygorlet \
+		| ../ygorlet -c config.json \
 		2>&1 \
 		| remove_timestamp \
 		> test.output

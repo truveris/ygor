@@ -101,7 +101,7 @@ cmd() {
 
 # Pass data via stdin waiting a little bit before and after.
 test_input() {
-	../ygord 2> test.stderr > test.output
+	../ygord -c config.json 2> test.stderr > test.output
 	if [ "$?" != 0 ]; then
 		fail "wrong return code (check test.stderr)"
 	fi

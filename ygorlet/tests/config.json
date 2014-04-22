@@ -1,7 +1,13 @@
 {
 	"Name": "bobert-von-cheesecake",
-	"AwsAccessKeyId": "AAAAAAAAAAAAAAAAAAAA",
-	"AwsSecretAccessKey": "////////////////////////////////////////",
+
+	"QueueName": "bobert-von-cheesecake",
+	"SoulQueueName": "ygord",
+
+	"AWSRegionCode": "us-east-1",
+	"AWSAccessKeyId": "AAAAAAAAAAAAAAAAAAAA",
+	"AWSSecretAccessKey": "////////////////////////////////////////",
+
 	"Test": true
 }
 

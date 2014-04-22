@@ -171,6 +171,8 @@ func main() {
 		log.Fatal("config error: ", err.Error())
 	}
 
+	log.Printf("%s ready", cfg.Name)
+
 	// This is the message box.
 	incoming := make(chan *sqs.Message)
 	if cfg.Test {
@@ -188,8 +190,6 @@ func main() {
 	go playNoise(NoiseInbox)
 
 	mplayer.StartSlave(mplayerErrorHandler)
-
-	log.Printf("%s ready", cfg.Name)
 
 	for msg := range incoming {
 		command, data := SplitBody(msg.Body)
