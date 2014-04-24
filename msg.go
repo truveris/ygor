@@ -24,8 +24,8 @@ type Message struct {
 	Command    string
 	Body       string
 	// In the case of an IRC message, this is a nickname.
-	ReplyTo    string
-	Args       []string
+	ReplyTo string
+	Args    []string
 }
 
 func NewMessage() *Message {

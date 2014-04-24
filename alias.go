@@ -5,16 +5,30 @@ package ygor
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
 	"time"
 )
 
+// Wrapper around your alias file, it abstracts the serialization of aliases
+// and keeps an in-memory cache to avoid frequent reads.
+type AliasFile struct {
+	filePath string
+	cache    map[string]*Alias
+	lastMod  time.Time
+}
+
+// Definition of a single alias, used for in-memory storage.
 type Alias struct {
 	Name  string
 	Value string
 }
+
+const (
+	MaxRecursionLevel = 8
+)
 
 var (
 	// This is a default value, it can be changed with the SetAliasFilePath
@@ -36,9 +50,19 @@ func (alias *Alias) SplitValue() (string, []string) {
 	return tokens[0], tokens[1:]
 }
 
-// Check if the alias file has been updated. It also returns false if we can't
-// read the file.
-func AliasesNeedReload() bool {
+// Create and return a wrapper around the file-system storage for aliases.
+func OpenAliasFile(filePath string) (*AliasFile, error) {
+	file := &AliasFile{filePath: filePath}
+	err := file.reload()
+	if err != nil {
+		return nil, err
+	}
+	return file, nil
+}
+
+// Check if the underlying file has been updated. It also returns false if we
+// can't read the file. XXX should return error instead.
+func (file *AliasFile) needsReload() bool {
 	si, err := os.Stat(aliasFilePath)
 	if err != nil {
 		return false
@@ -53,12 +77,12 @@ func AliasesNeedReload() bool {
 	return false
 }
 
-func GetAlias(name string) *Alias {
-	if AliasesNeedReload() {
-		ReloadAliases()
+func (file *AliasFile) Get(name string) *Alias {
+	if file.needsReload() {
+		file.reload()
 	}
 
-	for _, alias := range Aliases {
+	for _, alias := range file.cache {
 		if alias.Name == name {
 			return alias
 		}
@@ -67,47 +91,72 @@ func GetAlias(name string) *Alias {
 	return nil
 }
 
-func AddAlias(name, value string) {
+// Return a []string of all the alias names. FIXME: is there really no better
+// way to get the keys of a map?
+func (file *AliasFile) Names() []string {
+	idx := 0
+	names := make([]string, len(file.cache))
+	for name, _ := range file.cache {
+		names[idx] = name
+		idx++
+	}
+	return names
+}
+
+func (file *AliasFile) Add(name, value string) {
 	alias := &Alias{}
 	alias.Name = name
 	alias.Value = value
-	Aliases[alias.Name] = alias
+	file.cache[alias.Name] = alias
 }
 
-func DeleteAlias(name string) {
-	delete(Aliases, name)
+func (file *AliasFile) Delete(name string) {
+	delete(file.cache, name)
 }
 
 // Save all the aliases to disk.
-func SaveAliases() error {
+func (file *AliasFile) Save() error {
 	// Maybe an easier way is to use ioutil.WriteFile
-	file, err := os.OpenFile(aliasFilePath, os.O_TRUNC|os.O_WRONLY|os.O_CREATE, 0644)
+	fp, err := os.OpenFile(aliasFilePath, os.O_TRUNC|os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer fp.Close()
 
-	if len(Aliases) == 0 {
-		file.WriteString("\n")
+	if len(file.cache) == 0 {
+		fp.WriteString("\n")
 		return nil
 	}
 
-	for _, alias := range Aliases {
-		file.WriteString(alias.GetLine())
+	for _, alias := range file.cache {
+		fp.WriteString(alias.GetLine())
 	}
 
 	return nil
 }
 
-func ReloadAliases() {
-	Aliases = make(map[string]*Alias)
+// Reload all the cached aliases from disk.
+func (file *AliasFile) reload() error {
+	file.cache = make(map[string]*Alias)
 
-	file, err := os.Open(aliasFilePath)
+	// It's acceptable for the file not to exist at this point, we just
+	// need to create it. Attempting to create it at this points allows us
+	// to know early on whether the filesystem allows us to do so.
+	fp, err := os.Open(file.filePath)
 	if err != nil {
-		return
+		if os.IsNotExist(err) {
+			fp, err = os.Create(file.filePath)
+			if err != nil {
+				return err
+			}
+			fp.Close()
+			return nil
+		} else {
+			return err
+		}
 	}
 
-	br := bufio.NewReader(file)
+	br := bufio.NewReader(fp)
 
 	for {
 		line, err := br.ReadString('\n')
@@ -122,10 +171,42 @@ func ReloadAliases() {
 			continue
 		}
 
-		AddAlias(tokens[0], tokens[1])
+		file.Add(tokens[0], tokens[1])
 	}
+
+	return nil
 }
 
-func SetAliasFilePath(path string) {
-	aliasFilePath = path
+// Recursively resolve aliases from a given line.
+func (file *AliasFile) RecursiveResolve(line string, level int) (string, error) {
+	if level >= MaxRecursionLevel {
+		return line, errors.New("max recursion reached")
+	}
+
+	parts := strings.SplitN(line, " ", 2)
+
+	// No more aliases, we're done here.
+	alias := file.Get(parts[0])
+	if alias == nil {
+		return line, nil
+	}
+
+	// Build a new line from the alias.
+	newparts := make([]string, 0)
+	newparts = append(newparts, alias.Value)
+	newparts = append(newparts, parts[1:]...)
+	line = strings.Join(newparts, " ")
+
+	line, err := file.RecursiveResolve(line, level+1)
+	if err != nil {
+		return "", err
+	}
+
+	return line, nil
+}
+
+// Recursively resolve aliases from a given line. Error out if we're 8 level
+// deep and can't seem to resolve anything.
+func (file *AliasFile) Resolve(line string) (string, error) {
+	return file.RecursiveResolve(line, 0)
 }

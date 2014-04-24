@@ -81,7 +81,7 @@ func downloadFile(url, filepath string) error {
 }
 
 func mplayerErrorHandler(err error) {
-	SendToSoul("play error: "+err.Error())
+	SendToSoul("play error: " + err.Error())
 }
 
 func mplayerPlayAndWaitWithDuration(filepath string, duration time.Duration) {
@@ -130,7 +130,7 @@ func player(tune Noise) *exec.Cmd {
 			filepath = tune.Path
 		} else {
 			// Check if we already have a copy.
-			filepath = "tunes/"+MD5(tune.Path)
+			filepath = "tunes/" + MD5(tune.Path)
 			file, err := os.Open(filepath)
 			if err != nil {
 				SendToSoul("play caching start")

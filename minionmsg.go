@@ -45,7 +45,7 @@ func NewMinionMsg(line string) (*MinionMsg, error) {
 
 	msg := &MinionMsg{
 		UserID: tokens[1],
-		Body: tokens[2],
+		Body:   tokens[2],
 	}
 
 	tokens = strings.Split(msg.Body, " ")

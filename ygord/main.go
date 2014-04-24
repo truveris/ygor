@@ -15,6 +15,8 @@ var (
 	// All the normalized messages are pushed by the IO adapters, only the
 	// main loop reads from there.
 	InputQueue = make(chan *ygor.Message)
+
+	Aliases *ygor.AliasFile
 )
 
 // Start all the IO adapters (IRC, Stdin/Stdout, Minions, API, etc.)
@@ -50,6 +52,11 @@ func main() {
 	err := ParseConfigFile()
 	if err != nil {
 		log.Fatal("config error: ", err.Error())
+	}
+
+	Aliases, err = ygor.OpenAliasFile(cfg.AliasFilePath)
+	if err != nil {
+		log.Fatal("alias file error: ", err.Error())
 	}
 
 	log.Printf("registering modules")

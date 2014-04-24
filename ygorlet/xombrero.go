@@ -8,7 +8,6 @@ import (
 	"net"
 )
 
-
 // Send a message to xombrero via its unix socket.
 func Xombrero(data string) {
 	if cfg.Test {
@@ -18,7 +17,7 @@ func Xombrero(data string) {
 
 	conn, err := net.Dial("unix", cfg.XombreroSocket)
 	if err != nil {
-		SendToSoul("xombrero error "+err.Error())
+		SendToSoul("xombrero error " + err.Error())
 		log.Printf("xombrero: unable to connect to %s", err.Error())
 		return
 	}

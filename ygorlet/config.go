@@ -19,17 +19,17 @@ type Cfg struct {
 	AWSAccessKeyId     string
 	AWSSecretAccessKey string
 
-	Name		   string
+	Name string
 
 	// Name of the minion.
-	QueueName               string
+	QueueName string
 
 	// Defines the queue URL for the soul, used to send feedback.
-	SoulQueueName      string
+	SoulQueueName string
 
 	// Region code as found in the AWS API doc (http://goo.gl/Z7KvW), for
 	// example: us-east-1.
-	AWSRegionCode         string
+	AWSRegionCode string
 
 	// In Test-mode, this program will not attempt to communicate with any
 	// external systems (e.g. SQS and will print everything to stdout).

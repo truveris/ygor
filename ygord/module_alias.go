@@ -23,7 +23,7 @@ type AliasModule struct{}
 func (module AliasModule) PrivMsg(msg *ygor.PrivMsg) {}
 
 // Command used to set a new alias.
-func AliasCmdFunc(msg *ygor.Message) {
+func (module *AliasModule) AliasCmdFunc(msg *ygor.Message) {
 	var outputMsg string
 
 	if len(msg.Args) == 0 {
@@ -32,7 +32,7 @@ func AliasCmdFunc(msg *ygor.Message) {
 	}
 
 	name := msg.Args[0]
-	alias := ygor.GetAlias(name)
+	alias := Aliases.Get(name)
 
 	// Request the value of an alias.
 	if len(msg.Args) == 1 {
@@ -61,14 +61,14 @@ func AliasCmdFunc(msg *ygor.Message) {
 	}
 
 	if alias == nil {
-		ygor.AddAlias(name, strings.Join(msg.Args[1:], " "))
+		Aliases.Add(name, strings.Join(msg.Args[1:], " "))
 		outputMsg = "ok (created)"
 	} else {
 		alias.Value = strings.Join(msg.Args[1:], " ")
 		outputMsg = "ok (replaced)"
 	}
 
-	err := ygor.SaveAliases()
+	err := Aliases.Save()
 	if err != nil {
 		outputMsg = "error: " + err.Error()
 	}
@@ -108,37 +108,32 @@ func getPagesOfAliases(aliases []string) []string {
 	return pages
 }
 
-func UnAliasCmdFunc(msg *ygor.Message) {
+func (module *AliasModule) UnAliasCmdFunc(msg *ygor.Message) {
 	if len(msg.Args) != 1 {
 		IRCPrivMsg(msg.ReplyTo, "usage: unalias name")
 		return
 	}
 
 	name := msg.Args[0]
-	alias := ygor.GetAlias(name)
+	alias := Aliases.Get(name)
 
 	if alias == nil {
 		IRCPrivMsg(msg.ReplyTo, "error: unknown alias")
 		return
 	} else {
-		ygor.DeleteAlias(name)
+		Aliases.Delete(name)
 		IRCPrivMsg(msg.ReplyTo, "ok (deleted)")
 	}
-	ygor.SaveAliases()
+	Aliases.Save()
 }
 
-func AliasesCmdFunc(msg *ygor.Message) {
-	var aliases []string
-
+func (module *AliasModule) AliasesCmdFunc(msg *ygor.Message) {
 	if len(msg.Args) != 0 {
 		IRCPrivMsg(msg.ReplyTo, "usage: aliases")
 		return
 	}
 
-	for _, alias := range ygor.Aliases {
-		aliases = append(aliases, alias.Name)
-	}
-
+	aliases := Aliases.Names()
 	sort.Strings(aliases)
 	first := true
 	for _, page := range getPagesOfAliases(aliases) {
@@ -151,14 +146,10 @@ func AliasesCmdFunc(msg *ygor.Message) {
 	}
 }
 
-func (module AliasModule) Init() {
-	if cfg.AliasFilePath != "" {
-		ygor.SetAliasFilePath(cfg.AliasFilePath)
-	}
-
+func (module *AliasModule) Init() {
 	ygor.RegisterCommand(ygor.Command{
 		Name:            "alias",
-		PrivMsgFunction: AliasCmdFunc,
+		PrivMsgFunction: module.AliasCmdFunc,
 		Addressed:       true,
 		AllowPrivate:    false,
 		AllowChannel:    true,
@@ -166,7 +157,7 @@ func (module AliasModule) Init() {
 
 	ygor.RegisterCommand(ygor.Command{
 		Name:            "unalias",
-		PrivMsgFunction: UnAliasCmdFunc,
+		PrivMsgFunction: module.UnAliasCmdFunc,
 		Addressed:       true,
 		AllowPrivate:    false,
 		AllowChannel:    true,
@@ -174,7 +165,7 @@ func (module AliasModule) Init() {
 
 	ygor.RegisterCommand(ygor.Command{
 		Name:            "aliases",
-		PrivMsgFunction: AliasesCmdFunc,
+		PrivMsgFunction: module.AliasesCmdFunc,
 		Addressed:       true,
 		AllowPrivate:    true,
 		AllowChannel:    true,

@@ -45,7 +45,7 @@ func StartStdioHandler() (chan error, chan error, error) {
 			case "irc":
 				msg := NewMessageFromIRCLine(line)
 				if msg != nil {
-					InputQueue <- NewMessageFromIRCLine(line)
+					InputQueue <- msg
 				}
 			case "minion":
 				args := strings.SplitN(line, " ", 2)

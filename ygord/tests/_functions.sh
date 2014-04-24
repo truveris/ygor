@@ -114,3 +114,22 @@ test_line() {
 		exit 1
 	fi
 }
+
+# Pass data via stdin waiting a little bit before and after, expect an error
+test_input_error() {
+	../ygord -c config.json 2> test.stderr > test.output
+	if [ "$?" = 0 ]; then
+		fail "wrong return code (expected an error)"
+	fi
+}
+
+
+# Pass a line to ygord waiting a little bit before and after, expect an error.
+# $1 command
+test_line_error() {
+	if cmd "$@" | test_input_error; then
+		return 1
+	fi
+
+	return 0
+}

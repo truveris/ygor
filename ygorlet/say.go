@@ -3,11 +3,10 @@
 package main
 
 import (
-	"runtime"
 	"log"
 	"os/exec"
+	"runtime"
 )
-
 
 // say (for macs)
 func macSay(sentence string) {

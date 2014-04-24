@@ -51,10 +51,17 @@ func NewMessageFromPrivMsg(privmsg *ygor.PrivMsg) *ygor.Message {
 	}
 
 	msg.UserID = privmsg.Nick
-	msg.Command = privmsg.Command
 	msg.Body = privmsg.Body
 	msg.ReplyTo = privmsg.ReplyTo
-	msg.Args = privmsg.Args
+
+	tokens := strings.Split(msg.Body, " ")
+	if len(tokens) > 0 {
+		msg.Command = tokens[0]
+
+		if len(tokens) > 1 {
+			msg.Args = append(msg.Args, tokens[1:]...)
+		}
+	}
 
 	return msg
 }
@@ -74,6 +81,13 @@ func NewMessageFromIRCLine(line string) *ygor.Message {
 		// Not a PRIVMSG.
 		return nil
 	}
+
+	// Resolve any aliases.
+	body, err := Aliases.Resolve(privmsg.Body)
+	if err != nil {
+		Debug("failed to resolve aliases: " + err.Error())
+	}
+	privmsg.Body = body
 
 	// Check if we should ignore this message.
 	for _, ignore := range cfg.Ignore {

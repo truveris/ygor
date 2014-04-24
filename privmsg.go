@@ -37,10 +37,6 @@ type PrivMsg struct {
 
 	// The bot was contacted directly instead of through a channel.
 	Direct bool
-
-	// Store the command and its arguments if relevant.
-	Command string
-	Args    []string
 }
 
 func NewPrivMsg(line, nick string) *PrivMsg {
@@ -76,26 +72,6 @@ func NewPrivMsg(line, nick string) *PrivMsg {
 	if tokens != nil && tokens[1] == nick {
 		msg.Addressed = true
 		msg.Body = tokens[2]
-	}
-
-	tokens = strings.Split(msg.Body, " ")
-	if len(tokens) > 0 {
-		// Check if the first token is an alias.
-		alias := GetAlias(tokens[0])
-		if alias != nil {
-			msg.Command, msg.Args = alias.SplitValue()
-		} else {
-			msg.Command = tokens[0]
-		}
-
-		// Did not find a matching alias, use the provided data.
-		if msg.Command == "" {
-			msg.Command = tokens[0]
-		}
-
-		if len(tokens) > 1 {
-			msg.Args = append(msg.Args, tokens[1:]...)
-		}
 	}
 
 	return msg

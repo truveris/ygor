@@ -167,6 +167,10 @@ func ParseConfigFile() error {
 		return errors.New("'AWSSecretAccessKey' is not defined")
 	}
 
+	if cfg.AliasFilePath == "" {
+		cfg.AliasFilePath = "aliases.cfg"
+	}
+
 	return nil
 }
 

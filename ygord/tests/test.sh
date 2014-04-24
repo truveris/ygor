@@ -4,10 +4,6 @@
 # self-sufficient and should cleanup after itself (use the cleanup function).
 # No state should be maintained between each.
 #
-# Since ygord receives data from multiple fronts (IRC, minions, etc.), the
-# configuration file in this folder puts the process in Fifo mode which
-# replaces the SQS queues by fifo files. XXX
-#
 
 . ./_functions.sh
 
@@ -142,11 +138,16 @@ cleanup
 announce "set a new alias (permission error)"
 touch aliases.cfg
 chmod 000 aliases.cfg
-test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play stuff.ogg"
+test_line_error "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play stuff.ogg"
 cat > test.expected <<EOF
-PRIVMSG #test :error: open aliases.cfg: permission denied
 EOF
-assert_output && pass
+assert_output
+cat > test.expected <<EOF
+alias file error: open aliases.cfg: permission denied
+EOF
+sed 's/^....................//' test.stderr > test.tmp
+mv test.tmp test.stderr
+assert_stderr && pass
 cleanup
 
 
