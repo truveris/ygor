@@ -12,6 +12,7 @@ import (
 
 type XombreroModule struct{}
 
+// Send the xombrero command to the minions.
 func (module XombreroModule) PrivMsg(msg *ygor.Message) {
 	if len(msg.Args) == 0 {
 		IRCPrivMsg(msg.ReplyTo, "usage: xombrero [command [param ...]]")
@@ -19,6 +20,16 @@ func (module XombreroModule) PrivMsg(msg *ygor.Message) {
 	}
 
 	SendToChannelMinions(msg.ReplyTo, "xombrero "+strings.Join(msg.Args, " "))
+}
+
+// Shortcut for xombrero open.
+func (module XombreroModule) WebPrivMsg(msg *ygor.Message) {
+	if len(msg.Args) != 1 {
+		IRCPrivMsg(msg.ReplyTo, "usage: web url")
+		return
+	}
+
+	SendToChannelMinions(msg.ReplyTo, "xombrero open "+msg.Args[0])
 }
 
 // func (module XombreroModule) MinionMsg(msg *ygor.MinionMsg) {
@@ -36,6 +47,14 @@ func (module XombreroModule) Init() {
 		Name:            "xombrero",
 		PrivMsgFunction: module.PrivMsg,
 		// MinionMsgFunction: module.MinionMsg,
+		Addressed:    true,
+		AllowPrivate: false,
+		AllowChannel: true,
+	})
+
+	ygor.RegisterCommand(ygor.Command{
+		Name:            "web",
+		PrivMsgFunction: module.WebPrivMsg,
 		Addressed:    true,
 		AllowPrivate: false,
 		AllowChannel: true,
