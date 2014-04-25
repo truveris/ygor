@@ -55,8 +55,8 @@ func (module XombreroModule) Init() {
 	ygor.RegisterCommand(ygor.Command{
 		Name:            "web",
 		PrivMsgFunction: module.WebPrivMsg,
-		Addressed:    true,
-		AllowPrivate: false,
-		AllowChannel: true,
+		Addressed:       true,
+		AllowPrivate:    false,
+		AllowChannel:    true,
 	})
 }
