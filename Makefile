@@ -10,6 +10,11 @@ ygord/ygord:
 ygorlet/ygorlet:
 	cd ygorlet && make
 
+fmt:
+	go fmt
+	cd ygord && go fmt
+	cd ygorlet && go fmt
+
 clean:
 	cd ygord && make clean
 	cd ygorlet && make clean
