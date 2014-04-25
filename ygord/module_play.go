@@ -45,7 +45,7 @@ func PlayAfrica(msg *ygor.Message) {
 
 	go func() {
 		time.Sleep(2 * time.Second)
-		privAction(msg.ReplyTo, "hears the drums echoing tonight,")
+		IRCPrivAction(msg.ReplyTo, "hears the drums echoing tonight,")
 		time.Sleep(5 * time.Second)
 		IRCPrivMsg(msg.ReplyTo, "But she hears only whispers of some quiet conversation")
 		time.Sleep(9 * time.Second)
@@ -58,7 +58,7 @@ func PlayAfrica(msg *ygor.Message) {
 func PlayJeopardy(msg *ygor.Message) {
 	msg.Args = append([]string{"tunes/jeopardy.mp3"}, msg.Args...)
 
-	privAction(msg.ReplyTo, "queues some elevator music...")
+	IRCPrivAction(msg.ReplyTo, "queues some elevator music...")
 	Play(msg)
 }
 

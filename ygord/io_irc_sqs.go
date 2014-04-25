@@ -1,5 +1,13 @@
 // Copyright 2014, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
+//
+// The io_irc_sqs portion of the ygor code base defines the adapter used to
+// receive and send data to IRC via SQS (assuming irc-sqs-gateway is setup).
+//
+// The message in this adapter is roughly converted as such:
+//
+//     sqs.Message -> ygor.PrivMsg -> ygor.Message
+//
 
 package main
 
@@ -19,24 +27,7 @@ var (
 	IRCNickname string
 )
 
-// Send a message to a channel.
-func IRCPrivMsg(channel, msg string) {
-	lines := strings.Split(msg, "\n")
-	for i := 0; i < len(lines); i++ {
-		if lines[i] == "" {
-			continue
-		}
-		IRCOutgoing <- fmt.Sprintf("PRIVMSG %s :%s", channel, lines[i])
-
-		// Make test mode faster.
-		if cfg.TestMode {
-			time.Sleep(50 * time.Millisecond)
-		} else {
-			time.Sleep(500 * time.Millisecond)
-		}
-	}
-}
-
+// Create a new ygor message from a parsed PRIVMSG.
 func NewMessageFromPrivMsg(privmsg *ygor.PrivMsg) *ygor.Message {
 	msg := ygor.NewMessage()
 
@@ -66,6 +57,7 @@ func NewMessageFromPrivMsg(privmsg *ygor.PrivMsg) *ygor.Message {
 	return msg
 }
 
+// Create a new ygor message from an SQS message.
 func NewMessageFromIRCSQS(sqsmsg *sqs.Message) *ygor.Message {
 	msg := NewMessageFromIRCLine(strings.Trim(sqsmsg.Body, "\r\n"))
 	if msg != nil {
@@ -101,7 +93,9 @@ func NewMessageFromIRCLine(line string) *ygor.Message {
 	return msg
 }
 
-func ConvertIRCMessage(client *sqs.Client, sqsmsg *sqs.Message) error {
+// Convert an SQS message to an ygor Message and feed it to the InputQueue if
+// it is a valid IRC message. The SQS message is then deleted.
+func ReceiveSQSMessageForIRC(client *sqs.Client, sqsmsg *sqs.Message) error {
 	msg := NewMessageFromIRCSQS(sqsmsg)
 
 	if msg == nil {
@@ -118,8 +112,9 @@ func ConvertIRCMessage(client *sqs.Client, sqsmsg *sqs.Message) error {
 	return nil
 }
 
-// Reads all input from the IRC incoming queue.
-func ircIncomingHandler(client *sqs.Client) (<-chan error, error) {
+// Reads all input from the IRC incoming queue passing errors to the error
+// channel.
+func StartIRCIncomingQueueReader(client *sqs.Client) (<-chan error, error) {
 	errch := make(chan error, 0)
 
 	ch, sqserrch, err := sqschan.Incoming(client, cfg.IRCIncomingQueueName)
@@ -131,7 +126,7 @@ func ircIncomingHandler(client *sqs.Client) (<-chan error, error) {
 		for {
 			select {
 			case sqsmsg := <-ch:
-				err := ConvertIRCMessage(client, sqsmsg)
+				err := ReceiveSQSMessageForIRC(client, sqsmsg)
 				if err != nil {
 					errch <- err
 				}
@@ -145,7 +140,7 @@ func ircIncomingHandler(client *sqs.Client) (<-chan error, error) {
 }
 
 // Write all the messages from the outgoing channel.
-func ircOutgoingHandler(client *sqs.Client) (<-chan error, error) {
+func StartIRCOutgoingQueueWriter(client *sqs.Client) (<-chan error, error) {
 	ch, errch, err := sqschan.Outgoing(client, cfg.IRCOutgoingQueueName)
 	if err != nil {
 		return nil, err
@@ -164,11 +159,11 @@ func ircOutgoingHandler(client *sqs.Client) (<-chan error, error) {
 func StartIRCAdapter(client *sqs.Client) (chan error, error) {
 	errch := make(chan error, 0)
 
-	incerrch, err := ircIncomingHandler(client)
+	incerrch, err := StartIRCIncomingQueueReader(client)
 	if err != nil {
 		return nil, err
 	}
-	outerrch, err := ircOutgoingHandler(client)
+	outerrch, err := StartIRCOutgoingQueueWriter(client)
 	if err != nil {
 		return nil, err
 	}
@@ -184,7 +179,7 @@ func StartIRCAdapter(client *sqs.Client) (chan error, error) {
 		}
 	}()
 
-	autojoin()
+	AutoJoin()
 
 	return errch, nil
 }
@@ -205,21 +200,30 @@ func IRCMessageHandler(msg *ygor.Message) {
 	}
 }
 
-// Send an action message to a channel.
-func privAction(channel, msg string) {
+//
+// All the functions below are used as wrappers to send data to the IRC server.
+// They are convenience functions for ygor to speak.
+//
+
+// Send a message to a channel. Construct a PRIVMSG and send the raw client
+// line to the server (via SQS).
+func IRCPrivMsg(channel, msg string) {
+	lines := strings.Split(msg, "\n")
+	for i := 0; i < len(lines); i++ {
+		if lines[i] == "" {
+			continue
+		}
+		IRCOutgoing <- fmt.Sprintf("PRIVMSG %s :%s", channel, lines[i])
+	}
+}
+
+// Send an action message to a channel. This function is the equivalent of
+// using the /ME command in a normal IRC client.
+func IRCPrivAction(channel, msg string) {
 	IRCOutgoing <- fmt.Sprintf("PRIVMSG %s :\x01ACTION %s\x01", channel, msg)
 }
 
-func delayedPrivMsg(channel, msg string, waitTime time.Duration) {
-	time.Sleep(waitTime)
-	IRCPrivMsg(channel, msg)
-}
-
-func delayedPrivAction(channel, msg string, waitTime time.Duration) {
-	time.Sleep(waitTime)
-	privAction(channel, msg)
-}
-
+// Send a /JOIN command to the server.
 func JoinChannel(channel string) {
 	IRCOutgoing <- "JOIN " + channel
 }
@@ -233,7 +237,7 @@ func Debug(msg string) {
 }
 
 // Auto-join all the configured channels.
-func autojoin() {
+func AutoJoin() {
 	// Make test mode faster.
 	if cfg.TestMode {
 		time.Sleep(50 * time.Millisecond)

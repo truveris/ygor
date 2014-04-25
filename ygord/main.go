@@ -4,47 +4,14 @@
 package main
 
 import (
-	"errors"
 	"log"
 
-	"github.com/truveris/sqs"
 	"github.com/truveris/ygor"
 )
 
 var (
-	// All the normalized messages are pushed by the IO adapters, only the
-	// main loop reads from there.
-	InputQueue = make(chan *ygor.Message)
-
 	Aliases *ygor.AliasFile
 )
-
-// Start all the IO adapters (IRC, Stdin/Stdout, Minions, API, etc.)
-func StartAdapters() (<-chan error, <-chan error, error) {
-	if cfg.TestMode {
-		return StartStdioHandler()
-	}
-
-	client, err := sqs.NewClient(cfg.AWSAccessKeyId, cfg.AWSSecretAccessKey,
-		cfg.AWSRegionCode)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	ircerrch, err := StartIRCAdapter(client)
-	if err != nil {
-		return nil, nil, errors.New("error starting IRC adapter: " +
-			err.Error())
-	}
-
-	minionerrch, err := StartMinionAdapter(client)
-	if err != nil {
-		return nil, nil, errors.New("error starting minion adapter: " +
-			err.Error())
-	}
-
-	return ircerrch, minionerrch, nil
-}
 
 func main() {
 	ParseCommandLine()
@@ -54,13 +21,14 @@ func main() {
 		log.Fatal("config error: ", err.Error())
 	}
 
+	// We have a global alias file available to everyone. The alias module
+	// uses it, the irc io uses it to resolve aliases on PRIVMSGs.
 	Aliases, err = ygor.OpenAliasFile(cfg.AliasFilePath)
 	if err != nil {
 		log.Fatal("alias file error: ", err.Error())
 	}
 
 	log.Printf("registering modules")
-
 	RegisterModule(&AliasModule{})
 	RegisterModule(&ImageModule{})
 	RegisterModule(&RebootModule{})

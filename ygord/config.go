@@ -201,3 +201,19 @@ func ParseCommandLine() {
 		os.Exit(1)
 	}
 }
+
+// Return all the minions configured for that channel.
+func GetChannelMinions(channel string) []*ygor.Minion {
+	channelCfg, exists := cfg.Channels[channel]
+	if !exists {
+		Debug("error: " + channel + " has no queue(s) configured")
+		return nil
+	}
+
+	minions, err := channelCfg.GetMinions()
+	if err != nil {
+		Debug("error: GetChannelMinions: " + err.Error())
+	}
+
+	return minions
+}

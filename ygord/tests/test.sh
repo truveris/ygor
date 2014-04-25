@@ -45,8 +45,8 @@ test_line "minion user_id_1234567891 register pi2 https://nom.nom/super-train/jo
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: ping"
 cat > test.expected <<EOF
 [SQS-SendToMinion] https://nom.nom/super-train/bobert ping 1136239445000000000
-PRIVMSG #ygor :sent to pi1: ping 1136239445000000000
 [SQS-SendToMinion] https://nom.nom/super-train/jo ping 1136239445000000000
+PRIVMSG #ygor :sent to pi1: ping 1136239445000000000
 PRIVMSG #ygor :sent to pi2: ping 1136239445000000000
 EOF
 assert_output && pass
@@ -65,8 +65,8 @@ test_line "minion user_id_1234567891 register pi2 https://nom.nom/super-train/jo
 } | test_input
 cat > test.expected <<EOF
 [SQS-SendToMinion] https://nom.nom/super-train/bobert ping 1136239445000000000
-PRIVMSG #ygor :sent to pi1: ping 1136239445000000000
 [SQS-SendToMinion] https://nom.nom/super-train/jo ping 1136239445000000000
+PRIVMSG #ygor :sent to pi1: ping 1136239445000000000
 PRIVMSG #ygor :sent to pi2: ping 1136239445000000000
 PRIVMSG #ygor :pong: got old ping reponse (1136239945000000000)
 EOF
