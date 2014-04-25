@@ -91,7 +91,7 @@ func GetMinion(name string) (*Minion, error) {
 		}
 	}
 
-	return nil, errors.New("minion not found")
+	return nil, errors.New("minion not found: " + name)
 }
 
 func GetMinionByUserID(userID string) (*Minion, error) {

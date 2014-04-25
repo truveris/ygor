@@ -8,7 +8,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"strconv"
 	"time"
 
@@ -83,7 +82,6 @@ func (module *PingModule) PongCmdFunc(msg *ygor.Message) {
 		return
 	}
 
-	log.Printf("pst: %s", module.PingStartTimes)
 	start, ok := module.PingStartTimes[msg.UserID]
 	if !ok {
 		Debug("pong: unknown minion: " + msg.UserID)

@@ -30,16 +30,6 @@ const (
 	MaxRecursionLevel = 8
 )
 
-var (
-	// This is a default value, it can be changed with the SetAliasFilePath
-	// function.
-	aliasFilePath = "aliases.cfg"
-
-	// TODO: make this private at some point...
-	Aliases        = make(map[string]*Alias)
-	AliasesLastMod time.Time
-)
-
 // Generate a simple line for persistence, with new-line.
 func (alias *Alias) GetLine() string {
 	return fmt.Sprintf("%s\t%s\n", alias.Name, alias.Value)
@@ -63,14 +53,14 @@ func OpenAliasFile(filePath string) (*AliasFile, error) {
 // Check if the underlying file has been updated. It also returns false if we
 // can't read the file. XXX should return error instead.
 func (file *AliasFile) needsReload() bool {
-	si, err := os.Stat(aliasFilePath)
+	si, err := os.Stat(file.filePath)
 	if err != nil {
 		return false
 	}
 
 	// First update or the file was modified after the last update.
-	if AliasesLastMod.IsZero() || si.ModTime().After(AliasesLastMod) {
-		AliasesLastMod = si.ModTime()
+	if file.lastMod.IsZero() || si.ModTime().After(file.lastMod) {
+		file.lastMod = si.ModTime()
 		return true
 	}
 
@@ -117,7 +107,7 @@ func (file *AliasFile) Delete(name string) {
 // Save all the aliases to disk.
 func (file *AliasFile) Save() error {
 	// Maybe an easier way is to use ioutil.WriteFile
-	fp, err := os.OpenFile(aliasFilePath, os.O_TRUNC|os.O_WRONLY|os.O_CREATE, 0644)
+	fp, err := os.OpenFile(file.filePath, os.O_TRUNC|os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		return err
 	}

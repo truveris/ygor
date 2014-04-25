@@ -171,7 +171,7 @@ func main() {
 		log.Fatal("config error: ", err.Error())
 	}
 
-	log.Printf("%s ready", cfg.Name)
+	log.Printf("%s starting up", cfg.Name)
 
 	// This is the message box.
 	incoming := make(chan *sqs.Message)
