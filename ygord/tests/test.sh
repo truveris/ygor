@@ -106,15 +106,20 @@ test_line "minion user_id_1234567890 register pi1 https://nom.nom/super-train/bo
 test_line "minion user_id_1234567891 register pi2 https://nom.nom/super-train/jo"
 {
 	echo "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: ping"
-	sleep 0.5
+	sleep 0.2
 	echo "minion user_id_1234567890 pong 1136239445000000000"
+	sleep 0.2
+	echo "minion user_id_1234567891 pong 1136239445000000000"
 } | test_input
-tail -n 1 test.output \
-	| sed 's/[0-9]*h[0-9]*m[0-9.]*s/stuff/' \
-	> test.tmp
+sed 's/[0-9]*h[0-9]*m[0-9.]*s/timestamp/' test.output > test.tmp
 mv test.tmp test.output
 cat > test.expected <<EOF
-PRIVMSG #test :delay with pi1: stuff
+[SQS-SendToMinion] https://nom.nom/super-train/bobert ping 1136239445000000000
+[SQS-SendToMinion] https://nom.nom/super-train/jo ping 1136239445000000000
+PRIVMSG #ygor :sent to pi1: ping 1136239445000000000
+PRIVMSG #ygor :sent to pi2: ping 1136239445000000000
+PRIVMSG #test :delay with pi1: timestamp
+PRIVMSG #test :delay with pi2: timestamp
 EOF
 assert_output && pass
 cleanup
@@ -300,7 +305,7 @@ cleanup
 announce "say stuff (unknown minions)"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: say stuff"
 cat > test.expected <<EOF
-PRIVMSG #ygor :error: unable to load queue URLs, minion not found
+PRIVMSG #ygor :error: unable to load queue URLs, minion not found: pi1
 EOF
 assert_output && pass
 cleanup
@@ -373,9 +378,11 @@ assert_output && pass
 cleanup
 
 
+# This test is to make sure we don't catch words starting with stop...
 announce "stopwhining"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: stopwhining"
 cat > test.expected <<EOF
+PRIVMSG #test :command not found: stopwhining
 EOF
 assert_output && pass
 cleanup
@@ -392,6 +399,7 @@ cleanup
 announce "sshhhh privately (not owner)"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG whygore :whygore: sshhhh"
 cat > test.expected <<EOF
+PRIVMSG jimmy :command not found: sshhhh
 EOF
 assert_output && pass
 cleanup

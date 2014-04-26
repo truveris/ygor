@@ -12,3 +12,4 @@
  - play youtube
  - Look for 403 forbidden when caching.
  - aliases should take an argument to filter results
+ - differentiate "command not found" and "access denied"-type issues.
