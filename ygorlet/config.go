@@ -35,7 +35,7 @@ type Cfg struct {
 	// external systems (e.g. SQS and will print everything to stdout).
 	// Additionally, all delays are reduced to a minimum to speed up the
 	// test suite.
-	Test bool
+	TestMode bool
 
 	// Points to the filepath of the xxxterm/xombrero socket.
 	XombreroSocket string

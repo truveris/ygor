@@ -86,7 +86,7 @@ func mplayerErrorHandler(err error) {
 
 func mplayerPlayAndWaitWithDuration(filepath string, duration time.Duration) {
 	log.Printf("play: play with duration (%s)", duration)
-	if cfg.Test {
+	if cfg.TestMode {
 		return
 	}
 	mplayer.PlayAndWaitWithDuration(filepath, duration)
@@ -94,7 +94,7 @@ func mplayerPlayAndWaitWithDuration(filepath string, duration time.Duration) {
 
 func mplayerPlayAndWait(filepath string) {
 	log.Printf("play: play full")
-	if cfg.Test {
+	if cfg.TestMode {
 		return
 	}
 	mplayer.PlayAndWait(filepath)
@@ -102,7 +102,7 @@ func mplayerPlayAndWait(filepath string) {
 
 func omxplayer(filepath string) *exec.Cmd {
 	log.Printf("play: spawn omxplayer")
-	if cfg.Test {
+	if cfg.TestMode {
 		return exec.Command("echo", filepath)
 	}
 

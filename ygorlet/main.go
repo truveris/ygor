@@ -121,7 +121,7 @@ func SplitBody(body string) (string, string) {
 // XXX: replace this by an sqschan
 func SendToSoul(message string) error {
 	log.Printf("sending to soul: %s", message)
-	if cfg.Test {
+	if cfg.TestMode {
 		return nil
 	}
 
@@ -175,7 +175,7 @@ func main() {
 
 	// This is the message box.
 	incoming := make(chan *sqs.Message)
-	if cfg.Test {
+	if cfg.TestMode {
 		err := StartReceivingFromStdin(incoming)
 		if err != nil {
 			log.Fatal(err)
@@ -189,7 +189,7 @@ func main() {
 
 	go playNoise(NoiseInbox)
 
-	if !cfg.Test {
+	if !cfg.TestMode {
 		mplayer.StartSlave(mplayerErrorHandler)
 	}
 

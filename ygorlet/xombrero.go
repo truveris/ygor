@@ -10,7 +10,7 @@ import (
 
 // Send a message to xombrero via its unix socket.
 func Xombrero(data string) {
-	if cfg.Test {
+	if cfg.TestMode {
 		log.Printf("xombrero: %s", data)
 		return
 	}
