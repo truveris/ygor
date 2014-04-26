@@ -2,7 +2,7 @@
 	"Name": "bobert-von-cheesecake",
 
 	"QueueName": "bobert-von-cheesecake",
-	"SoulQueueName": "ygord",
+	"YgordQueueName": "ygord",
 
 	"AWSRegionCode": "us-east-1",
 	"AWSAccessKeyId": "AAAAAAAAAAAAAAAAAAAA",

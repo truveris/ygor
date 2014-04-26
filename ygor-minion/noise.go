@@ -99,7 +99,7 @@ func Play(data string) {
 	if len(tokens) > 1 {
 		duration, err := time.ParseDuration(tokens[1])
 		if err != nil {
-			SendToSoul("play error invalid duration: " + err.Error())
+			Send("play error invalid duration: " + err.Error())
 			return
 		}
 		tune.Duration = duration

@@ -17,11 +17,11 @@ func Xombrero(data string) {
 
 	conn, err := net.Dial("unix", cfg.XombreroSocket)
 	if err != nil {
-		SendToSoul("xombrero error " + err.Error())
+		Send("xombrero error " + err.Error())
 		log.Printf("xombrero: unable to connect to %s", err.Error())
 		return
 	}
 	fmt.Fprintf(conn, "%s\x00", data)
 	conn.Close()
-	SendToSoul("xombrero ok")
+	Send("xombrero ok")
 }

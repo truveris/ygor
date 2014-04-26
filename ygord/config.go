@@ -24,8 +24,7 @@ type Cfg struct {
 	// AWS Region to use for SQS access (e.g. us-east-1).
 	AWSRegionCode string
 
-	// Credentials used to write to the minion queues and read from the
-	// soul queue.
+	// AWS credentials (used to access ygord and minion queues).
 	AWSAccessKeyId     string
 	AWSSecretAccessKey string
 
@@ -35,12 +34,11 @@ type Cfg struct {
 	// test suite.
 	TestMode bool
 
-	// All the configured channels. The soul will JOIN every single one of
-	// them and will push minion commands to the configured associated
-	// minion.
+	// All the configured channels. ygord will JOIN every single one of
+	// them and will push commands to the configured associated minions.
 	Channels map[string]ChannelCfg
 
-	// Queue used by the soul to receive feedback from the minions.
+	// Queue used by ygord to receive feedback from the minions.
 	QueueName string
 
 	// IRC Queues
@@ -190,8 +188,7 @@ func GetChannelsByMinionName(name string) []string {
 	return channels
 }
 
-// Parse the command line arguments and return the soul program's path/name
-// (only argument).
+// Parse the command line arguments and populate the global cmd struct.
 func ParseCommandLine() {
 	flagParser := flags.NewParser(&cmd, flags.PassDoubleDash)
 	_, err := flagParser.Parse()

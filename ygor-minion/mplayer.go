@@ -18,9 +18,9 @@ import (
 )
 
 const (
-	// This is the maximum file size the minion will keep a local cache of.
-	// Anything above this limit will be played directly from the remote
-	// location.
+	// This is the maximum file size this minion will keep a local cache
+	// of. Anything above this limit will be played directly from the
+	// remote location.
 	MaxCacheableSize = 2 * 1024 * 1024
 )
 
@@ -81,7 +81,7 @@ func downloadFile(url, filepath string) error {
 }
 
 func mplayerErrorHandler(err error) {
-	SendToSoul("play error: " + err.Error())
+	Send("play error: " + err.Error())
 }
 
 func mplayerPlayAndWaitWithDuration(filepath string, duration time.Duration) {
@@ -133,11 +133,11 @@ func player(tune Noise) *exec.Cmd {
 			filepath = "tunes/" + MD5(tune.Path)
 			file, err := os.Open(filepath)
 			if err != nil {
-				SendToSoul("play caching start")
+				Send("play caching start")
 				log.Printf("play: attempting to cache file...")
 				err = downloadFile(tune.Path, filepath)
 				if err != nil {
-					SendToSoul("play caching error")
+					Send("play caching error")
 					log.Printf("play: download error:"+
 						" %s", err.Error())
 					return nil
@@ -149,12 +149,12 @@ func player(tune Noise) *exec.Cmd {
 		// This path dance should avoid abuses.
 		folder, filename := path.Split(tune.Path)
 		if folder == "" {
-			SendToSoul("play error path should contain a folder")
+			Send("play error path should contain a folder")
 			return nil
 		}
 		filepath = path.Join(path.Base(folder), filename)
 		if _, err := os.Stat(filepath); err != nil {
-			SendToSoul("play error file not found: " + filepath)
+			Send("play error file not found: " + filepath)
 			return nil
 		}
 	}

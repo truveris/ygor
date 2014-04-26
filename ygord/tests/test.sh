@@ -127,24 +127,24 @@ cleanup
 
 
 announce "play"
-test_line "minion user_id_123123123 register pi2 http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion-pi2"
-test_line "minion user_id_234234234 register pi1 http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion-pi1"
+test_line "minion user_id_123123123 register pi2 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2"
+test_line "minion user_id_234234234 register pi1 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: play stuff.ogg"
 cat > test.expected <<EOF
-[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion-pi1 play stuff.ogg
-[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion-pi2 play stuff.ogg
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1 play stuff.ogg
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2 play stuff.ogg
 EOF
 assert_output && pass
 cleanup
 
 
 announce "play w/ duration"
-test_line "minion user_id_123123123 register pi2 http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion-pi2"
-test_line "minion user_id_234234234 register pi1 http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion-pi1"
+test_line "minion user_id_123123123 register pi2 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2"
+test_line "minion user_id_234234234 register pi1 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: play stuff.ogg 5s"
 cat > test.expected <<EOF
-[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion-pi1 play stuff.ogg 5s
-[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion-pi2 play stuff.ogg 5s
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1 play stuff.ogg 5s
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2 play stuff.ogg 5s
 EOF
 assert_output && pass
 cleanup
@@ -312,7 +312,7 @@ assert_output && pass
 cleanup
 
 
-announce "bad minions file (wrong param count)"
+announce "bad roster file (wrong param count)"
 echo "123	123	123" > minions.cfg
 test_line "minion user_id_123123123 register pi2 http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion-pi2"
 cat > test.expected <<EOF
@@ -322,9 +322,9 @@ assert_output && pass
 cleanup
 
 
-announce "bad minions file (bad timestamp)"
+announce "bad roster file (bad timestamp)"
 echo "123	123	123	qwe" > minions.cfg
-test_line "minion user_id_234234234 register pi2 http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion-pi2"
+test_line "minion user_id_234234234 register pi2 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2"
 cat > test.expected <<EOF
 PRIVMSG #ygor :register: error: minion line has an invalid timestamp
 EOF
@@ -333,12 +333,12 @@ cleanup
 
 
 announce "say stuff"
-test_line "minion user_id_123123123 register pi2 http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion-pi2"
-test_line "minion user_id_234234234 register pi1 http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion-pi1"
+test_line "minion user_id_123123123 register pi2 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2"
+test_line "minion user_id_234234234 register pi1 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: say stuff"
 cat > test.expected <<EOF
-[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion-pi1 say stuff
-[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion-pi2 say stuff
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1 say stuff
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2 say stuff
 EOF
 assert_output && pass
 cleanup
@@ -354,25 +354,25 @@ cleanup
 
 
 announce "use alias"
-test_line "minion user_id_234234234 register pi1 http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion-pi1"
-test_line "minion user_id_123123123 register pi2 http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion-pi2"
+test_line "minion user_id_234234234 register pi1 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1"
+test_line "minion user_id_123123123 register pi2 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias 60% play stuff"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: 60%"
 cat > test.expected <<EOF
-[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion-pi1 play stuff
-[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion-pi2 play stuff
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1 play stuff
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2 play stuff
 EOF
 assert_output && pass
 cleanup
 
 
 announce "sshhhh"
-test_line "minion user_id_234234234 register pi1 http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion-pi1"
-test_line "minion user_id_123123123 register pi2 http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion-pi2"
+test_line "minion user_id_234234234 register pi1 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1"
+test_line "minion user_id_123123123 register pi2 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: sshhhh"
 cat > test.expected <<EOF
-[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion-pi1 shutup
-[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion-pi2 shutup
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1 shutup
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2 shutup
 PRIVMSG #test :ok...
 EOF
 assert_output && pass
@@ -407,24 +407,24 @@ cleanup
 
 
 announce "image"
-test_line "minion user_id_234234234 register pi1 http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion-pi1"
-test_line "minion user_id_123123123 register pi2 http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion-pi2"
+test_line "minion user_id_234234234 register pi1 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1"
+test_line "minion user_id_123123123 register pi2 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: image http://imgur.com/stuff"
 cat > test.expected <<EOF
-[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion-pi1 xombrero open http://truveris.github.io/fullscreen-image/?http://imgur.com/stuff
-[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion-pi2 xombrero open http://truveris.github.io/fullscreen-image/?http://imgur.com/stuff
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1 xombrero open http://truveris.github.io/fullscreen-image/?http://imgur.com/stuff
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2 xombrero open http://truveris.github.io/fullscreen-image/?http://imgur.com/stuff
 EOF
 assert_output && pass
 cleanup
 
 
 announce "xombrero"
-test_line "minion user_id_234234234 register pi1 http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion-pi1"
-test_line "minion user_id_123123123 register pi2 http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion-pi2"
+test_line "minion user_id_234234234 register pi1 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1"
+test_line "minion user_id_123123123 register pi2 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: xombrero open http://www.truveris.com/"
 cat > test.expected <<EOF
-[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion-pi1 xombrero open http://www.truveris.com/
-[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion-pi2 xombrero open http://www.truveris.com/
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1 xombrero open http://www.truveris.com/
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2 xombrero open http://www.truveris.com/
 EOF
 assert_output && pass
 cleanup
@@ -453,12 +453,12 @@ cleanup
 
 
 announce "reboot"
-test_line "minion user_id_234234234 register pi1 http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion-pi1"
-test_line "minion user_id_123123123 register pi2 http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion-pi2"
+test_line "minion user_id_234234234 register pi1 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1"
+test_line "minion user_id_123123123 register pi2 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: reboot"
 cat > test.expected <<EOF
-[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion-pi1 reboot
-[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion-pi2 reboot
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1 reboot
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2 reboot
 PRIVMSG #test :attempting to reboot #test minions...
 EOF
 assert_output && pass

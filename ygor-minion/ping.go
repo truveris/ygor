@@ -4,5 +4,5 @@ package main
 
 // Send the pong message back t
 func Ping(timestamp string) {
-	SendToSoul("pong " + timestamp)
+	Send("pong " + timestamp)
 }

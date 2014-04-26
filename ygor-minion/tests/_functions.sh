@@ -100,11 +100,11 @@ cmd() {
 	sleep 0.1
 }
 
-# Pipe a command to ygorlet.
+# Pipe a command to ygor-minion.
 # $1 command
 test_command() {
 	cmd "$@" \
-		| ../ygorlet -c config.json \
+		| ../ygor-minion -c config.json \
 		2>&1 \
 		| remove_timestamp \
 		> test.output

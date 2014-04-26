@@ -12,20 +12,21 @@ import (
 )
 
 type Cmd struct {
-	ConfigFile string `short:"c" description:"Configuration file" default:"/etc/ygorlet.conf"`
+	ConfigFile string `short:"c" description:"Configuration file" default:"/etc/ygor-minion.conf"`
 }
 
 type Cfg struct {
 	AWSAccessKeyId     string
 	AWSSecretAccessKey string
 
+	// Name of the minion.
 	Name string
 
-	// Name of the minion.
+	// Name of the queue used to receive commands.
 	QueueName string
 
-	// Defines the queue URL for the soul, used to send feedback.
-	SoulQueueName string
+	// Defines the feedback queue URL (communicate back to ygord).
+	YgordQueueName string
 
 	// Region code as found in the AWS API doc (http://goo.gl/Z7KvW), for
 	// example: us-east-1.
@@ -67,8 +68,8 @@ func parseConfigFile() error {
 		return errors.New("\"QueueName\" is required")
 	}
 
-	if cfg.SoulQueueName == "" {
-		return errors.New("\"SoulQueueName\" is required")
+	if cfg.YgordQueueName == "" {
+		return errors.New("\"YgordQueueName\" is required")
 	}
 
 	if cfg.AWSAccessKeyId == "" {
@@ -86,8 +87,7 @@ func parseConfigFile() error {
 	return nil
 }
 
-// Parse the command line arguments and return the soul program's path/name
-// (only argument).
+// Parse the command line arguments and populate the cmd global.
 func parseCommandLine() {
 	flagParser := flags.NewParser(&cmd, flags.PassDoubleDash)
 	_, err := flagParser.Parse()

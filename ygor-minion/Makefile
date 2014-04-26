@@ -1,10 +1,10 @@
-all: ygorlet
+all: ygor-minion
 
-ygorlet:
+ygor-minion:
 	go build
 
 test:
 	cd tests && make test
 
 clean:
-	rm -f ygorlet
+	rm -f ygor-minion
