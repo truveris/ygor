@@ -8,6 +8,6 @@
 	"AWSAccessKeyId": "AAAAAAAAAAAAAAAAAAAA",
 	"AWSSecretAccessKey": "////////////////////////////////////////",
 
-	"Test": true
+	"TestMode": true
 }
 
