@@ -110,6 +110,7 @@ test_line "minion user_id_1234567891 register pi2 https://nom.nom/super-train/jo
 	echo "minion user_id_1234567890 pong 1136239445000000000"
 	sleep 0.2
 	echo "minion user_id_1234567891 pong 1136239445000000000"
+	sleep 0.2
 } | test_input
 sed 's/[0-9]*h[0-9]*m[0-9.]*s/timestamp/' test.output > test.tmp
 mv test.tmp test.output
