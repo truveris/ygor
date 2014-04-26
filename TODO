@@ -1,9 +1,7 @@
 # TODO
 
  - make AliasFile thread safe.
- - clean-up post-move... too many go routines... bad error handling in ygorlet...
  - Remember the user id and refuse all messages for this minion.
- - define the alias and minions file path in the configuration file.
  - run a routine to check the validity of the URL before sending it to the
    minion.
  - Validate the configuration (e.g. minion name should be [a-z0-9]+..)
@@ -13,3 +11,4 @@
  - play random image or sound
  - play youtube
  - Look for 403 forbidden when caching.
+ - aliases should take an argument to filter results

@@ -35,7 +35,7 @@ func NewMessageFromPrivMsg(privmsg *ygor.PrivMsg) *ygor.Message {
 		msg.Type = ygor.MsgTypeIRCPrivate
 	} else {
 		// Channel messages have to be prefixes with the bot's nick.
-		if !privmsg.Addressed {
+		if !privmsg.Addressed && !privmsg.Direct {
 			return nil
 		}
 		msg.Type = ygor.MsgTypeIRCChannel
@@ -191,13 +191,17 @@ func IRCMessageHandler(msg *ygor.Message) {
 		}
 
 		if cmd.PrivMsgFunction == nil {
-			Debug("unhandled IRC message: " + msg.Body)
+			log.Printf("misconfigured command: %s (no PrivMsg)",
+				cmd.Name)
 			continue
 		}
 
 		cmd.PrivMsgFunction(msg)
-		break
+		return
 	}
+
+	// If we got that far, we didn't find a command.
+	IRCPrivMsg(msg.ReplyTo, "command not found: " + msg.Command)
 }
 
 //

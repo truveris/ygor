@@ -19,6 +19,33 @@ assert_output && pass
 cleanup
 
 
+announce "unhandled command (channel)"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: wtf"
+cat > test.expected <<EOF
+PRIVMSG #test :command not found: wtf
+EOF
+assert_output && pass
+cleanup
+
+
+announce "unhandled command (private prefixed)"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG whygore :whygore: wtf"
+cat > test.expected <<EOF
+PRIVMSG jimmy :command not found: wtf
+EOF
+assert_output && pass
+cleanup
+
+
+announce "unhandled command (private no prefix)"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG whygore :wtf"
+cat > test.expected <<EOF
+PRIVMSG jimmy :command not found: wtf
+EOF
+assert_output && pass
+cleanup
+
+
 announce "minion registration"
 test_line "minion user_id_0123456789 register bobert-von-cheesecake https://nom.nom/super-train/"
 cat > test.expected <<EOF
