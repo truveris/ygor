@@ -189,7 +189,9 @@ func main() {
 
 	go playNoise(NoiseInbox)
 
-	mplayer.StartSlave(mplayerErrorHandler)
+	if !cfg.Test {
+		mplayer.StartSlave(mplayerErrorHandler)
+	}
 
 	for msg := range incoming {
 		command, data := SplitBody(msg.Body)
