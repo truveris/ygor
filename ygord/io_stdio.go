@@ -11,9 +11,12 @@ package main
 
 import (
 	"bufio"
+	"io"
 	"log"
 	"os"
 	"strings"
+
+	"github.com/truveris/ygor"
 )
 
 // This is used for debugging and local tests.
@@ -47,8 +50,14 @@ func ReadAllInputFromStdin(errch chan error) {
 	for {
 		line, err := br.ReadString('\n')
 		if err != nil {
-			log.Printf("terminating: " + err.Error())
-			os.Exit(0)
+			var msg *ygor.Message
+			if err == io.EOF {
+				msg = ygor.NewExitMessage(err.Error())
+			} else {
+				msg = ygor.NewFatalMessage(err.Error())
+			}
+			InputQueue <- msg
+			continue
 		}
 		line = strings.TrimSpace(line)
 

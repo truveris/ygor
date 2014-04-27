@@ -15,6 +15,8 @@ const (
 	MsgTypeIRCPrivate MsgType = iota
 	MsgTypeAPI        MsgType = iota
 	MsgTypeMinion     MsgType = iota
+	MsgTypeExit       MsgType = iota
+	MsgTypeFatal      MsgType = iota
 )
 
 type Message struct {
@@ -31,5 +33,19 @@ type Message struct {
 func NewMessage() *Message {
 	msg := &Message{}
 	msg.Type = MsgTypeUnknown
+	return msg
+}
+
+func NewExitMessage(body string) *Message {
+	msg := NewMessage()
+	msg.Type = MsgTypeExit
+	msg.Body = body
+	return msg
+}
+
+func NewFatalMessage(body string) *Message {
+	msg := NewMessage()
+	msg.Type = MsgTypeFatal
+	msg.Body = body
 	return msg
 }

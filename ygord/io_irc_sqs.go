@@ -201,7 +201,7 @@ func IRCMessageHandler(msg *ygor.Message) {
 	}
 
 	// If we got that far, we didn't find a command.
-	IRCPrivMsg(msg.ReplyTo, "command not found: " + msg.Command)
+	IRCPrivMsg(msg.ReplyTo, "command not found: "+msg.Command)
 }
 
 //

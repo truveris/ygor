@@ -5,6 +5,7 @@ package main
 
 import (
 	"log"
+	"os"
 
 	"github.com/truveris/ygor"
 )
@@ -60,6 +61,11 @@ func main() {
 				IRCMessageHandler(msg)
 			case ygor.MsgTypeMinion:
 				MinionMessageHandler(msg)
+			case ygor.MsgTypeExit:
+				log.Printf("terminating: %s", msg.Body)
+				os.Exit(0)
+			case ygor.MsgTypeFatal:
+				log.Fatal("fatal error: " + msg.Body)
 			default:
 				log.Printf("msg handler error: un-handled type"+
 					" '%d'", msg.Type)
