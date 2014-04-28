@@ -169,6 +169,12 @@ func ParseConfigFile() error {
 		cfg.AliasFilePath = "aliases.cfg"
 	}
 
+	if cfg.MinionsFilePath == "" {
+		cfg.MinionsFilePath = "minions.cfg"
+	}
+
+	ygor.SetMinionsFilePath(cfg.MinionsFilePath)
+
 	return nil
 }
 
@@ -176,10 +182,10 @@ func ParseConfigFile() error {
 func GetChannelsByMinionName(name string) []string {
 	channels := make([]string, 0)
 
-	for name, channelCfg := range cfg.Channels {
+	for channelName, channelCfg := range cfg.Channels {
 		for _, minionName := range channelCfg.Minions {
 			if minionName == name {
-				channels = append(channels, name)
+				channels = append(channels, channelName)
 				break
 			}
 		}

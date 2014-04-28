@@ -63,10 +63,6 @@ func (module *MinionsModule) RegisterMinionMsgFunc(msg *ygor.Message) {
 }
 
 func (module *MinionsModule) Init() {
-	if cfg.MinionsFilePath != "" {
-		ygor.SetMinionsFilePath(cfg.MinionsFilePath)
-	}
-
 	ygor.RegisterCommand(ygor.Command{
 		Name:              "register",
 		PrivMsgFunction:   module.RegisterPrivMsgFunc,

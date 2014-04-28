@@ -4,7 +4,7 @@
 package main
 
 import (
-	//	"fmt"
+	"fmt"
 	"strings"
 
 	"github.com/truveris/ygor"
@@ -32,24 +32,30 @@ func (module XombreroModule) WebPrivMsg(msg *ygor.Message) {
 	SendToChannelMinions(msg.ReplyTo, "xombrero open "+msg.Args[0])
 }
 
-// func (module XombreroModule) MinionMsg(msg *ygor.MinionMsg) {
-// 	if msg.Args[0] == "ok" {
-// 		channels := GetChannelsByMinionName(msg.Name)
-// 		for _, channel := range channels {
-// 			s := fmt.Sprintf("%s: %s", msg.Name, okWord())
-// 			IRCPrivMsg(channel, s)
-// 		}
-// 	}
-// }
+func (module XombreroModule) MinionMsg(msg *ygor.Message) {
+	if msg.Args[0] != "ok" {
+		minion, err := ygor.GetMinionByUserID(msg.UserID)
+		if err != nil {
+			Debug(fmt.Sprintf("xombrero: can't find minion for %s",
+				msg.UserID))
+			return
+		}
+		channels := GetChannelsByMinionName(minion.Name)
+		for _, channel := range channels {
+			s := fmt.Sprintf("xombrero@%s: %s", minion.Name, strings.Join(msg.Args, " "))
+			IRCPrivMsg(channel, s)
+		}
+	}
+}
 
 func (module XombreroModule) Init() {
 	ygor.RegisterCommand(ygor.Command{
-		Name:            "xombrero",
-		PrivMsgFunction: module.PrivMsg,
-		// MinionMsgFunction: module.MinionMsg,
-		Addressed:    true,
-		AllowPrivate: false,
-		AllowChannel: true,
+		Name:              "xombrero",
+		PrivMsgFunction:   module.PrivMsg,
+		MinionMsgFunction: module.MinionMsg,
+		Addressed:         true,
+		AllowPrivate:      false,
+		AllowChannel:      true,
 	})
 
 	ygor.RegisterCommand(ygor.Command{

@@ -169,14 +169,14 @@ cleanup
 
 
 announce "set a new alias (permission error)"
-touch aliases.cfg
-chmod 000 aliases.cfg
+touch test.aliases
+chmod 000 test.aliases
 test_line_error "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play stuff.ogg"
 cat > test.expected <<EOF
 EOF
 assert_output
 cat > test.expected <<EOF
-alias file error: open aliases.cfg: permission denied
+alias file error: open test.aliases: permission denied
 EOF
 sed 's/^....................//' test.stderr > test.tmp
 mv test.tmp test.stderr
@@ -272,7 +272,7 @@ cleanup
 
 
 announce "unalias usage"
-rm -f aliases.cfg
+rm -f test.aliases
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: unalias"
 cat > test.expected <<EOF
 PRIVMSG #test :usage: unalias name
@@ -281,7 +281,7 @@ assert_output && pass
 
 
 announce "try to delete a non-existing alias"
-rm -f aliases.cfg
+rm -f test.aliases
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias notblabla play stuff.ogg"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: unalias blabla"
 cat > test.expected <<EOF
@@ -291,7 +291,7 @@ assert_output && pass
 
 
 announce "delete an existing alias"
-rm -f aliases.cfg
+rm -f test.aliases
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play stuff.ogg"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: unalias blabla"
 # make sure it has really gone
@@ -313,7 +313,7 @@ cleanup
 
 
 announce "bad roster file (wrong param count)"
-echo "123	123	123" > minions.cfg
+echo "123	123	123" > test.roster
 test_line "minion user_id_123123123 register pi2 http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion-pi2"
 cat > test.expected <<EOF
 PRIVMSG #ygor :register: error: minion line is missing parameters
@@ -323,7 +323,7 @@ cleanup
 
 
 announce "bad roster file (bad timestamp)"
-echo "123	123	123	qwe" > minions.cfg
+echo "123	123	123	qwe" > test.roster
 test_line "minion user_id_234234234 register pi2 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2"
 cat > test.expected <<EOF
 PRIVMSG #ygor :register: error: minion line has an invalid timestamp
@@ -435,18 +435,28 @@ test_line "minion user_id_1234567890 register pi1 https://nom.nom/super-train/bo
 test_line "minion user_id_1234567891 register pi2 https://nom.nom/super-train/jo"
 test_line "minion user_id_1234567890 xombrero ok"
 cat > test.expected <<EOF
-PRIVMSG #ygor :unhandled minion message: xombrero ok
 EOF
 assert_output && pass
 cleanup
 
 
-announce "xombrero error"
+announce "xombrero error (known minion)"
 test_line "minion user_id_1234567890 register pi1 https://nom.nom/super-train/bobert"
 test_line "minion user_id_1234567891 register pi2 https://nom.nom/super-train/jo"
 test_line "minion user_id_1234567890 xombrero error stuff"
 cat > test.expected <<EOF
-PRIVMSG #ygor :unhandled minion message: xombrero error stuff
+PRIVMSG #test :xombrero@pi1: error stuff
+EOF
+assert_output && pass
+cleanup
+
+
+announce "xombrero error (unknown minion)"
+test_line "minion user_id_1234567890 register pi1 https://nom.nom/super-train/bobert"
+test_line "minion user_id_1234567891 register pi2 https://nom.nom/super-train/jo"
+test_line "minion user_id_1234567892 xombrero error stuff"
+cat > test.expected <<EOF
+PRIVMSG #ygor :xombrero: can't find minion for user_id_1234567892
 EOF
 assert_output && pass
 cleanup

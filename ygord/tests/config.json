@@ -13,6 +13,10 @@
 	"IRCIncomingQueueName": "ygor-irc-incoming",
 	"IRCOutgoingQueueName": "ygor-irc-outgoing",
 	"QueueName": "ygord-incoming",
+
+	"AliasFilePath": "test.aliases",
+	"MinionsFilePath": "test.roster",
+
 	"TestMode": true
 }
 
