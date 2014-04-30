@@ -194,6 +194,19 @@ assert_output && pass
 cleanup
 
 
+announce "set an alias with a colon"
+test_line "minion user_id_123123123 register pi2 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2"
+test_line "minion user_id_234234234 register pi1 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias :) play stuff.ogg"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: :)"
+cat > test.expected <<EOF
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1 play stuff.ogg
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2 play stuff.ogg
+EOF
+assert_output && pass
+cleanup
+
+
 announce "change this alias"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play stuff.ogg"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play things.ogg"
