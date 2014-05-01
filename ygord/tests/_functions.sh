@@ -33,6 +33,14 @@ cleanup() {
 		test.expected test.aliases
 }
 
+# Remove the header timestamp added by the Go log module.
+# $1 - filename to cleanup
+remove_timestamp() {
+	tmpfile=`mktemp test.XXXXXX`
+	sed 's@^..../../.. ..:..:.. @@' $1 > $tmpfile
+	mv $tmpfile $1
+}
+
 # $1 - file to test, typically test.stdout or test.stderr
 assert_generic() {
 	if diff $1 test.expected > test.diff; then
@@ -105,6 +113,7 @@ test_input() {
 	if [ "$?" != 0 ]; then
 		fail "wrong return code (check test.stderr)"
 	fi
+	remove_timestamp test.stderr
 }
 
 # Pass a line to ygord waiting a little bit before and after.
@@ -121,6 +130,7 @@ test_input_error() {
 	if [ "$?" = 0 ]; then
 		fail "wrong return code (expected an error)"
 	fi
+	remove_timestamp test.stderr
 }
 
 

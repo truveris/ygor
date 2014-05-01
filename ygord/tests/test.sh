@@ -174,12 +174,10 @@ chmod 000 test.aliases
 test_line_error "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play stuff.ogg"
 cat > test.expected <<EOF
 EOF
-assert_output
+assert_output || fail
 cat > test.expected <<EOF
 alias file error: open test.aliases: permission denied
 EOF
-sed 's/^....................//' test.stderr > test.tmp
-mv test.tmp test.stderr
 assert_stderr && pass
 cleanup
 
@@ -327,21 +325,27 @@ cleanup
 
 announce "bad roster file (wrong param count)"
 echo "123	123	123" > test.roster
-test_line "minion user_id_123123123 register pi2 http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion-pi2"
+test_line_error "minion user_id_123123123 register pi2 http://sqs.us-east-1.amazonaws.com/000000000000/ygor-minion-pi2"
 cat > test.expected <<EOF
-PRIVMSG #ygor :register: error: minion line is missing parameters
 EOF
-assert_output && pass
+assert_output || fail
+cat > test.expected <<EOF
+minions file error: minion line is missing parameters
+EOF
+assert_stderr && pass
 cleanup
 
 
 announce "bad roster file (bad timestamp)"
 echo "123	123	123	qwe" > test.roster
-test_line "minion user_id_234234234 register pi2 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2"
+test_line_error "minion user_id_234234234 register pi2 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2"
 cat > test.expected <<EOF
-PRIVMSG #ygor :register: error: minion line has an invalid timestamp
 EOF
-assert_output && pass
+assert_output || fail
+cat > test.expected <<EOF
+minions file error: minion line has an invalid timestamp
+EOF
+assert_stderr && pass
 cleanup
 
 

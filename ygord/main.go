@@ -12,6 +12,7 @@ import (
 
 var (
 	Aliases *ygor.AliasFile
+	Minions *ygor.MinionsFile
 )
 
 func main() {
@@ -22,11 +23,16 @@ func main() {
 		log.Fatal("config error: ", err.Error())
 	}
 
-	// We have a global alias file available to everyone. The alias module
-	// uses it, the irc io uses it to resolve aliases on PRIVMSGs.
+	// We have global alias and minions files available to everyone. The
+	// alias module and irc io adapter use aliases and everything uses minions.
 	Aliases, err = ygor.OpenAliasFile(cfg.AliasFilePath)
 	if err != nil {
 		log.Fatal("alias file error: ", err.Error())
+	}
+
+	Minions, err = ygor.OpenMinionsFile(cfg.MinionsFilePath)
+	if err != nil {
+		log.Fatal("minions file error: ", err.Error())
 	}
 
 	log.Printf("registering modules")

@@ -88,7 +88,7 @@ func (channelCfg *ChannelCfg) GetMinions() ([]*ygor.Minion, error) {
 	minions := make([]*ygor.Minion, 0)
 
 	for _, name := range channelCfg.Minions {
-		minion, err := ygor.GetMinion(name)
+		minion, err := Minions.Get(name)
 		if err != nil {
 			return nil, err
 		}
@@ -172,8 +172,6 @@ func ParseConfigFile() error {
 	if cfg.MinionsFilePath == "" {
 		cfg.MinionsFilePath = "minions.cfg"
 	}
-
-	ygor.SetMinionsFilePath(cfg.MinionsFilePath)
 
 	return nil
 }

@@ -1,5 +1,8 @@
 // Copyright 2014, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
+//
+// This file contains all the tools to handle the aliases registry.
+//
 
 package ygor
 
@@ -15,7 +18,7 @@ import (
 // Wrapper around your alias file, it abstracts the serialization of aliases
 // and keeps an in-memory cache to avoid frequent reads.
 type AliasFile struct {
-	filePath string
+	path string
 	cache    map[string]*Alias
 	lastMod  time.Time
 }
@@ -41,8 +44,8 @@ func (alias *Alias) SplitValue() (string, []string) {
 }
 
 // Create and return a wrapper around the file-system storage for aliases.
-func OpenAliasFile(filePath string) (*AliasFile, error) {
-	file := &AliasFile{filePath: filePath}
+func OpenAliasFile(path string) (*AliasFile, error) {
+	file := &AliasFile{path: path}
 	err := file.reload()
 	if err != nil {
 		return nil, err
@@ -53,7 +56,7 @@ func OpenAliasFile(filePath string) (*AliasFile, error) {
 // Check if the underlying file has been updated. It also returns false if we
 // can't read the file. XXX should return error instead.
 func (file *AliasFile) needsReload() bool {
-	si, err := os.Stat(file.filePath)
+	si, err := os.Stat(file.path)
 	if err != nil {
 		return false
 	}
@@ -107,7 +110,7 @@ func (file *AliasFile) Delete(name string) {
 // Save all the aliases to disk.
 func (file *AliasFile) Save() error {
 	// Maybe an easier way is to use ioutil.WriteFile
-	fp, err := os.OpenFile(file.filePath, os.O_TRUNC|os.O_WRONLY|os.O_CREATE, 0644)
+	fp, err := os.OpenFile(file.path, os.O_TRUNC|os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		return err
 	}
@@ -132,10 +135,10 @@ func (file *AliasFile) reload() error {
 	// It's acceptable for the file not to exist at this point, we just
 	// need to create it. Attempting to create it at this points allows us
 	// to know early on whether the filesystem allows us to do so.
-	fp, err := os.Open(file.filePath)
+	fp, err := os.Open(file.path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			fp, err = os.Create(file.filePath)
+			fp, err = os.Create(file.path)
 			if err != nil {
 				return err
 			}
@@ -145,6 +148,7 @@ func (file *AliasFile) reload() error {
 			return err
 		}
 	}
+	defer fp.Close()
 
 	br := bufio.NewReader(fp)
 

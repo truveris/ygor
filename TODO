@@ -1,7 +1,6 @@
 # TODO
 
- - create a MinionFile mimicking Aliasfile.
- - make AliasFile thread safe.
+ - make AliasFile and MinionsFile thread safe.
  - Remember the user id and refuse all messages for this minion.
  - run a routine to check the validity of the URL before sending it to the
    minion.

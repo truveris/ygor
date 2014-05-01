@@ -34,7 +34,7 @@ func (module XombreroModule) WebPrivMsg(msg *ygor.Message) {
 
 func (module XombreroModule) MinionMsg(msg *ygor.Message) {
 	if msg.Args[0] != "ok" {
-		minion, err := ygor.GetMinionByUserID(msg.UserID)
+		minion, err := Minions.GetByUserID(msg.UserID)
 		if err != nil {
 			Debug(fmt.Sprintf("xombrero: can't find minion for %s",
 				msg.UserID))

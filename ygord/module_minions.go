@@ -21,7 +21,7 @@ func (module *MinionsModule) PrivMsg(msg *ygor.Message) {}
 
 func (module *MinionsModule) MinionsCmdFunc(msg *ygor.Message) {
 	names := make([]string, 0)
-	minions, err := ygor.GetMinions()
+	minions, err := Minions.All()
 	if err != nil {
 		Debug("GetMinions error: " + err.Error())
 		return
@@ -49,13 +49,13 @@ func (module *MinionsModule) RegisterMinionMsgFunc(msg *ygor.Message) {
 	name := msg.Args[0]
 	queueURL := msg.Args[1]
 
-	err := ygor.RegisterMinion(name, queueURL, msg.UserID)
+	err := Minions.Register(name, queueURL, msg.UserID)
 	if err != nil {
 		Debug("register: error: " + err.Error())
 		return
 	}
 
-	ygor.SaveMinions()
+	Minions.Save()
 	err = SendToQueue(queueURL, "register success")
 	if err != nil {
 		Debug("register: error: " + err.Error())

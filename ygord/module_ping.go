@@ -97,7 +97,7 @@ func (module *PingModule) PongCmdFunc(msg *ygor.Message) {
 	duration := time.Since(start)
 
 	var name string
-	minion, err := ygor.GetMinionByUserID(msg.UserID)
+	minion, err := Minions.GetByUserID(msg.UserID)
 	if err != nil {
 		name = "no name (" + msg.UserID + ")"
 	} else {
