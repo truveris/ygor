@@ -10,7 +10,7 @@ import (
 
 var (
 	// Detect a PRIVMSG (most user communications).
-	rePrivMsg = regexp.MustCompile(`^:([^!]+)![^@]+@[^\s]+\sPRIVMSG\s([^\s]+)\s:(.*)`)
+	rePrivMsg = regexp.MustCompile(`^:([^!]+)![^@]+@[^\s]+\sPRIVMSG\s([^\s]+)\s:\s*(.*)\s*`)
 
 	// Detect if we are addressed to.
 	reAddressed = regexp.MustCompile(`^(\w+)[:,.]*\s*(.*)`)

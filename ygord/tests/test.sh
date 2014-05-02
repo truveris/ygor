@@ -66,10 +66,21 @@ assert_output && pass
 cleanup
 
 
-announce "minions list (without colon)"
+announce "talk to the bot without colon"
 test_line "minion user_id_1234567890 register bobert-von-cheesecake https://nom.nom/super-train/bobert"
 test_line "minion user_id_0987654321 register jo-mac-whopper https://nom.nom/super-train/jo"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore minions"
+cat > test.expected <<EOF
+PRIVMSG #test :currently registered: bobert-von-cheesecake, jo-mac-whopper
+EOF
+assert_output && pass
+cleanup
+
+
+announce "spaces everywhere"
+test_line "minion user_id_1234567890 register bobert-von-cheesecake https://nom.nom/super-train/bobert"
+test_line "minion user_id_0987654321 register jo-mac-whopper https://nom.nom/super-train/jo"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :  whygore  minions  "
 cat > test.expected <<EOF
 PRIVMSG #test :currently registered: bobert-von-cheesecake, jo-mac-whopper
 EOF
