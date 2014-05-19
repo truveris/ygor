@@ -149,10 +149,6 @@ func ParseConfigFile() error {
 		return errors.New("'IRCOutgoingQueueName' is not defined")
 	}
 
-	if cfg.QueueName == "" {
-		return errors.New("'QueueName' is not defined")
-	}
-
 	if cfg.AWSRegionCode == "" {
 		return errors.New("'AWSRegionCode' is not defined")
 	}
