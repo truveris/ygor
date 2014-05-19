@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/truveris/ygor"
 )
@@ -143,6 +144,7 @@ func (module *AliasModule) AliasesCmdFunc(msg *ygor.Message) {
 		} else {
 			IRCPrivMsg(msg.ReplyTo, "... "+page)
 		}
+		time.Sleep(500 * time.Millisecond)
 	}
 }
 
