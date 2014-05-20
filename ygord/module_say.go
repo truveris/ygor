@@ -14,7 +14,14 @@ type SayModule struct{}
 func (module SayModule) PrivMsg(msg *ygor.PrivMsg) {}
 
 func SayCommand(msg *ygor.Message) {
-	body := "say " + strings.Join(msg.Args, " ")
+	args := make([]string, 0)
+	if len(msg.Args) > 3 {
+		IRCPrivAction(msg.ReplyTo, "cropping to 3 words until someone works on ticket 7651")
+		args = msg.Args[:3]
+	} else {
+		args = msg.Args
+	}
+	body := "say " + strings.Join(args, " ")
 	SendToChannelMinions(msg.ReplyTo, body)
 }
 
