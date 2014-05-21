@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 	"time"
 )
@@ -84,8 +85,8 @@ func (file *AliasFile) Get(name string) *Alias {
 	return nil
 }
 
-// Return a []string of all the alias names. FIXME: is there really no better
-// way to get the keys of a map?
+// Return a sorted []string of all the alias names. FIXME: is there really no
+// better way to get the keys of a map?
 func (file *AliasFile) Names() []string {
 	idx := 0
 	names := make([]string, len(file.cache))
@@ -93,6 +94,7 @@ func (file *AliasFile) Names() []string {
 		names[idx] = name
 		idx++
 	}
+	sort.Strings(names)
 	return names
 }
 
@@ -203,4 +205,23 @@ func (file *AliasFile) RecursiveResolve(line string, level int) (string, error) 
 // deep and can't seem to resolve anything.
 func (file *AliasFile) Resolve(line string) (string, error) {
 	return file.RecursiveResolve(line, 0)
+}
+
+func (file *AliasFile) All() ([]Alias, error) {
+	aliases := make([]Alias, 0)
+	if file.needsReload() {
+		err := file.reload()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	names := file.Names()
+
+	for _, name := range names {
+		alias := *file.cache[name]
+		aliases = append(aliases, alias)
+	}
+
+	return aliases, nil
 }

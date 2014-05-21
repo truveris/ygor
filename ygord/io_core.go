@@ -22,6 +22,12 @@ var (
 
 // Start all the IO adapters (IRC, Stdin/Stdout, Minions, API, etc.)
 func StartAdapters() (<-chan error, <-chan error, error) {
+	err := StartHTTPAdapter()
+	if err != nil {
+		return nil, nil, errors.New("error starting http adapter: " +
+			err.Error())
+	}
+
 	if cfg.TestMode {
 		return StartStdioHandler()
 	}

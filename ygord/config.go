@@ -60,6 +60,9 @@ type Cfg struct {
 
 	// Where to find the minions file.
 	MinionsFilePath string
+
+	// If defined, start a web server to list the aliases (e.g. :8989)
+	HTTPServerAddress string
 }
 
 var (
