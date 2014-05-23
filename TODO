@@ -1,5 +1,13 @@
 # TODO
 
+ - double check for QueueName in ygord/config.go
+ - implement a temporary and permanent voting system.
+    - permanent would be something like "Light in the engineering room" and you can change your opinion constantly.
+    - temporary would be "Should we go get cheese steak sandwiches for lunch?".
+    - one could address the butler this way: "vote light on"
+    - one could request a vote status with "vote light"
+    - you can create a new poll with "add-vote http://stuff/vote-config.json"
+ - implement grep which looks through the aliases
  - make AliasFile and MinionsFile thread safe.
  - Remember the user id and refuse all messages for this minion.
  - run a routine to check the validity of the URL before sending it to the

@@ -280,6 +280,33 @@ assert_output && pass
 cleanup
 
 
+announce "grep"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play stuff.ogg"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias zelda play zelda.ogg"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias beer play beer.ogg"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: grep a"
+cat > test.expected <<EOF
+PRIVMSG #test :blabla, zelda
+EOF
+assert_output && pass
+cleanup
+
+
+announce "grep no result"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play stuff.ogg"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias zelda play zelda.ogg"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias beer play beer.ogg"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: grep y"
+cat > test.expected <<EOF
+PRIVMSG #test :error: no results
+EOF
+assert_output && pass
+cleanup
+
+
+# FIXME: grep too many results
+
+
 announce "list aliases by pages of 400 bytes at most"
 for each in 0 1 2 3 4 5 6 7 8 9 A B C D E F G H I J K L M N O P Q R S T U V W X Y Z; do
 	test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias randomlongaliasfromhell$each play stuff.ogg"

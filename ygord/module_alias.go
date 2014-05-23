@@ -148,10 +148,48 @@ func (module *AliasModule) AliasesCmdFunc(msg *ygor.Message) {
 	}
 }
 
+func (module *AliasModule) GrepCmdFunc(msg *ygor.Message) {
+	if len(msg.Args) != 1 && msg.Args[0] != "" {
+		IRCPrivMsg(msg.ReplyTo, "usage: grep pattern")
+		return
+	}
+
+	results := make([]string, 0)
+	aliases := Aliases.Names()
+	sort.Strings(aliases)
+	for _, name := range aliases {
+		if strings.Contains(name, msg.Args[0]) {
+			results = append(results, name)
+		}
+	}
+
+	if len(results) == 0 {
+		IRCPrivMsg(msg.ReplyTo, "error: no results")
+		return
+	}
+
+	found := strings.Join(results, ", ")
+	if len(found) > MaxCharsPerPage {
+		IRCPrivMsg(msg.ReplyTo, "error: too many results, refine your search")
+		return
+	}
+
+	IRCPrivMsg(msg.ReplyTo, found)
+
+}
+
 func (module *AliasModule) Init() {
 	ygor.RegisterCommand(ygor.Command{
 		Name:            "alias",
 		PrivMsgFunction: module.AliasCmdFunc,
+		Addressed:       true,
+		AllowPrivate:    false,
+		AllowChannel:    true,
+	})
+
+	ygor.RegisterCommand(ygor.Command{
+		Name:            "grep",
+		PrivMsgFunction: module.GrepCmdFunc,
 		Addressed:       true,
 		AllowPrivate:    false,
 		AllowChannel:    true,
