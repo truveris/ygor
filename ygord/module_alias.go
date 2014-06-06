@@ -196,7 +196,7 @@ func (module *AliasModule) RandomCmdFunc(msg *ygor.Message) {
 		return
 	}
 
-	IRCPrivAction(msg.ReplyTo, aliases[idx])
+	IRCPrivMsg(msg.ReplyTo, "the codes have chosen "+aliases[idx])
 
 	privmsg := &ygor.PrivMsg{}
 	privmsg.Nick = msg.UserID
