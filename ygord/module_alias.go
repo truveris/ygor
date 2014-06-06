@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strings"
 	"time"
+	"math/rand"
 
 	"github.com/truveris/ygor"
 )
@@ -144,7 +145,9 @@ func (module *AliasModule) AliasesCmdFunc(msg *ygor.Message) {
 		} else {
 			IRCPrivMsg(msg.ReplyTo, "... "+page)
 		}
-		time.Sleep(500 * time.Millisecond)
+		if !cfg.TestMode {
+			time.Sleep(500 * time.Millisecond)
+		}
 	}
 }
 
@@ -156,6 +159,7 @@ func (module *AliasModule) GrepCmdFunc(msg *ygor.Message) {
 
 	results := make([]string, 0)
 	aliases := Aliases.Names()
+
 	sort.Strings(aliases)
 	for _, name := range aliases {
 		if strings.Contains(name, msg.Args[0]) {
@@ -178,6 +182,35 @@ func (module *AliasModule) GrepCmdFunc(msg *ygor.Message) {
 
 }
 
+func (module *AliasModule) RandomCmdFunc(msg *ygor.Message) {
+	if len(msg.Args) != 0 {
+		IRCPrivMsg(msg.ReplyTo, "usage: random")
+		return
+	}
+	aliases := Aliases.Names()
+	idx := rand.Intn(len(aliases))
+
+	body, err := Aliases.Resolve(aliases[idx])
+	if err != nil {
+		Debug("failed to resolve aliases: " + err.Error())
+		return
+	}
+
+	IRCPrivAction(msg.ReplyTo, aliases[idx])
+
+	privmsg := &ygor.PrivMsg{}
+	privmsg.Nick = msg.UserID
+	privmsg.Body = body
+	privmsg.ReplyTo = msg.ReplyTo
+	privmsg.Addressed = true
+	newmsg := NewMessageFromPrivMsg(privmsg)
+	if newmsg == nil {
+		Debug("failed to convert PRIVMSG")
+		return
+	}
+	InputQueue <- newmsg
+}
+
 func (module *AliasModule) Init() {
 	ygor.RegisterCommand(ygor.Command{
 		Name:            "alias",
@@ -190,6 +223,14 @@ func (module *AliasModule) Init() {
 	ygor.RegisterCommand(ygor.Command{
 		Name:            "grep",
 		PrivMsgFunction: module.GrepCmdFunc,
+		Addressed:       true,
+		AllowPrivate:    false,
+		AllowChannel:    true,
+	})
+
+	ygor.RegisterCommand(ygor.Command{
+		Name:            "random",
+		PrivMsgFunction: module.RandomCmdFunc,
 		Addressed:       true,
 		AllowPrivate:    false,
 		AllowChannel:    true,

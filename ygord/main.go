@@ -62,11 +62,11 @@ func main() {
 		case msg := <-InputQueue:
 			switch msg.Type {
 			case ygor.MsgTypeIRCChannel:
-				IRCMessageHandler(msg)
+				go IRCMessageHandler(msg)
 			case ygor.MsgTypeIRCPrivate:
-				IRCMessageHandler(msg)
+				go IRCMessageHandler(msg)
 			case ygor.MsgTypeMinion:
-				MinionMessageHandler(msg)
+				go MinionMessageHandler(msg)
 			case ygor.MsgTypeExit:
 				log.Printf("terminating: %s", msg.Body)
 				os.Exit(0)
