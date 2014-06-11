@@ -17,8 +17,8 @@ func WaitForTraceRequest() {
 
 	for _ = range ch {
 		log.Printf("Received USR1 signal, printing stack trace:")
-		buf := make([]byte, 4096)
-		runtime.Stack(buf, true)
-		log.Printf("%s", buf)
+		buf := make([]byte, 40960)
+		i := runtime.Stack(buf, true)
+		log.Printf("%s", buf[:i])
 	}
 }
