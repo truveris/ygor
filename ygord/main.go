@@ -6,6 +6,9 @@ package main
 import (
 	"log"
 	"os"
+	"os/signal"
+	"runtime"
+	"syscall"
 
 	"github.com/truveris/ygor"
 )
@@ -14,6 +17,18 @@ var (
 	Aliases *ygor.AliasFile
 	Minions *ygor.MinionsFile
 )
+
+func WaitForTraceRequest() {
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, syscall.SIGUSR1)
+
+	for _ = range ch {
+		log.Printf("Received USR1 signal, printing stack trace:")
+		buf := make([]byte, 4096)
+		runtime.Stack(buf, true)
+		log.Printf("%s", buf)
+	}
+}
 
 func main() {
 	ParseCommandLine()
@@ -51,6 +66,8 @@ func main() {
 	if err != nil {
 		log.Fatal("failed to start adapters: ", err.Error())
 	}
+
+	go WaitForTraceRequest()
 
 	log.Printf("ready")
 	for {
