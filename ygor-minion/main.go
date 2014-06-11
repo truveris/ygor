@@ -31,6 +31,7 @@ import (
 	"github.com/tamentis/go-mplayer"
 	"github.com/truveris/sqs"
 	"github.com/truveris/sqs/sqschan"
+	"github.com/truveris/ygor"
 )
 
 // This is used for debugging.
@@ -185,6 +186,8 @@ func main() {
 			log.Fatal(err)
 		}
 	}
+
+	go ygor.WaitForTraceRequest()
 
 	go playNoise(NoiseInbox)
 
