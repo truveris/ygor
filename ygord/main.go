@@ -40,6 +40,7 @@ func main() {
 	RegisterModule(&ImageModule{})
 	RegisterModule(&RebootModule{})
 	RegisterModule(&MinionsModule{})
+	RegisterModule(&NopModule{})
 	RegisterModule(&PingModule{})
 	RegisterModule(&SayModule{})
 	RegisterModule(&ShutUpModule{})
