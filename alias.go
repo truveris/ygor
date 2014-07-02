@@ -225,3 +225,16 @@ func (file *AliasFile) All() ([]Alias, error) {
 
 	return aliases, nil
 }
+
+func (file *AliasFile) Find(pattern string) []string {
+	results := make([]string, 0)
+	aliases := file.Names()
+
+	for _, name := range aliases {
+		if strings.Contains(name, pattern) {
+			results = append(results, name)
+		}
+	}
+
+	return results
+}

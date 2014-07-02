@@ -157,15 +157,8 @@ func (module *AliasModule) GrepCmdFunc(msg *ygor.Message) {
 		return
 	}
 
-	results := make([]string, 0)
-	aliases := Aliases.Names()
-
-	sort.Strings(aliases)
-	for _, name := range aliases {
-		if strings.Contains(name, msg.Args[0]) {
-			results = append(results, name)
-		}
-	}
+	results := Aliases.Find(msg.Args[0])
+	sort.Strings(results)
 
 	if len(results) == 0 {
 		IRCPrivMsg(msg.ReplyTo, "error: no results")
@@ -179,15 +172,21 @@ func (module *AliasModule) GrepCmdFunc(msg *ygor.Message) {
 	}
 
 	IRCPrivMsg(msg.ReplyTo, found)
-
 }
 
 func (module *AliasModule) RandomCmdFunc(msg *ygor.Message) {
-	if len(msg.Args) != 0 {
-		IRCPrivMsg(msg.ReplyTo, "usage: random")
+	var aliases []string
+
+	switch len(msg.Args) {
+	case 0:
+		aliases = Aliases.Names()
+	case 1:
+		aliases = Aliases.Find(msg.Args[0])
+	default:
+		IRCPrivMsg(msg.ReplyTo, "usage: random [pattern]")
 		return
 	}
-	aliases := Aliases.Names()
+
 	idx := rand.Intn(len(aliases))
 
 	body, err := Aliases.Resolve(aliases[idx])

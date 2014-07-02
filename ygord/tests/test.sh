@@ -297,21 +297,25 @@ test_line "minion user_id_123123123 register pi2 http://sqs.us-east-1.amazonaws.
 test_line "minion user_id_234234234 register pi1 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias beer play beer.ogg"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: random"
-xxd -r > test.expected <<EOF
-0000000: 5052 4956 4d53 4720 2374 6573 7420 3a01  PRIVMSG #test :.
-0000010: 4143 5449 4f4e 2062 6565 7201 0a5b 5351  ACTION beer..[SQ
-0000020: 532d 5365 6e64 546f 4d69 6e69 6f6e 5d20  S-SendToMinion] 
-0000030: 6874 7470 3a2f 2f73 7173 2e75 732d 6561  http://sqs.us-ea
-0000040: 7374 2d31 2e61 6d61 7a6f 6e61 7773 2e63  st-1.amazonaws.c
-0000050: 6f6d 2f30 3030 3030 3030 3030 3030 302f  om/000000000000/
-0000060: 6d69 6e69 6f6e 2d70 6931 2070 6c61 7920  minion-pi1 play 
-0000070: 6265 6572 2e6f 6767 0a5b 5351 532d 5365  beer.ogg.[SQS-Se
-0000080: 6e64 546f 4d69 6e69 6f6e 5d20 6874 7470  ndToMinion] http
-0000090: 3a2f 2f73 7173 2e75 732d 6561 7374 2d31  ://sqs.us-east-1
-00000a0: 2e61 6d61 7a6f 6e61 7773 2e63 6f6d 2f30  .amazonaws.com/0
-00000b0: 3030 3030 3030 3030 3030 302f 6d69 6e69  00000000000/mini
-00000c0: 6f6e 2d70 6932 2070 6c61 7920 6265 6572  on-pi2 play beer
-00000d0: 2e6f 6767 0a                             .ogg.
+cat > test.expected <<EOF
+PRIVMSG #test :the codes have chosen beer
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1 play beer.ogg
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2 play beer.ogg
+EOF
+assert_output && pass
+cleanup
+
+
+announce "random pattern"
+test_line "minion user_id_123123123 register pi2 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2"
+test_line "minion user_id_234234234 register pi1 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias beer play beer.ogg"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias bees play bees.ogg"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: random beer"
+cat > test.expected <<EOF
+PRIVMSG #test :the codes have chosen beer
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1 play beer.ogg
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2 play beer.ogg
 EOF
 assert_output && pass
 cleanup
