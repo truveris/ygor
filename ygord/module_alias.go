@@ -187,6 +187,11 @@ func (module *AliasModule) RandomCmdFunc(msg *ygor.Message) {
 		return
 	}
 
+	if len(aliases) <= 0 {
+		IRCPrivMsg(msg.ReplyTo, "no matches found")
+		return
+	}
+
 	idx := rand.Intn(len(aliases))
 
 	body, err := Aliases.Resolve(aliases[idx])
