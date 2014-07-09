@@ -99,10 +99,10 @@ func Play(data string) {
 	if len(tokens) > 1 {
 		duration, err := time.ParseDuration(tokens[1])
 		if err != nil {
-			Send("play error invalid duration: " + err.Error())
-			return
+			Send("play warning invalid duration: " + err.Error())
+		} else {
+			tune.Duration = duration
 		}
-		tune.Duration = duration
 	}
 	NoiseInbox <- tune
 }
