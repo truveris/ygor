@@ -231,7 +231,7 @@ announce "change this alias"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play stuff.ogg"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play things.ogg"
 cat > test.expected <<EOF
-PRIVMSG #test :ok (replaced)
+PRIVMSG #test :ok (replaces "play stuff.ogg")
 EOF
 assert_output && pass
 cleanup
