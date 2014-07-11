@@ -18,6 +18,9 @@ import (
 const (
 	// That should be plenty for most IRC servers to handle.
 	MaxCharsPerPage = 444
+
+	// You can't list that many aliases without trouble...
+	MaxAliasesForFullList = 40
 )
 
 type AliasModule struct{}
@@ -137,7 +140,7 @@ func (module *AliasModule) AliasesCmdFunc(msg *ygor.Message) {
 
 	aliases := Aliases.Names()
 
-	if len(aliases) > (MaxCharsPerPage * 4) {
+	if len(aliases) > MaxAliasesForFullList {
 		IRCPrivMsg(msg.ReplyTo, "error: too many results, use grep")
 		return
 	}

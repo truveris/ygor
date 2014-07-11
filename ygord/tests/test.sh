@@ -350,6 +350,19 @@ assert_output && pass
 cleanup
 
 
+announce "too many aliases to list"
+for each in 0 1 2 3 4 5 6 7 8 9 A B C D E F G H I J K L M N O P Q R S T U V W X Y Z; do
+	test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias randomlongaliasfromhella$each play stuff.ogg"
+	test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias randomlongaliasfromhellb$each play stuff.ogg"
+done
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: aliases"
+cat > test.expected <<EOF
+PRIVMSG #test :error: too many results, use grep
+EOF
+assert_output && pass
+cleanup
+
+
 announce "alias with percent sign"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias 60% play stuff"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias 60%"
