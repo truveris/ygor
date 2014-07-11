@@ -136,6 +136,12 @@ func (module *AliasModule) AliasesCmdFunc(msg *ygor.Message) {
 	}
 
 	aliases := Aliases.Names()
+
+	if len(aliases) > (MaxCharsPerPage * 4) {
+		IRCPrivMsg(msg.ReplyTo, "error: too many results, use grep")
+		return
+	}
+
 	sort.Strings(aliases)
 	first := true
 	for _, page := range getPagesOfAliases(aliases) {
