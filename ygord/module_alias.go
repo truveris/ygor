@@ -65,12 +65,16 @@ func (module *AliasModule) AliasCmdFunc(msg *ygor.Message) {
 		return
 	}
 
+	newValue := strings.Join(msg.Args[1:], " ")
+
 	if alias == nil {
 		outputMsg = "ok (created)"
-		Aliases.Add(name, strings.Join(msg.Args[1:], " "))
+		Aliases.Add(name, newValue)
+	} else if alias.Value == newValue {
+		outputMsg = "no changes"
 	} else {
 		outputMsg = "ok (replaces \"" + alias.Value + "\")"
-		alias.Value = strings.Join(msg.Args[1:], " ")
+		alias.Value = newValue
 	}
 
 	err := Aliases.Save()

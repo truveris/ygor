@@ -237,6 +237,16 @@ assert_output && pass
 cleanup
 
 
+announce "unchanged alias"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play stuff.ogg"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play stuff.ogg"
+cat > test.expected <<EOF
+PRIVMSG #test :no changes
+EOF
+assert_output && pass
+cleanup
+
+
 announce "get this updated alias"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play stuff.ogg"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play things.ogg"
