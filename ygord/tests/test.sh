@@ -46,6 +46,15 @@ assert_output && pass
 cleanup
 
 
+announce "commands"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: commands"
+cat > test.expected <<EOF
+PRIVMSG #test :africa, alias, aliases, commands, grep, image, jeopardy, minions, nop, ping, play, pong, random, reboot, register, say, shutup, unalias, web, xombrero
+EOF
+assert_output && pass
+cleanup
+
+
 announce "minion registration"
 test_line "minion user_id_0123456789 register bobert-von-cheesecake https://nom.nom/super-train/"
 cat > test.expected <<EOF

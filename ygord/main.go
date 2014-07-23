@@ -37,6 +37,7 @@ func main() {
 
 	log.Printf("registering modules")
 	RegisterModule(&AliasModule{})
+	RegisterModule(&CommandsModule{})
 	RegisterModule(&ImageModule{})
 	RegisterModule(&RebootModule{})
 	RegisterModule(&MinionsModule{})
