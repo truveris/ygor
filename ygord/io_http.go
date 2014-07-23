@@ -9,12 +9,22 @@
 package main
 
 import (
+	"encoding/base64"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 )
 
 func aliasesHandler(w http.ResponseWriter, r *http.Request) {
+	user, err := auth(r)
+	if err != nil {
+		log.Printf("Authentication failed: %s", err.Error())
+		errorHandler(w, "Authentication failed")
+		return
+	}
+
 	aliases, err := Aliases.All()
 	if err != nil {
 		http.Error(w, "error: "+err.Error(), 500)
@@ -32,7 +42,7 @@ func aliasesHandler(w http.ResponseWriter, r *http.Request) {
 			</style>
 		</head>
 		<body>
-			<h1>ygor - aliases</h1>
+			<h1>%s@ygor/aliases</h1>
 			<table>
 				<thead>
 					<tr>
@@ -41,7 +51,7 @@ func aliasesHandler(w http.ResponseWriter, r *http.Request) {
 					</tr>
 				</thead>
 				<tbody>
-	`)
+	`, user)
 
 	for _, alias := range aliases {
 		fmt.Fprintf(w, `
@@ -58,6 +68,13 @@ func aliasesHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func minionsHandler(w http.ResponseWriter, r *http.Request) {
+	user, err := auth(r)
+	if err != nil {
+		log.Printf("Authentication failed: %s", err.Error())
+		errorHandler(w, "Authentication failed")
+		return
+	}
+
 	minions, err := Minions.All()
 	if err != nil {
 		http.Error(w, "error: "+err.Error(), 500)
@@ -75,16 +92,16 @@ func minionsHandler(w http.ResponseWriter, r *http.Request) {
 			</style>
 		</head>
 		<body>
-			<h2>ygor - minions</h2>
+			<h1>%s@ygor/minions</h1>
 			<table>
 				<thead>
 					<tr>
 						<th>Name</th>
-						<th>Last Seen</th>
+						<th>Last registration</th>
 					</tr>
 				</thead>
 				<tbody>
-	`)
+	`, user)
 
 	for _, minion := range minions {
 		fmt.Fprintf(w, `
@@ -100,19 +117,83 @@ func minionsHandler(w http.ResponseWriter, r *http.Request) {
 	`)
 }
 
-func homeHandler(w http.ResponseWriter, r *http.Request) {
+// Given a Basic Authorization header value, return the user and password.
+func parseBasicAuth(value string) (string, string, error) {
+	log.Printf("parseBasicAuth: %s", value)
+	authorization, err := base64.StdEncoding.DecodeString(value)
+	if err != nil {
+		return "", "", err
+	}
+
+	tokens := strings.SplitN(string(authorization), ":", 2)
+	if len(tokens) != 2 {
+		return "", "", errors.New("Unable to split Basic Auth.")
+	}
+
+	return tokens[0], tokens[1], nil
+}
+
+// Makes sure we have a Basic auth user. We don't check the password, we assume
+// this HTTP server sits behind a proxy which enforces that aspect.
+func auth(r *http.Request) (string, error) {
+	var user string
+	var err error
+
+	auth, ok := r.Header["Authorization"]
+	if ok {
+		if len(auth) > 0 {
+			if ! strings.HasPrefix(auth[0], "Basic ") {
+				return "", errors.New("Unsupported auth type")
+			}
+			value := strings.TrimPrefix(auth[0], "Basic ")
+			user, _, err = parseBasicAuth(value)
+			if err != nil {
+				return "", err
+			}
+		}
+	}
+
+	return user, nil
+}
+
+func errorHandler(w http.ResponseWriter, msg string) {
 	fmt.Fprintf(w, `
 	<html>
-	<head><title>ygor</title></head>
+	<head><title>ygor: Error</title></head>
 	<body>
-		<h1>ygor</h1>
+		<h1>Error: %s</h1>
+	</body>
+	</html>
+	`, msg)
+}
+
+func homeHandler(w http.ResponseWriter, r *http.Request) {
+	user, err := auth(r)
+	if err != nil {
+		log.Printf("Authentication failed: %s", err.Error())
+		errorHandler(w, "Authentication failed")
+		return
+	}
+
+	fmt.Fprintf(w, `
+	<html>
+	<head>
+		<title>ygor</title>
+		<style type="text/css">
+			body { font-family: monospace; }
+			th { text-align: left; }
+			th, td { padding: 2px 8px; }
+		</style>
+	</head>
+	<body>
+		<h1>%s@ygor</h1>
 		<ul>
 			<li><a href="/aliases">aliases</a>
 			<li><a href="/minions">minions</a>
 		</ul>
 	</body>
 	</html>
-	`)
+	`, user)
 }
 
 func HTTPServer(address string) {
