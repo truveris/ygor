@@ -34,11 +34,6 @@ func (module *MinionsModule) MinionsCmdFunc(msg *ygor.Message) {
 	IRCPrivMsg(msg.ReplyTo, "currently registered: "+strings.Join(names, ", "))
 }
 
-// There is no reason why someone would use register from IRC.
-func (module *MinionsModule) RegisterPrivMsgFunc(msg *ygor.Message) {
-	IRCPrivMsg(msg.ReplyTo, "error: you're not a minion")
-}
-
 // A minion is registering...
 func (module *MinionsModule) RegisterMinionMsgFunc(msg *ygor.Message) {
 	if len(msg.Args) != 2 {
@@ -65,7 +60,6 @@ func (module *MinionsModule) RegisterMinionMsgFunc(msg *ygor.Message) {
 func (module *MinionsModule) Init() {
 	ygor.RegisterCommand(ygor.Command{
 		Name:              "register",
-		PrivMsgFunction:   module.RegisterPrivMsgFunc,
 		MinionMsgFunction: module.RegisterMinionMsgFunc,
 		Addressed:         true,
 		AllowPrivate:      true,

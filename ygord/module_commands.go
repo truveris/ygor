@@ -17,12 +17,15 @@ type CommandsModule struct{}
 func (module CommandsModule) PrivMsg(msg *ygor.PrivMsg) {}
 
 func (module *CommandsModule) CommandsCmdFunc(msg *ygor.Message) {
-	names := make([]string, len(ygor.RegisteredCommands))
+	names := make([]string, 0)
 
-	i := 0
-	for k, _ := range ygor.RegisteredCommands {
-		names[i] = k
-		i++
+	for name, cmd := range ygor.RegisteredCommands {
+		// Attempt to only return user commands (skip minion commands).
+		if cmd.PrivMsgFunction == nil {
+			continue
+		}
+
+		names = append(names, name)
 	}
 
 	sort.Strings(names)
