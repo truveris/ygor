@@ -7,21 +7,28 @@ import (
 	"strings"
 
 	"github.com/truveris/ygor"
+	"github.com/jessevdk/go-flags"
 )
+
+type SayCmd struct {
+	Voice string `short:"v" description:"Voice" default:"bruce"`
+}
 
 type SayModule struct{}
 
 func (module SayModule) PrivMsg(msg *ygor.PrivMsg) {}
 
 func SayCommand(msg *ygor.Message) {
-	args := make([]string, 0)
-	if len(msg.Args) > 3 {
-		IRCPrivAction(msg.ReplyTo, "cropping to 3 words until someone works on ticket 7651")
-		args = msg.Args[:3]
-	} else {
-		args = msg.Args
+	cmd := SayCmd{}
+
+	flagParser := flags.NewParser(&cmd, flags.PassDoubleDash)
+	args, err := flagParser.ParseArgs(msg.Args)
+	if err != nil {
+		IRCPrivMsg(msg.ReplyTo, "usage: say [-v voice] sentence")
+		return
 	}
-	body := "say " + strings.Join(args, " ")
+
+	body := "say -v " + cmd.Voice + " " + strings.Join(args, " ")
 	SendToChannelMinions(msg.ReplyTo, body)
 }
 

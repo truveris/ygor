@@ -464,8 +464,8 @@ test_line "minion user_id_123123123 register pi2 http://sqs.us-east-1.amazonaws.
 test_line "minion user_id_234234234 register pi1 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: say stuff"
 cat > test.expected <<EOF
-[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1 say stuff
-[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2 say stuff
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1 say -v bruce stuff
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2 say -v bruce stuff
 EOF
 assert_output && pass
 cleanup
