@@ -63,7 +63,9 @@ test_command "play tunes/test.mp3 5"
 cat > test.expected <<EOF
 bobert-von-cheesecake starting up
 send to ygord: register bobert-von-cheesecake fake-queue
-send to ygord: play error invalid duration: time: missing unit in duration 5
+send to ygord: play warning invalid duration: time: missing unit in duration 5
+play: tunes/test.mp3
+play: play full
 terminating: EOF
 EOF
 assert_output && pass

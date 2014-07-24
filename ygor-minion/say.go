@@ -6,11 +6,12 @@ import (
 	"log"
 	"os/exec"
 	"runtime"
+	"net/url"
 )
 
 // say (for macs)
-func macSay(sentence string) {
-	cmd := exec.Command("say", sentence)
+func macSay(voice, sentence string) {
+	cmd := exec.Command("say", "-v", voice, sentence)
 	err := cmd.Start()
 	if err != nil {
 		log.Printf("error starting say")
@@ -25,8 +26,14 @@ func macSay(sentence string) {
 	}
 }
 
-// espeak | aplay (for linux)
-func say(sentence string) {
+func sayd(voice, sentence string) {
+	url := cfg.SaydURL + voice + "?" + url.QueryEscape(sentence)
+	mplayerPlayAndWait(url)
+}
+
+// Call sayd if configured, if not, "espeak" on Linux and "say" on Mac. The
+// voice argument is only used by "sayd" and "say".
+func say(voice, sentence string) {
 	var err error
 
 	if cfg.TestMode {
@@ -34,8 +41,13 @@ func say(sentence string) {
 		return
 	}
 
+	if cfg.SaydURL != "" {
+		sayd(voice, sentence)
+		return
+	}
+
 	if runtime.GOOS == "darwin" {
-		macSay(sentence)
+		macSay(voice, sentence)
 		return
 	}
 

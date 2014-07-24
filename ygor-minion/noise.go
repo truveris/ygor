@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/tamentis/go-mplayer"
+	"github.com/jessevdk/go-flags"
 )
 
 var (
@@ -17,13 +18,18 @@ var (
 	// This is the noise box, we keep as much as possible in local memory,
 	// that makes 'shutup' remotely useful. Without buffer we would have to
 	// wait through orders before even reaching the 'shutup' command.
-	NoiseInbox = make(chan Noise, 1000)
+	NoiseInbox = make(chan Noise, 64)
 )
 
 type Noise struct {
 	Path     string
 	Duration time.Duration
+	Voice    string
 	Sentence string
+}
+
+type SayCmd struct {
+	Voice string `short:"v" description:"Voice for say" default:"bruce"`
 }
 
 func playTune(tune Noise) {
@@ -47,10 +53,11 @@ func playTune(tune Noise) {
 	RunningProcess = nil
 }
 
+// Iterate over the noise channel and pass the content to "say" or "play".
 func playNoise(noiseInbox chan Noise) {
 	for noise := range noiseInbox {
 		if noise.Sentence != "" {
-			say(noise.Sentence)
+			say(noise.Voice, noise.Sentence)
 		} else {
 			playTune(noise)
 		}
@@ -83,8 +90,19 @@ func ShutUp() {
 }
 
 func Say(data string) {
+	cmd := SayCmd{}
+	args := strings.Split(data, " ")
+
+	flagParser := flags.NewParser(&cmd, flags.PassDoubleDash)
+	args, err := flagParser.ParseArgs(args)
+	if err != nil {
+		log.Printf("say command line error: %s", err.Error())
+		return
+	}
+
 	noise := Noise{}
-	noise.Sentence = data
+	noise.Voice = cmd.Voice
+	noise.Sentence = strings.Join(args, " ")
 	NoiseInbox <- noise
 }
 
