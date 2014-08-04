@@ -28,58 +28,69 @@ var (
 )
 
 // Create a new ygor message from a parsed PRIVMSG.
-func NewMessageFromPrivMsg(privmsg *ygor.PrivMsg) *ygor.Message {
-	msg := ygor.NewMessage()
+func NewMessagesFromPrivMsg(privmsg *ygor.PrivMsg) []*ygor.Message {
+	msgs := make([]*ygor.Message, 0)
+	bodies := strings.Split(privmsg.Body, ";")
 
-	if privmsg.Direct {
-		msg.Type = ygor.MsgTypeIRCPrivate
-	} else {
-		// Channel messages have to be prefixes with the bot's nick.
-		if !privmsg.Addressed && !privmsg.Direct {
-			return nil
+	for _, body := range bodies {
+		msg := ygor.NewMessage()
+
+		if privmsg.Direct {
+			msg.Type = ygor.MsgTypeIRCPrivate
+		} else {
+			// Channel messages have to be prefixes with the bot's nick.
+			if !privmsg.Addressed && !privmsg.Direct {
+				return nil
+			}
+			msg.Type = ygor.MsgTypeIRCChannel
 		}
-		msg.Type = ygor.MsgTypeIRCChannel
+
+		msg.UserID = privmsg.Nick
+		msg.ReplyTo = privmsg.ReplyTo
+
+		// Resolve any aliases.
+		body, err := Aliases.Resolve(strings.Trim(body, " \r\n\t"))
+		if err != nil {
+			IRCPrivMsg(msg.ReplyTo, "failed to resolve aliases: " +
+				err.Error())
+			continue
+		}
+
+		msg.Body = body
+
+		tokens := strings.Split(msg.Body, " ")
+		if len(tokens) > 0 {
+			msg.Command = tokens[0]
+
+			if len(tokens) > 1 {
+				msg.Args = append(msg.Args, tokens[1:]...)
+			}
+		}
+
+		msgs = append(msgs, msg)
 	}
 
-	msg.UserID = privmsg.Nick
-	msg.Body = privmsg.Body
-	msg.ReplyTo = privmsg.ReplyTo
-
-	tokens := strings.Split(msg.Body, " ")
-	if len(tokens) > 0 {
-		msg.Command = tokens[0]
-
-		if len(tokens) > 1 {
-			msg.Args = append(msg.Args, tokens[1:]...)
-		}
-	}
-
-	return msg
+	return msgs
 }
 
 // Create a new ygor message from an SQS message.
-func NewMessageFromIRCSQS(sqsmsg *sqs.Message) *ygor.Message {
-	msg := NewMessageFromIRCLine(strings.Trim(sqsmsg.Body, "\r\n"))
-	if msg != nil {
-		msg.SQSMessage = sqsmsg
+func NewMessagesFromIRCSQS(sqsmsg *sqs.Message) []*ygor.Message {
+	msgs := NewMessagesFromIRCLine(strings.Trim(sqsmsg.Body, "\r\n"))
+	for _, msg := range msgs {
+		if msg != nil {
+			msg.SQSMessage = sqsmsg
+		}
 	}
-	return msg
+	return msgs
 }
 
 // Create a new Message based on the raw IRC line.
-func NewMessageFromIRCLine(line string) *ygor.Message {
+func NewMessagesFromIRCLine(line string) []*ygor.Message {
 	privmsg := ygor.NewPrivMsg(line, cfg.IRCNickname)
 	if privmsg == nil {
 		// Not a PRIVMSG.
 		return nil
 	}
-
-	// Resolve any aliases.
-	body, err := Aliases.Resolve(privmsg.Body)
-	if err != nil {
-		Debug("failed to resolve aliases: " + err.Error())
-	}
-	privmsg.Body = body
 
 	// Check if we should ignore this message.
 	for _, ignore := range cfg.Ignore {
@@ -88,20 +99,20 @@ func NewMessageFromIRCLine(line string) *ygor.Message {
 		}
 	}
 
-	msg := NewMessageFromPrivMsg(privmsg)
-
-	return msg
+	return NewMessagesFromPrivMsg(privmsg)
 }
 
 // Convert an SQS message to an ygor Message and feed it to the InputQueue if
 // it is a valid IRC message. The SQS message is then deleted.
 func ReceiveSQSMessageForIRC(client *sqs.Client, sqsmsg *sqs.Message) error {
-	msg := NewMessageFromIRCSQS(sqsmsg)
+	msgs := NewMessagesFromIRCSQS(sqsmsg)
 
-	if msg == nil {
-		log.Printf("unhandled message: %s", sqsmsg.Body)
-	} else {
-		InputQueue <- msg
+	for _, msg := range msgs {
+		if msg == nil {
+			log.Printf("unhandled message in line: %s", sqsmsg.Body)
+		} else {
+			InputQueue <- msg
+		}
 	}
 
 	err := client.DeleteMessage(sqsmsg)

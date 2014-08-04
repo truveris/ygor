@@ -72,9 +72,11 @@ func ReadAllInputFromStdin(errch chan error) {
 
 		switch msgtype {
 		case "irc":
-			msg := NewMessageFromIRCLine(line)
-			if msg != nil {
-				InputQueue <- msg
+			msgs := NewMessagesFromIRCLine(line)
+			for _, msg := range msgs {
+				if msg != nil {
+					InputQueue <- msg
+				}
 			}
 		case "minion":
 			args := strings.SplitN(line, " ", 2)

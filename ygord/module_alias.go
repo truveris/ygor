@@ -58,13 +58,6 @@ func (module *AliasModule) AliasCmdFunc(msg *ygor.Message) {
 		return
 	}
 
-	cmd = ygor.GetCommand(msg.Args[1])
-	if cmd == nil {
-		IRCPrivMsg(msg.ReplyTo, fmt.Sprintf("error: '%s' is not a valid "+
-			"command", msg.Args[1]))
-		return
-	}
-
 	newValue := strings.Join(msg.Args[1:], " ")
 
 	if alias == nil {
@@ -165,7 +158,7 @@ func (module *AliasModule) AliasesCmdFunc(msg *ygor.Message) {
 }
 
 func (module *AliasModule) GrepCmdFunc(msg *ygor.Message) {
-	if len(msg.Args) != 1 {
+	if len(msg.Args) != 1 && msg.Args[0] != "" {
 		IRCPrivMsg(msg.ReplyTo, "usage: grep pattern")
 		return
 	}
@@ -209,7 +202,8 @@ func (module *AliasModule) RandomCmdFunc(msg *ygor.Message) {
 
 	body, err := Aliases.Resolve(aliases[idx])
 	if err != nil {
-		Debug("failed to resolve aliases: " + err.Error())
+		IRCPrivMsg(msg.ReplyTo, "failed to resolve aliases: " +
+			err.Error())
 		return
 	}
 
@@ -220,12 +214,14 @@ func (module *AliasModule) RandomCmdFunc(msg *ygor.Message) {
 	privmsg.Body = body
 	privmsg.ReplyTo = msg.ReplyTo
 	privmsg.Addressed = true
-	newmsg := NewMessageFromPrivMsg(privmsg)
-	if newmsg == nil {
-		Debug("failed to convert PRIVMSG")
-		return
+	newmsgs := NewMessagesFromPrivMsg(privmsg)
+	for _, newmsg := range newmsgs {
+		if newmsg == nil {
+			Debug("failed to convert PRIVMSG")
+			return
+		}
+		InputQueue <- newmsg
 	}
-	InputQueue <- newmsg
 }
 
 func (module *AliasModule) Init() {
