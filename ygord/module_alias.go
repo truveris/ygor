@@ -165,7 +165,7 @@ func (module *AliasModule) AliasesCmdFunc(msg *ygor.Message) {
 }
 
 func (module *AliasModule) GrepCmdFunc(msg *ygor.Message) {
-	if len(msg.Args) != 1 && msg.Args[0] != "" {
+	if len(msg.Args) != 1 {
 		IRCPrivMsg(msg.ReplyTo, "usage: grep pattern")
 		return
 	}

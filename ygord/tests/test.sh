@@ -311,6 +311,18 @@ assert_output && pass
 cleanup
 
 
+announce "grep no args"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play stuff.ogg"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias zelda play zelda.ogg"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias beer play beer.ogg"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: grep"
+cat > test.expected <<EOF
+PRIVMSG #test :usage: grep pattern
+EOF
+assert_output && pass
+cleanup
+
+
 announce "random"
 test_line "minion user_id_123123123 register pi2 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2"
 test_line "minion user_id_234234234 register pi1 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1"
