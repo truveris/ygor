@@ -6,6 +6,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -21,7 +22,33 @@ const (
 
 	// You can't list that many aliases without trouble...
 	MaxAliasesForFullList = 40
+
+	// We should stop at cat999.
+	MaxAliasIncrements = 1000
 )
+
+// Given an alias name, return a new name with increment if the name contains
+// the '#' rune.
+func GetIncrementedName(name string) (string, error) {
+	cnt := strings.Count(name, "#")
+	if cnt == 0 {
+		return name, nil
+	} else if cnt > 1 {
+		return "", errors.New("too many '#'")
+	}
+
+	var newName string
+
+	for i := 1; i < MaxAliasIncrements; i++ {
+		newName = strings.Replace(name, "#", fmt.Sprintf("%d", i), 1)
+
+		if Aliases.Get(newName) == nil {
+			break
+		}
+	}
+
+	return newName, nil
+}
 
 type AliasModule struct{}
 
@@ -61,8 +88,17 @@ func (module *AliasModule) AliasCmdFunc(msg *ygor.Message) {
 	newValue := strings.Join(msg.Args[1:], " ")
 
 	if alias == nil {
-		outputMsg = "ok (created)"
-		Aliases.Add(name, newValue)
+		newName, err := GetIncrementedName(name)
+		if err != nil {
+			IRCPrivMsg(msg.ReplyTo, "error: " + err.Error())
+			return
+		}
+		if newName != name {
+			outputMsg = "ok (created as \"" + newName + "\")"
+		} else {
+			outputMsg = "ok (created)"
+		}
+		Aliases.Add(newName, newValue)
 	} else if alias.Value == newValue {
 		outputMsg = "no changes"
 	} else {
