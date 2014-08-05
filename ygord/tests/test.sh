@@ -11,201 +11,201 @@
 cleanup
 
 
-# announce "unknown chatter"
-# test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :blabla"
-# cat > test.expected <<EOF
-# EOF
-# assert_output && pass
-# cleanup
-# 
-# 
-# announce "unhandled command (channel)"
-# test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: wtf"
-# cat > test.expected <<EOF
-# PRIVMSG #test :command not found: wtf
-# EOF
-# assert_output && pass
-# cleanup
-# 
-# 
-# announce "unhandled command (private prefixed)"
-# test_line "irc :jimmy!dev@truveris.com PRIVMSG whygore :whygore: wtf"
-# cat > test.expected <<EOF
-# PRIVMSG jimmy :command not found: wtf
-# EOF
-# assert_output && pass
-# cleanup
-# 
-# 
-# announce "unhandled command (private no prefix)"
-# test_line "irc :jimmy!dev@truveris.com PRIVMSG whygore :wtf"
-# cat > test.expected <<EOF
-# PRIVMSG jimmy :command not found: wtf
-# EOF
-# assert_output && pass
-# cleanup
-# 
-# 
-# announce "nop"
-# test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: nop"
-# cat > test.expected <<EOF
-# EOF
-# assert_output && pass
-# cleanup
-# 
-# 
-# announce "multi-commands"
-# test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: wtf; nop;bbq"
-# cat > test.expected <<EOF
-# PRIVMSG #test :command not found: wtf
-# PRIVMSG #test :command not found: bbq
-# EOF
-# assert_output && pass
-# cleanup
-# 
-# 
-# announce "commands"
-# test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: commands"
-# cat > test.expected <<EOF
-# PRIVMSG #test :africa, alias, aliases, commands, grep, image, jeopardy, minions, nop, ping, play, random, reboot, say, shutup, unalias, web, xombrero
-# EOF
-# assert_output && pass
-# cleanup
-# 
-# 
-# announce "minion registration"
-# test_line "minion user_id_0123456789 register bobert-von-cheesecake https://nom.nom/super-train/"
-# cat > test.expected <<EOF
-# [SQS-SendToMinion] https://nom.nom/super-train/ register success
-# EOF
-# assert_output && pass
-# cleanup
-# 
-# 
-# announce "minions list"
-# test_line "minion user_id_1234567890 register bobert-von-cheesecake https://nom.nom/super-train/bobert"
-# test_line "minion user_id_0987654321 register jo-mac-whopper https://nom.nom/super-train/jo"
-# test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: minions"
-# cat > test.expected <<EOF
-# PRIVMSG #test :currently registered: bobert-von-cheesecake, jo-mac-whopper
-# EOF
-# assert_output && pass
-# cleanup
-# 
-# 
-# announce "talk to the bot without colon"
-# test_line "minion user_id_1234567890 register bobert-von-cheesecake https://nom.nom/super-train/bobert"
-# test_line "minion user_id_0987654321 register jo-mac-whopper https://nom.nom/super-train/jo"
-# test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore minions"
-# cat > test.expected <<EOF
-# PRIVMSG #test :currently registered: bobert-von-cheesecake, jo-mac-whopper
-# EOF
-# assert_output && pass
-# cleanup
-# 
-# 
-# announce "spaces everywhere"
-# test_line "minion user_id_1234567890 register bobert-von-cheesecake https://nom.nom/super-train/bobert"
-# test_line "minion user_id_0987654321 register jo-mac-whopper https://nom.nom/super-train/jo"
-# test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :  whygore  minions  "
-# cat > test.expected <<EOF
-# PRIVMSG #test :currently registered: bobert-von-cheesecake, jo-mac-whopper
-# EOF
-# assert_output && pass
-# cleanup
-# 
-# 
-# announce "ping minions (outgoing)"
-# test_line "minion user_id_1234567890 register pi1 https://nom.nom/super-train/bobert"
-# test_line "minion user_id_1234567891 register pi2 https://nom.nom/super-train/jo"
-# test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: ping"
-# cat > test.expected <<EOF
-# [SQS-SendToMinion] https://nom.nom/super-train/bobert ping 1136239445000000000
-# [SQS-SendToMinion] https://nom.nom/super-train/jo ping 1136239445000000000
-# PRIVMSG #ygor :sent to pi1: ping 1136239445000000000
-# PRIVMSG #ygor :sent to pi2: ping 1136239445000000000
-# EOF
-# assert_output && pass
-# cleanup
-# 
-# 
-# announce "ping minions (late response)"
-# test_line "minion user_id_1234567890 register pi1 https://nom.nom/super-train/bobert"
-# test_line "minion user_id_1234567891 register pi2 https://nom.nom/super-train/jo"
-# {
-# 	sleep 0.1
-# 	echo "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: ping"
-# 	sleep 0.1
-# 	echo "minion user_id_1234567890 pong 1136239945000000000"
-# 	sleep 0.2
-# } | test_input
-# cat > test.expected <<EOF
-# [SQS-SendToMinion] https://nom.nom/super-train/bobert ping 1136239445000000000
-# [SQS-SendToMinion] https://nom.nom/super-train/jo ping 1136239445000000000
-# PRIVMSG #ygor :sent to pi1: ping 1136239445000000000
-# PRIVMSG #ygor :sent to pi2: ping 1136239445000000000
-# PRIVMSG #ygor :pong: got old ping reponse (1136239945000000000)
-# EOF
-# assert_output && pass
-# cleanup
-# 
-# 
-# announce "ping minions (good response)"
-# test_line "minion user_id_1234567890 register pi1 https://nom.nom/super-train/bobert"
-# test_line "minion user_id_1234567891 register pi2 https://nom.nom/super-train/jo"
-# {
-# 	echo "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: ping"
-# 	sleep 0.2
-# 	echo "minion user_id_1234567890 pong 1136239445000000000"
-# 	sleep 0.2
-# 	echo "minion user_id_1234567891 pong 1136239445000000000"
-# 	sleep 0.2
-# } | test_input
-# sed 's/[0-9]*h[0-9]*m[0-9.]*s/timestamp/' test.output > test.tmp
-# mv test.tmp test.output
-# cat > test.expected <<EOF
-# [SQS-SendToMinion] https://nom.nom/super-train/bobert ping 1136239445000000000
-# [SQS-SendToMinion] https://nom.nom/super-train/jo ping 1136239445000000000
-# PRIVMSG #ygor :sent to pi1: ping 1136239445000000000
-# PRIVMSG #ygor :sent to pi2: ping 1136239445000000000
-# PRIVMSG #test :delay with pi1: timestamp
-# PRIVMSG #test :delay with pi2: timestamp
-# EOF
-# assert_output && pass
-# cleanup
-# 
-# 
-# announce "play"
-# test_line "minion user_id_123123123 register pi2 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2"
-# test_line "minion user_id_234234234 register pi1 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1"
-# test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: play stuff.ogg"
-# cat > test.expected <<EOF
-# [SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1 play stuff.ogg
-# [SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2 play stuff.ogg
-# EOF
-# assert_output && pass
-# cleanup
-# 
-# 
-# announce "play w/ duration"
-# test_line "minion user_id_123123123 register pi2 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2"
-# test_line "minion user_id_234234234 register pi1 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1"
-# test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: play stuff.ogg 5s"
-# cat > test.expected <<EOF
-# [SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1 play stuff.ogg 5s
-# [SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2 play stuff.ogg 5s
-# EOF
-# assert_output && pass
-# cleanup
-# 
-# 
-# announce "set a new alias"
-# test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play stuff.ogg"
-# cat > test.expected <<EOF
-# PRIVMSG #test :ok (created)
-# EOF
-# assert_output && pass
-# cleanup
+announce "unknown chatter"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :blabla"
+cat > test.expected <<EOF
+EOF
+assert_output && pass
+cleanup
+
+
+announce "unhandled command (channel)"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: wtf"
+cat > test.expected <<EOF
+PRIVMSG #test :command not found: wtf
+EOF
+assert_output && pass
+cleanup
+
+
+announce "unhandled command (private prefixed)"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG whygore :whygore: wtf"
+cat > test.expected <<EOF
+PRIVMSG jimmy :command not found: wtf
+EOF
+assert_output && pass
+cleanup
+
+
+announce "unhandled command (private no prefix)"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG whygore :wtf"
+cat > test.expected <<EOF
+PRIVMSG jimmy :command not found: wtf
+EOF
+assert_output && pass
+cleanup
+
+
+announce "nop"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: nop"
+cat > test.expected <<EOF
+EOF
+assert_output && pass
+cleanup
+
+
+announce "multi-commands"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: wtf; nop;bbq"
+cat > test.expected <<EOF
+PRIVMSG #test :command not found: wtf
+PRIVMSG #test :command not found: bbq
+EOF
+assert_output && pass
+cleanup
+
+
+announce "commands"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: commands"
+cat > test.expected <<EOF
+PRIVMSG #test :africa, alias, aliases, commands, grep, image, jeopardy, minions, nop, ping, play, random, reboot, say, shutup, unalias, web, xombrero
+EOF
+assert_output && pass
+cleanup
+
+
+announce "minion registration"
+test_line "minion user_id_0123456789 register bobert-von-cheesecake https://nom.nom/super-train/"
+cat > test.expected <<EOF
+[SQS-SendToMinion] https://nom.nom/super-train/ register success
+EOF
+assert_output && pass
+cleanup
+
+
+announce "minions list"
+test_line "minion user_id_1234567890 register bobert-von-cheesecake https://nom.nom/super-train/bobert"
+test_line "minion user_id_0987654321 register jo-mac-whopper https://nom.nom/super-train/jo"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: minions"
+cat > test.expected <<EOF
+PRIVMSG #test :currently registered: bobert-von-cheesecake, jo-mac-whopper
+EOF
+assert_output && pass
+cleanup
+
+
+announce "talk to the bot without colon"
+test_line "minion user_id_1234567890 register bobert-von-cheesecake https://nom.nom/super-train/bobert"
+test_line "minion user_id_0987654321 register jo-mac-whopper https://nom.nom/super-train/jo"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore minions"
+cat > test.expected <<EOF
+PRIVMSG #test :currently registered: bobert-von-cheesecake, jo-mac-whopper
+EOF
+assert_output && pass
+cleanup
+
+
+announce "spaces everywhere"
+test_line "minion user_id_1234567890 register bobert-von-cheesecake https://nom.nom/super-train/bobert"
+test_line "minion user_id_0987654321 register jo-mac-whopper https://nom.nom/super-train/jo"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :  whygore  minions  "
+cat > test.expected <<EOF
+PRIVMSG #test :currently registered: bobert-von-cheesecake, jo-mac-whopper
+EOF
+assert_output && pass
+cleanup
+
+
+announce "ping minions (outgoing)"
+test_line "minion user_id_1234567890 register pi1 https://nom.nom/super-train/bobert"
+test_line "minion user_id_1234567891 register pi2 https://nom.nom/super-train/jo"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: ping"
+cat > test.expected <<EOF
+[SQS-SendToMinion] https://nom.nom/super-train/bobert ping 1136239445000000000
+[SQS-SendToMinion] https://nom.nom/super-train/jo ping 1136239445000000000
+PRIVMSG #ygor :sent to pi1: ping 1136239445000000000
+PRIVMSG #ygor :sent to pi2: ping 1136239445000000000
+EOF
+assert_output && pass
+cleanup
+
+
+announce "ping minions (late response)"
+test_line "minion user_id_1234567890 register pi1 https://nom.nom/super-train/bobert"
+test_line "minion user_id_1234567891 register pi2 https://nom.nom/super-train/jo"
+{
+	sleep 0.1
+	echo "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: ping"
+	sleep 0.1
+	echo "minion user_id_1234567890 pong 1136239945000000000"
+	sleep 0.2
+} | test_input
+cat > test.expected <<EOF
+[SQS-SendToMinion] https://nom.nom/super-train/bobert ping 1136239445000000000
+[SQS-SendToMinion] https://nom.nom/super-train/jo ping 1136239445000000000
+PRIVMSG #ygor :sent to pi1: ping 1136239445000000000
+PRIVMSG #ygor :sent to pi2: ping 1136239445000000000
+PRIVMSG #ygor :pong: got old ping reponse (1136239945000000000)
+EOF
+assert_output && pass
+cleanup
+
+
+announce "ping minions (good response)"
+test_line "minion user_id_1234567890 register pi1 https://nom.nom/super-train/bobert"
+test_line "minion user_id_1234567891 register pi2 https://nom.nom/super-train/jo"
+{
+	echo "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: ping"
+	sleep 0.2
+	echo "minion user_id_1234567890 pong 1136239445000000000"
+	sleep 0.2
+	echo "minion user_id_1234567891 pong 1136239445000000000"
+	sleep 0.2
+} | test_input
+sed 's/[0-9]*h[0-9]*m[0-9.]*s/timestamp/' test.output > test.tmp
+mv test.tmp test.output
+cat > test.expected <<EOF
+[SQS-SendToMinion] https://nom.nom/super-train/bobert ping 1136239445000000000
+[SQS-SendToMinion] https://nom.nom/super-train/jo ping 1136239445000000000
+PRIVMSG #ygor :sent to pi1: ping 1136239445000000000
+PRIVMSG #ygor :sent to pi2: ping 1136239445000000000
+PRIVMSG #test :delay with pi1: timestamp
+PRIVMSG #test :delay with pi2: timestamp
+EOF
+assert_output && pass
+cleanup
+
+
+announce "play"
+test_line "minion user_id_123123123 register pi2 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2"
+test_line "minion user_id_234234234 register pi1 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: play stuff.ogg"
+cat > test.expected <<EOF
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1 play stuff.ogg
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2 play stuff.ogg
+EOF
+assert_output && pass
+cleanup
+
+
+announce "play w/ duration"
+test_line "minion user_id_123123123 register pi2 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2"
+test_line "minion user_id_234234234 register pi1 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: play stuff.ogg 5s"
+cat > test.expected <<EOF
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1 play stuff.ogg 5s
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2 play stuff.ogg 5s
+EOF
+assert_output && pass
+cleanup
+
+
+announce "set a new alias"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play stuff.ogg"
+cat > test.expected <<EOF
+PRIVMSG #test :ok (created)
+EOF
+assert_output && pass
+cleanup
 
 
 announce "set an incremental alias"
