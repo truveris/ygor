@@ -28,6 +28,12 @@ func macSay(voice, sentence string) {
 
 func sayd(voice, sentence string) {
 	url := cfg.SaydURL + voice + "?" + url.QueryEscape(sentence)
+	log.Printf("invoking remote sayd with: %s", url)
+
+	if cfg.TestMode {
+		return
+	}
+
 	mplayerPlayAndWait(url)
 }
 
@@ -36,13 +42,13 @@ func sayd(voice, sentence string) {
 func say(voice, sentence string) {
 	var err error
 
-	if cfg.TestMode {
-		log.Printf("say: %s", sentence)
+	if cfg.SaydURL != "" {
+		sayd(voice, sentence)
 		return
 	}
 
-	if cfg.SaydURL != "" {
-		sayd(voice, sentence)
+	if cfg.TestMode {
+		log.Printf("say: %s", sentence)
 		return
 	}
 

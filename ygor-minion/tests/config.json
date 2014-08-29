@@ -4,6 +4,8 @@
 	"QueueName": "bobert-von-cheesecake",
 	"YgordQueueName": "ygord",
 
+	"SaydURL": "http://127.0.0.1:9999/",
+
 	"AWSRegionCode": "us-east-1",
 	"AWSAccessKeyId": "AAAAAAAAAAAAAAAAAAAA",
 	"AWSSecretAccessKey": "////////////////////////////////////////",

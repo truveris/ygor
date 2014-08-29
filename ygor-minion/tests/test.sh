@@ -83,12 +83,12 @@ EOF
 assert_output && pass
 
 
-announce "say something"
-test_command "say something"
+announce "say something complicated via sayd"
+test_command "say -v good%20news check my ~/scripts folder originally named joanne_query_runner"
 cat > test.expected <<EOF
 bobert-von-cheesecake starting up
 send to ygord: register bobert-von-cheesecake fake-queue
-say: something
+invoking remote sayd with: http://127.0.0.1:9999/good%20news?check+my+~%2Fscripts+folder+originally+named+joanne_query_runner
 terminating: EOF
 EOF
 assert_output && pass
