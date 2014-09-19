@@ -54,11 +54,11 @@ func aliasesHandler(w http.ResponseWriter, r *http.Request) {
 				<tbody>
 	`, user)
 
-	re := regexp.MustCompile("(https?://(?:(?:[:&=+$,a-zA-Z0-9_-]+@)?[a-zA-Z0-9.-]+)(?:/[\+~%/.a-zA-Z0-9_-]*)?\??(?:[+=&%@.a-zA-Z0-9_-]*))")
+	re := regexp.MustCompile("(https?://(?:(?:[:&=+$,a-zA-Z0-9_-]+@)?[a-zA-Z0-9.-]+)(?:/[+~%/.a-zA-Z0-9_-]*)?\\??(?:[+=&%@.a-zA-Z0-9_-]*))")
 
 	for _, alias := range aliases {
 
-		value = re.ReplaceAll(alias.Value, "<a href='$1'>$1</a>")
+		value := re.ReplaceAll([]byte(alias.Value), []byte("<a href='$1'>$1</a>"))
 
 		fmt.Fprintf(w, `
 		<tr>
