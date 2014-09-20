@@ -74,7 +74,7 @@ func SendToChannelMinions(channel, msg string) {
 			continue
 		}
 
-		err := client.SendMessage(url, msg)
+		err := client.SendMessage(url, sqs.SQSEncode(msg))
 		if err != nil {
 			Debug("error sending to minion: " + err.Error())
 			continue
@@ -135,7 +135,7 @@ func NewMessageFromMinionLine(line string) *ygor.Message {
 
 // Convert an SQS message into an ygor message.
 func NewMessageFromMinionSQS(sqsmsg *sqs.Message) *ygor.Message {
-	msg := NewMessageFromMinionLine(sqsmsg.Body)
+	msg := NewMessageFromMinionLine(sqs.SQSDecode(sqsmsg.Body))
 	msg.UserID = sqsmsg.UserID
 	return msg
 }

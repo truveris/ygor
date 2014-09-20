@@ -140,7 +140,7 @@ func Send(message string) error {
 		return err
 	}
 
-	err = client.SendMessage(url, message)
+	err = client.SendMessage(url, sqs.SQSEncode(message))
 	if err != nil {
 		return err
 	}
@@ -196,7 +196,7 @@ func main() {
 	}
 
 	for msg := range incoming {
-		command, data := SplitBody(msg.Body)
+		command, data := SplitBody(sqs.SQSDecode(msg.Body))
 
 		switch command {
 		case "play", "play-tune":

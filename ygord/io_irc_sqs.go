@@ -159,7 +159,7 @@ func StartIRCOutgoingQueueWriter(client *sqs.Client) (<-chan error, error) {
 
 	go func() {
 		for {
-			ch <- <-IRCOutgoing
+			ch <- sqs.SQSEncode(<-IRCOutgoing)
 		}
 	}()
 
