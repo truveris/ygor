@@ -106,8 +106,10 @@ func NewMessagesFromBody(body string) ([]*ygor.Message, error) {
 func NewMessagesFromPrivMsg(privmsg *ygor.PrivMsg) []*ygor.Message {
 	msgs, err := NewMessagesFromBody(privmsg.Body)
 	if err != nil {
-		IRCPrivMsg(privmsg.ReplyTo, "lexer/expand error: " +
-			err.Error())
+		if privmsg.Addressed {
+			IRCPrivMsg(privmsg.ReplyTo, "lexer/expand error: " +
+				err.Error())
+		}
 		return nil
 	}
 
