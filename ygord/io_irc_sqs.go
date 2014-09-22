@@ -27,14 +27,91 @@ var (
 	IRCNickname string
 )
 
-// Create a new ygor message from a parsed PRIVMSG.
-func NewMessagesFromPrivMsg(privmsg *ygor.PrivMsg) []*ygor.Message {
-	msgs := make([]*ygor.Message, 0)
-	bodies := strings.Split(privmsg.Body, ";")
+func ExpandSentence(words []string) ([][]string, error) {
+	sentences := make([][]string, len(words))
 
-	for _, body := range bodies {
+	// Resolve any alias found as first word.
+	expanded, err := Aliases.Resolve(words[0])
+	if err != nil {
+		return nil, err
+	}
+
+	sentences, err = LexerSplit(expanded)
+	if err != nil {
+		return nil, err
+	}
+
+	last := len(sentences) - 1
+	sentences[last] = append(sentences[last], words[1:]...)
+
+	return sentences, nil
+}
+
+// Expand sentences through aliases.
+func ExpandSentences(ss [][]string) ([][]string, error) {
+	sentences := make([][]string, len(ss))
+
+	for _, words := range ss {
+		if len(words) == 0 {
+			continue
+		}
+
+		newsentences, err := ExpandSentence(words)
+		if err != nil {
+			return nil, err
+		}
+		sentences = append(sentences, newsentences...)
+	}
+
+	return sentences, nil
+}
+
+// Create a new ygor message from a plain string.
+func NewMessagesFromBody(body string) ([]*ygor.Message, error) {
+	msgs := make([]*ygor.Message, 0)
+	sentences, err := LexerSplit(body)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: make that recursive.
+	for i := 0; i < 3; i++ {
+		sentences, err = ExpandSentences(sentences)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	for _, words := range sentences {
+		if len(words) == 0 {
+			continue
+		}
+
 		msg := ygor.NewMessage()
 
+		msg.Body = strings.Join(words, " ")
+		msg.Command = words[0]
+
+		if len(words) > 1 {
+			msg.Args = append(msg.Args, words[1:]...)
+		}
+
+		msgs = append(msgs, msg)
+	}
+
+	return msgs, nil
+}
+
+// Create a new ygor message from a parsed PRIVMSG.
+func NewMessagesFromPrivMsg(privmsg *ygor.PrivMsg) []*ygor.Message {
+	msgs, err := NewMessagesFromBody(privmsg.Body)
+	if err != nil {
+		IRCPrivMsg(privmsg.ReplyTo, "lexer/expand error: " +
+			err.Error())
+		return nil
+	}
+
+	for _, msg := range msgs {
 		if privmsg.Direct {
 			msg.Type = ygor.MsgTypeIRCPrivate
 		} else {
@@ -47,27 +124,6 @@ func NewMessagesFromPrivMsg(privmsg *ygor.PrivMsg) []*ygor.Message {
 
 		msg.UserID = privmsg.Nick
 		msg.ReplyTo = privmsg.ReplyTo
-
-		// Resolve any aliases.
-		body, err := Aliases.Resolve(strings.Trim(body, " \r\n\t"))
-		if err != nil {
-			IRCPrivMsg(msg.ReplyTo, "failed to resolve aliases: " +
-				err.Error())
-			continue
-		}
-
-		msg.Body = body
-
-		tokens := strings.Split(msg.Body, " ")
-		if len(tokens) > 0 {
-			msg.Command = tokens[0]
-
-			if len(tokens) > 1 {
-				msg.Args = append(msg.Args, tokens[1:]...)
-			}
-		}
-
-		msgs = append(msgs, msg)
 	}
 
 	return msgs

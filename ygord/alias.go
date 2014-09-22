@@ -4,7 +4,7 @@
 // This file contains all the tools to handle the aliases registry.
 //
 
-package ygor
+package main
 
 import (
 	"bufio"
@@ -179,6 +179,7 @@ func (file *AliasFile) RecursiveResolve(line string, level int) (string, error) 
 		return line, errors.New("max recursion reached")
 	}
 
+	// Only resolve the first word of a line.
 	parts := strings.SplitN(line, " ", 2)
 
 	// No more aliases, we're done here.
@@ -188,10 +189,11 @@ func (file *AliasFile) RecursiveResolve(line string, level int) (string, error) 
 	}
 
 	// Build a new line from the alias.
-	newparts := make([]string, 0)
-	newparts = append(newparts, alias.Value)
-	newparts = append(newparts, parts[1:]...)
-	line = strings.Join(newparts, " ")
+	if len(parts) > 1 {
+		line = alias.Value + " " + parts[1]
+	} else {
+		line = alias.Value
+	}
 
 	line, err := file.RecursiveResolve(line, level+1)
 	if err != nil {

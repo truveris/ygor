@@ -217,41 +217,46 @@ func (module *AliasModule) GrepCmdFunc(msg *ygor.Message) {
 }
 
 func (module *AliasModule) RandomCmdFunc(msg *ygor.Message) {
-	var aliases []string
+	var names []string
 
 	switch len(msg.Args) {
 	case 0:
-		aliases = Aliases.Names()
+		names = Aliases.Names()
 	case 1:
-		aliases = Aliases.Find(msg.Args[0])
+		names = Aliases.Find(msg.Args[0])
 	default:
 		IRCPrivMsg(msg.ReplyTo, "usage: random [pattern]")
 		return
 	}
 
-	if len(aliases) <= 0 {
+	if len(names) <= 0 {
 		IRCPrivMsg(msg.ReplyTo, "no matches found")
 		return
 	}
 
-	idx := rand.Intn(len(aliases))
+	idx := rand.Intn(len(names))
 
-	body, err := Aliases.Resolve(aliases[idx])
+	body, err := Aliases.Resolve(names[idx])
 	if err != nil {
 		IRCPrivMsg(msg.ReplyTo, "failed to resolve aliases: " +
 			err.Error())
 		return
 	}
 
-	IRCPrivMsg(msg.ReplyTo, "the codes have chosen "+aliases[idx])
+	newmsgs, err := NewMessagesFromBody(body)
+	if err != nil {
+		IRCPrivMsg(msg.ReplyTo, "error: failed to expand chose alias '" +
+			names[idx] + "': " + err.Error())
+		return
+	}
 
-	privmsg := &ygor.PrivMsg{}
-	privmsg.Nick = msg.UserID
-	privmsg.Body = body
-	privmsg.ReplyTo = msg.ReplyTo
-	privmsg.Addressed = true
-	newmsgs := NewMessagesFromPrivMsg(privmsg)
+	IRCPrivMsg(msg.ReplyTo, "the codes have chosen "+names[idx])
+
 	for _, newmsg := range newmsgs {
+		newmsg.ReplyTo = msg.ReplyTo
+		newmsg.Type = msg.Type
+		newmsg.UserID = msg.UserID
+		newmsg.ReplyTo = msg.ReplyTo
 		if newmsg == nil {
 			Debug("failed to convert PRIVMSG")
 			return

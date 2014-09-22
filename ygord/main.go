@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	Aliases *ygor.AliasFile
+	Aliases *AliasFile
 	Minions *ygor.MinionsFile
 )
 
@@ -25,7 +25,7 @@ func main() {
 
 	// We have global alias and minions files available to everyone. The
 	// alias module and irc io adapter use aliases and everything uses minions.
-	Aliases, err = ygor.OpenAliasFile(cfg.AliasFilePath)
+	Aliases, err = OpenAliasFile(cfg.AliasFilePath)
 	if err != nil {
 		log.Fatal("alias file error: ", err.Error())
 	}

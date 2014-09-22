@@ -351,12 +351,44 @@ assert_output && pass
 cleanup
 
 
+announce "use an alias with semi-colons"
+test_line "minion user_id_123123123 register pi2 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2"
+test_line "minion user_id_234234234 register pi1 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias jibberish \"play foo.ogg;play bar.ogg\""
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: jibberish"
+cat > test.expected <<EOF
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1 play foo.ogg
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2 play foo.ogg
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1 play bar.ogg
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2 play bar.ogg
+EOF
+assert_output && pass
+cleanup
+
+
+announce "use an alias with semi-colons sub-aliases"
+test_line "minion user_id_123123123 register pi2 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2"
+test_line "minion user_id_234234234 register pi1 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias foo play foo.ogg"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias bar play bar.ogg"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias jibberish \"foo;bar\""
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: jibberish"
+cat > test.expected <<EOF
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1 play foo.ogg
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2 play foo.ogg
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1 play bar.ogg
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2 play bar.ogg
+EOF
+assert_output && pass
+cleanup
+
+
 announce "use a recursive alias"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla babble"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias babble blabla"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: babble"
 cat > test.expected <<EOF
-PRIVMSG #test :failed to resolve aliases: max recursion reached
+PRIVMSG #test :lexer/expand error: max recursion reached
 EOF
 assert_output && pass
 cleanup
@@ -367,7 +399,7 @@ test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla babb
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias babble blabla;babble"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: babble"
 cat > test.expected <<EOF
-PRIVMSG #test :failed to resolve aliases: max recursion reached
+PRIVMSG #test :lexer/expand error: max recursion reached
 EOF
 assert_output && pass
 cleanup
