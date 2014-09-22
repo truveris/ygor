@@ -125,23 +125,25 @@ func player(tune Noise) *exec.Cmd {
 	var filepath string
 
 	if PathIsHttp(tune.Path) {
-		size, err := getRemoteSize(tune.Path)
-		if err != nil {
-			log.Printf("play: unable to read HTTP length: %s",
-				err.Error())
-			return nil
-		}
-		log.Printf("play: http content size is %d", size)
 
-		// Too big for local copy, let's stream.
-		if size > MaxCacheableSize {
-			log.Printf("play: content is too large for caching")
-			filepath = tune.Path
-		} else {
-			// Check if we already have a copy.
-			filepath = "tunes/" + MD5(tune.Path)
-			file, err := os.Open(filepath)
+		// Check if we have a local copy.
+		filepath = "tunes/" + MD5(tune.Path)
+		file, err := os.Open(filepath)
+		if err != nil {
+			// No cache available, check content size.
+			size, err := getRemoteSize(tune.Path)
 			if err != nil {
+				log.Printf("play: unable to read HTTP length: %s",
+					err.Error())
+				return nil
+			}
+			log.Printf("play: http content size is %d", size)
+
+			// Too big for local copy, let's stream.
+			if size > MaxCacheableSize {
+				log.Printf("play: content is too large for caching")
+				filepath = tune.Path
+			} else {
 				Send("play caching start")
 				log.Printf("play: attempting to cache file...")
 				err = downloadFile(tune.Path, filepath)
@@ -152,8 +154,8 @@ func player(tune Noise) *exec.Cmd {
 					return nil
 				}
 			}
-			file.Close()
 		}
+		file.Close()
 	} else {
 		// This path dance should avoid abuses.
 		folder, filename := path.Split(tune.Path)
