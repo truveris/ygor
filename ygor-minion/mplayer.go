@@ -4,6 +4,7 @@ package main
 
 import (
 	"crypto/md5"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -55,6 +56,10 @@ func getRemoteSize(url string) (int64, error) {
 		return 0, err
 	}
 
+	if resp.StatusCode != 200 {
+		return 0, errors.New("resp.StatusCode != 200")
+	}
+
 	return resp.ContentLength, nil
 }
 
@@ -66,6 +71,10 @@ func downloadFile(url, filepath string) error {
 	}
 
 	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return errors.New("resp.StatusCode != 200")
+	}
 
 	file, err := os.Create(filepath)
 	if err != nil {

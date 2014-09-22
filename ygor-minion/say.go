@@ -4,9 +4,9 @@ package main
 
 import (
 	"log"
+	"net/url"
 	"os/exec"
 	"runtime"
-	"net/url"
 )
 
 // say (for macs)

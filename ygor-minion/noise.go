@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tamentis/go-mplayer"
 	"github.com/jessevdk/go-flags"
+	"github.com/tamentis/go-mplayer"
 )
 
 var (
