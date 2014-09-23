@@ -10,7 +10,12 @@
 //    - ["unalias", "foo", ";", "alias", "foo", "play http://foo/music.mp3; image bar.jpg"]
 //
 // Note that unescaped semi-colons are singled out as tokens in a shell
-// fashion.
+// fashion. They are used to delimite statements/sentences at the lexer level.
+//
+// This tokenizer has some peculiarities:
+//    - \a-z will remain unescaped (\a remains \a).
+//    - \\ should be used to produce a single \
+//    - \" should be used to produce a single "
 //
 
 package main
@@ -120,6 +125,7 @@ func (t *Tokenizer) NextToken() (string, error) {
 			case RUNETYPE_EOF:
 				return string(token), errors.New("missing quote termination")
 			case RUNETYPE_CHAR, RUNETYPE_SPACE, RUNETYPE_EOS:
+				token = append(token, '\\')
 				token = append(token, nextRune)
 			case RUNETYPE_BACKSLASH:
 				state = STATE_QUOTED_ESCAPED
@@ -131,6 +137,7 @@ func (t *Tokenizer) NextToken() (string, error) {
 			case RUNETYPE_EOF:
 				return string(token), errors.New("unterminated escape character")
 			case RUNETYPE_CHAR:
+				token = append(token, '\\')
 				token = append(token, nextRune)
 				state = STATE_INWORD
 			case RUNETYPE_QUOTE:
