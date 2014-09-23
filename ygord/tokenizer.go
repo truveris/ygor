@@ -132,6 +132,7 @@ func (t *Tokenizer) NextToken() (string, error) {
 				return string(token), errors.New("unterminated escape character")
 			case RUNETYPE_CHAR:
 				token = append(token, nextRune)
+				state = STATE_INWORD
 			case RUNETYPE_QUOTE:
 				token = append(token, '"')
 				state = STATE_INWORD
@@ -147,6 +148,7 @@ func (t *Tokenizer) NextToken() (string, error) {
 				return string(token), errors.New("unterminated escape character")
 			case RUNETYPE_CHAR:
 				token = append(token, nextRune)
+				state = STATE_QUOTED
 			case RUNETYPE_QUOTE:
 				token = append(token, '"')
 				state = STATE_QUOTED
