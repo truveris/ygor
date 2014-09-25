@@ -55,13 +55,6 @@ func PlayAfrica(msg *ygor.Message) {
 	}()
 }
 
-func PlayJeopardy(msg *ygor.Message) {
-	msg.Args = append([]string{"tunes/jeopardy.mp3"}, msg.Args...)
-
-	IRCPrivAction(msg.ReplyTo, "queues some elevator music...")
-	Play(msg)
-}
-
 func (module SoundBoardModule) Init() {
 	ygor.RegisterCommand(ygor.Command{
 		Name:            "play",
@@ -74,14 +67,6 @@ func (module SoundBoardModule) Init() {
 	ygor.RegisterCommand(ygor.Command{
 		Name:            "africa",
 		PrivMsgFunction: PlayAfrica,
-		Addressed:       false,
-		AllowPrivate:    false,
-		AllowChannel:    true,
-	})
-
-	ygor.RegisterCommand(ygor.Command{
-		Name:            "jeopardy",
-		PrivMsgFunction: PlayJeopardy,
 		Addressed:       false,
 		AllowPrivate:    false,
 		AllowChannel:    true,
