@@ -67,7 +67,7 @@ cleanup
 announce "commands"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: commands"
 cat > test.expected <<EOF
-PRIVMSG #test :africa, alias, aliases, commands, grep, image, jeopardy, minions, nop, ping, play, random, reboot, say, shutup, unalias, web, xombrero
+PRIVMSG #test :africa, alias, aliases, commands, grep, image, minions, nop, ping, play, random, reboot, say, shutup, unalias, web, xombrero
 EOF
 assert_output && pass
 cleanup
@@ -76,7 +76,7 @@ cleanup
 announce "commands (no space)"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore:commands"
 cat > test.expected <<EOF
-PRIVMSG #test :africa, alias, aliases, commands, grep, image, jeopardy, minions, nop, ping, play, random, reboot, say, shutup, unalias, web, xombrero
+PRIVMSG #test :africa, alias, aliases, commands, grep, image, minions, nop, ping, play, random, reboot, say, shutup, unalias, web, xombrero
 EOF
 assert_output && pass
 cleanup
