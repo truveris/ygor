@@ -7,7 +7,50 @@
 
 . ./_functions.sh
 
+cleanup
 
+
+announce "volume usage"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: volume"
+cat > test.expected <<EOF
+PRIVMSG #test :usage: volume percent
+EOF
+assert_output && pass
+cleanup
+
+
+announce "volume 50%"
+test_line "minion user_id_234234234 register pi1 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1"
+test_line "minion user_id_123123123 register pi2 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: volume 50%"
+cat > test.expected <<EOF
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1 volume 50%
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2 volume 50%
+EOF
+assert_output && pass
+cleanup
+
+
+announce "volume -10%"
+test_line "minion user_id_234234234 register pi1 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1"
+test_line "minion user_id_123123123 register pi2 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: volume -10%"
+cat > test.expected <<EOF
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1 volume -10%
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2 volume -10%
+EOF
+assert_output && pass
+cleanup
+
+
+announce "volume error"
+test_line "minion user_id_1234567890 register pi1 https://nom.nom/super-train/bobert"
+test_line "minion user_id_1234567891 register pi2 https://nom.nom/super-train/jo"
+test_line "minion user_id_1234567891 volume error things"
+cat > test.expected <<EOF
+PRIVMSG #test :volume@pi2: error things
+EOF
+assert_output && pass
 cleanup
 
 
@@ -67,16 +110,7 @@ cleanup
 announce "commands"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: commands"
 cat > test.expected <<EOF
-PRIVMSG #test :africa, alias, aliases, commands, grep, image, minions, nop, ping, play, random, reboot, say, shutup, unalias, web, xombrero
-EOF
-assert_output && pass
-cleanup
-
-
-announce "commands (no space)"
-test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore:commands"
-cat > test.expected <<EOF
-PRIVMSG #test :africa, alias, aliases, commands, grep, image, minions, nop, ping, play, random, reboot, say, shutup, unalias, web, xombrero
+PRIVMSG #test :africa, alias, aliases, commands, grep, image, minions, nop, ping, play, random, reboot, say, shutup, unalias, volume, web, xombrero
 EOF
 assert_output && pass
 cleanup
@@ -106,6 +140,17 @@ announce "talk to the bot without colon"
 test_line "minion user_id_1234567890 register bobert-von-cheesecake https://nom.nom/super-train/bobert"
 test_line "minion user_id_0987654321 register jo-mac-whopper https://nom.nom/super-train/jo"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore minions"
+cat > test.expected <<EOF
+PRIVMSG #test :currently registered: bobert-von-cheesecake, jo-mac-whopper
+EOF
+assert_output && pass
+cleanup
+
+
+announce "talk to the bot without space"
+test_line "minion user_id_1234567890 register bobert-von-cheesecake https://nom.nom/super-train/bobert"
+test_line "minion user_id_0987654321 register jo-mac-whopper https://nom.nom/super-train/jo"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore:minions"
 cat > test.expected <<EOF
 PRIVMSG #test :currently registered: bobert-von-cheesecake, jo-mac-whopper
 EOF

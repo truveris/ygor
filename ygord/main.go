@@ -46,6 +46,7 @@ func main() {
 	RegisterModule(&SayModule{})
 	RegisterModule(&ShutUpModule{})
 	RegisterModule(&SoundBoardModule{})
+	RegisterModule(&VolumeModule{})
 	RegisterModule(&XombreroModule{})
 
 	log.Printf("starting i/o adapters")
