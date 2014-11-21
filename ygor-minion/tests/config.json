@@ -10,6 +10,8 @@
 	"AWSAccessKeyId": "AAAAAAAAAAAAAAAAAAAA",
 	"AWSSecretAccessKey": "////////////////////////////////////////",
 
+	"AMixerCommand": "./test.amixer",
+
 	"TestMode": true
 }
 

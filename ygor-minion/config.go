@@ -44,6 +44,10 @@ type Cfg struct {
 	// If defined, all the say commands are rendered through this service
 	// instead of using the tools available.
 	SaydURL string
+
+	// This optional command for amixer is mostly provided for the test
+	// suite to override.
+	AMixerCommand string
 }
 
 var (
@@ -51,7 +55,8 @@ var (
 	cmd = Cmd{}
 )
 
-// Look in the current directory for an config.json file.
+// Look in the current directory for an config.json file, provide validation
+// and default values where needed.
 func parseConfigFile() error {
 	file, err := os.Open(cmd.ConfigFile)
 	if err != nil {
@@ -86,6 +91,10 @@ func parseConfigFile() error {
 
 	if cfg.AWSRegionCode == "" {
 		return errors.New("\"AWSRegionCode\" is required")
+	}
+
+	if cfg.AMixerCommand == "" {
+		cfg.AMixerCommand = "amixer"
 	}
 
 	return nil

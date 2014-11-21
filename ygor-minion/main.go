@@ -211,6 +211,8 @@ func main() {
 			Reboot()
 		case "ping":
 			Ping(data)
+		case "volume":
+			Volume(data)
 		case "error":
 			// These errors are typically received when the queue
 			// systems fails to fetch a message. There is no reason

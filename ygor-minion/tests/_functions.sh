@@ -29,7 +29,8 @@ remove_timestamp() {
 }
 
 cleanup() {
-	rm -f test.stdout test.output test.stderr test.diff aliases.cfg test.expected
+	rm -f test.stdout test.output test.stderr test.diff aliases.cfg \
+		test.expected test.amixer
 }
 
 # $1 - file to test, typically test.stdout or test.stderr

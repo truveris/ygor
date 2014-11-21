@@ -1,0 +1,3 @@
+#!/bin/sh
+
+exit $FAKE_AMIXER_RETURN_CODE
