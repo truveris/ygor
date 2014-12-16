@@ -150,8 +150,8 @@ func player(tune Noise) *exec.Cmd {
 				if err != nil {
 					Send("play caching error")
 					log.Printf("play: download error:"+
-						" %s", err.Error())
-					return nil
+						" %s, reverting to streaming", err.Error())
+					filepath = tune.Path
 				}
 			}
 		}
