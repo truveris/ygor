@@ -48,6 +48,7 @@ type Cfg struct {
 	// This optional command for amixer is mostly provided for the test
 	// suite to override.
 	AMixerCommand string
+	AMixerControl string
 }
 
 var (
@@ -95,6 +96,10 @@ func parseConfigFile() error {
 
 	if cfg.AMixerCommand == "" {
 		cfg.AMixerCommand = "amixer"
+	}
+
+	if cfg.AMixerControl == "" {
+		cfg.AMixerControl = "PCM"
 	}
 
 	return nil

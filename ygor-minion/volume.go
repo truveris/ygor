@@ -19,7 +19,7 @@ func Volume(data string) {
 		return
 	}
 
-	cmd := exec.Command(cfg.AMixerCommand, "sset", "Master", data)
+	cmd := exec.Command(cfg.AMixerCommand, "sset", cfg.AMixerControl, data)
 	err := cmd.Start()
 	if err != nil {
 		Send("volume error starting amixer")

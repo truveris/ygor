@@ -1,4 +1,4 @@
-// Copyright 2014, Truveris Inc. All Rights Reserved.
+// Copyright 2014-2015, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 //
 // The io_irc_http is a temporary hack to expose ygor functions to the
@@ -14,9 +14,28 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
 	"regexp"
+	"strings"
 )
+
+func aliasesTxtHandler(w http.ResponseWriter, r *http.Request) {
+	_, err := auth(r)
+	if err != nil {
+		log.Printf("Authentication failed: %s", err.Error())
+		errorHandler(w, "Authentication failed")
+		return
+	}
+
+	aliases, err := Aliases.All()
+	if err != nil {
+		http.Error(w, "error: "+err.Error(), 500)
+		return
+	}
+
+	for _, alias := range aliases {
+		fmt.Fprintf(w, `%s\t%s`, alias.Name, alias.Value)
+	}
+}
 
 func aliasesHandler(w http.ResponseWriter, r *http.Request) {
 	user, err := auth(r)
@@ -148,7 +167,7 @@ func auth(r *http.Request) (string, error) {
 	auth, ok := r.Header["Authorization"]
 	if ok {
 		if len(auth) > 0 {
-			if ! strings.HasPrefix(auth[0], "Basic ") {
+			if !strings.HasPrefix(auth[0], "Basic ") {
 				return "", errors.New("Unsupported auth type")
 			}
 			value := strings.TrimPrefix(auth[0], "Basic ")
@@ -205,6 +224,7 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 func HTTPServer(address string) {
 	log.Printf("starting http server on %s", address)
 	http.HandleFunc("/", homeHandler)
+	http.HandleFunc("/aliases.txt", aliasesTxtHandler)
 	http.HandleFunc("/aliases", aliasesHandler)
 	http.HandleFunc("/minions", minionsHandler)
 	http.ListenAndServe(address, nil)
