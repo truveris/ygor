@@ -32,8 +32,9 @@ func aliasesTxtHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Content-Type", "text/plain")
 	for _, alias := range aliases {
-		fmt.Fprintf(w, `%s\t%s`, alias.Name, alias.Value)
+		fmt.Fprintf(w, "%s\t%s\n", alias.Name, alias.Value)
 	}
 }
 
