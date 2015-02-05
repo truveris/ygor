@@ -1,4 +1,4 @@
-// Copyright 2014, Truveris Inc. All Rights Reserved.
+// Copyright 2014-2015, Truveris Inc. All Rights Reserved.
 //
 // Minions takes orders from ygord and executes them (through an SQS
 // queue/inbox). There could be hundreds of minions installed on all sorts of
@@ -193,6 +193,7 @@ func main() {
 
 	if !cfg.TestMode {
 		mplayer.StartSlave(mplayerErrorHandler)
+		OpenTurrets()
 	}
 
 	for msg := range incoming {
@@ -213,6 +214,8 @@ func main() {
 			Ping(data)
 		case "volume":
 			Volume(data)
+		case "turret":
+			Turret(data)
 		case "error":
 			// These errors are typically received when the queue
 			// systems fails to fetch a message. There is no reason
@@ -223,5 +226,9 @@ func main() {
 		default:
 			log.Printf("unknown command: %s", msg)
 		}
+	}
+
+	if !cfg.TestMode {
+		CloseTurrets()
 	}
 }
