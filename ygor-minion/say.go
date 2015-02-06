@@ -1,4 +1,4 @@
-// Copyright 2014, Truveris Inc. All Rights Reserved.
+// Copyright 2014-2015, Truveris Inc. All Rights Reserved.
 
 package main
 
@@ -7,6 +7,9 @@ import (
 	"net/url"
 	"os/exec"
 	"runtime"
+	"strings"
+
+	"github.com/jessevdk/go-flags"
 )
 
 // say (for macs)
@@ -57,39 +60,57 @@ func say(voice, sentence string) {
 		return
 	}
 
-	cmd_espeak := exec.Command("espeak", "-ven-us+f2", "--stdout",
+	cmdEspeak := exec.Command("espeak", "-ven-us+f2", "--stdout",
 		sentence, "-a", "300", "-s", "130")
-	cmd_aplay := exec.Command("aplay")
+	cmdAplay := exec.Command("aplay")
 
-	cmd_aplay.Stdin, err = cmd_espeak.StdoutPipe()
+	cmdAplay.Stdin, err = cmdEspeak.StdoutPipe()
 	if err != nil {
-		log.Printf("error on cmd_espeak.StdoutPipe(): " + err.Error())
+		log.Printf("error on cmdEspeak.StdoutPipe(): " + err.Error())
 		return
 	}
 
-	err = cmd_espeak.Start()
+	err = cmdEspeak.Start()
 	if err != nil {
-		log.Printf("error on cmd_espeak.Start(): " + err.Error())
+		log.Printf("error on cmdEspeak.Start(): " + err.Error())
 		return
 	}
-	err = cmd_aplay.Start()
+	err = cmdAplay.Start()
 	if err != nil {
-		log.Printf("error on cmd_aplay.Start(): " + err.Error())
+		log.Printf("error on cmdAplay.Start(): " + err.Error())
 		return
 	}
 
-	RunningProcess = cmd_aplay.Process
+	RunningProcess = cmdAplay.Process
 
-	err = cmd_espeak.Wait()
+	err = cmdEspeak.Wait()
 	if err != nil {
-		log.Printf("error on cmd_espeak.Wait(): " + err.Error())
+		log.Printf("error on cmdEspeak.Wait(): " + err.Error())
 		return
 	}
-	err = cmd_aplay.Wait()
+	err = cmdAplay.Wait()
 	if err != nil {
-		log.Printf("error on cmd_aplay.Wait(): " + err.Error())
+		log.Printf("error on cmdAplay.Wait(): " + err.Error())
 		return
 	}
 
 	RunningProcess = nil
+}
+
+// Say is the implementation of the 'say' minion command.
+func Say(data string) {
+	cmd := SayArgs{}
+	args := strings.Split(data, " ")
+
+	flagParser := flags.NewParser(&cmd, flags.PassDoubleDash)
+	args, err := flagParser.ParseArgs(args)
+	if err != nil {
+		log.Printf("say command line error: %s", err.Error())
+		return
+	}
+
+	noise := Noise{}
+	noise.Voice = cmd.Voice
+	noise.Sentence = strings.Join(args, " ")
+	AddToPlayList(noise)
 }

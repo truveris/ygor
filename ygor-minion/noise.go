@@ -1,26 +1,24 @@
-// Copyright 2014, Truveris Inc. All Rights Reserved.
+// Copyright 2014-2015, Truveris Inc. All Rights Reserved.
 
 package main
 
 import (
 	"log"
-	"os"
 	"strings"
 	"time"
 
-	"github.com/jessevdk/go-flags"
 	"github.com/tamentis/go-mplayer"
 )
 
 var (
-	RunningProcess *os.Process
-
 	// This is the noise box, we keep as much as possible in local memory,
 	// that makes 'shutup' remotely useful. Without buffer we would have to
 	// wait through orders before even reaching the 'shutup' command.
-	NoiseInbox = make(chan Noise, 64)
+	playlist = make(chan Noise, 64)
 )
 
+// Noise defines a sound emitted by our minion. It could be a sound clip, a
+// video or a spoken sentence.
 type Noise struct {
 	Path     string
 	Duration time.Duration
@@ -28,7 +26,8 @@ type Noise struct {
 	Sentence string
 }
 
-type SayCmd struct {
+// SayArgs is the definition of the command-line parameters for the say command.
+type SayArgs struct {
 	Voice string `short:"v" description:"Voice for say" default:"bruce"`
 }
 
@@ -54,8 +53,8 @@ func playTune(tune Noise) {
 }
 
 // Iterate over the noise channel and pass the content to "say" or "play".
-func playNoise(noiseInbox chan Noise) {
-	for noise := range noiseInbox {
+func playNoise() {
+	for noise := range playlist {
 		if noise.Sentence != "" {
 			say(noise.Voice, noise.Sentence)
 		} else {
@@ -64,14 +63,14 @@ func playNoise(noiseInbox chan Noise) {
 	}
 }
 
-// Empty the noise inbox ...
+// ShutUp clears the noise inbox.
 func ShutUp() {
 	log.Printf("shutup: deleting %d items from the noise queue",
-		len(NoiseInbox))
+		len(playlist))
 
-	if len(NoiseInbox) > 0 {
-		for _ = range NoiseInbox {
-			if len(NoiseInbox) == 0 {
+	if len(playlist) > 0 {
+		for _ = range playlist {
+			if len(playlist) == 0 {
 				break
 			}
 		}
@@ -89,23 +88,13 @@ func ShutUp() {
 	}
 }
 
-func Say(data string) {
-	cmd := SayCmd{}
-	args := strings.Split(data, " ")
-
-	flagParser := flags.NewParser(&cmd, flags.PassDoubleDash)
-	args, err := flagParser.ParseArgs(args)
-	if err != nil {
-		log.Printf("say command line error: %s", err.Error())
-		return
-	}
-
-	noise := Noise{}
-	noise.Voice = cmd.Voice
-	noise.Sentence = strings.Join(args, " ")
-	NoiseInbox <- noise
+// AddToPlayList pushes noise down the pipeline.
+func AddToPlayList(n Noise) {
+	playlist <- n
 }
 
+// Play is the implementation of the 'play' minion command which schedules the
+// playback of sounds and videos in the minion.
 func Play(data string) {
 	if data == "" {
 		return
@@ -122,5 +111,5 @@ func Play(data string) {
 			tune.Duration = duration
 		}
 	}
-	NoiseInbox <- tune
+	AddToPlayList(tune)
 }

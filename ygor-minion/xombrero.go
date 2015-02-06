@@ -1,4 +1,4 @@
-// Copyright 2014, Truveris Inc. All Rights Reserved.
+// Copyright 2014-2015, Truveris Inc. All Rights Reserved.
 
 package main
 
@@ -8,7 +8,7 @@ import (
 	"net"
 )
 
-// Send a message to xombrero via its unix socket.
+// Xombrero sends a message to xombrero via its unix socket.
 func Xombrero(data string) {
 	if cfg.TestMode {
 		log.Printf("xombrero: %s", data)

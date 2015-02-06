@@ -10,6 +10,48 @@
 cleanup
 
 
+announce "turret usage (empty)"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: turret"
+cat > test.expected <<EOF
+PRIVMSG #test :usage: turret command [param]
+EOF
+assert_output && pass
+cleanup
+
+
+announce "turret usage (too many)"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: turret jimmy foo bar"
+cat > test.expected <<EOF
+PRIVMSG #test :usage: turret command [param]
+EOF
+assert_output && pass
+cleanup
+
+
+announce "turret reset"
+test_line "minion user_id_234234234 register pi1 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1"
+test_line "minion user_id_123123123 register pi2 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: turret reset"
+cat > test.expected <<EOF
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1 turret reset
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2 turret reset
+EOF
+assert_output && pass
+cleanup
+
+
+announce "turret fire 4"
+test_line "minion user_id_234234234 register pi1 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1"
+test_line "minion user_id_123123123 register pi2 http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: turret fire 4"
+cat > test.expected <<EOF
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1 turret fire 4
+[SQS-SendToMinion] http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2 turret fire 4
+EOF
+assert_output && pass
+cleanup
+
+
 announce "volume usage"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: volume"
 cat > test.expected <<EOF
@@ -110,7 +152,7 @@ cleanup
 announce "commands"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: commands"
 cat > test.expected <<EOF
-PRIVMSG #test :africa, alias, aliases, commands, grep, image, minions, nop, ping, play, random, reboot, say, shutup, unalias, volume, web, xombrero
+PRIVMSG #test :africa, alias, aliases, commands, grep, image, minions, nop, ping, play, random, reboot, say, shutup, turret, unalias, volume, web, xombrero
 EOF
 assert_output && pass
 cleanup

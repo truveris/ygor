@@ -1,4 +1,4 @@
-// Copyright 2014, Truveris Inc. All Rights Reserved.
+// Copyright 2014-2015, Truveris Inc. All Rights Reserved.
 
 package main
 
@@ -12,6 +12,7 @@ var (
 	rePercentage = regexp.MustCompile(`^[-+]?\d+%$`)
 )
 
+// Volume sets the volume via the alsa mixer command.
 func Volume(data string) {
 	if !rePercentage.MatchString(data) {
 		Send("volume error invalid input")

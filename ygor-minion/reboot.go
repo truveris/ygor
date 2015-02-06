@@ -1,4 +1,4 @@
-// Copyright 2014, Truveris Inc. All Rights Reserved.
+// Copyright 2014-2015, Truveris Inc. All Rights Reserved.
 
 package main
 
@@ -6,7 +6,7 @@ import (
 	"os/exec"
 )
 
-// Send a message to xombrero via its unix socket.
+// Reboot orders a system reboot to the minion.
 func Reboot() {
 	cmd := exec.Command("sudo", "reboot")
 	cmd.Start()

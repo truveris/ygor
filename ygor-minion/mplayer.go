@@ -1,4 +1,4 @@
-// Copyright 2014, Truveris Inc. All Rights Reserved.
+// Copyright 2014-2015, Truveris Inc. All Rights Reserved.
 
 package main
 
@@ -19,18 +19,18 @@ import (
 )
 
 const (
-	// This is the maximum file size this minion will keep a local cache
-	// of. Anything above this limit will be played directly from the
-	// remote location.
-	MaxCacheableSize = 2 * 1024 * 1024
+	// maxCacheableSize is the maximum file size this minion will keep a
+	// local cache of. Anything above this limit will be played directly
+	// from the remote location.
+	maxCacheableSize = 2 * 1024 * 1024
 )
 
 var (
 	mplayerInput = make(chan string)
 )
 
-// Check if the given path appears to be http.
-func PathIsHttp(path string) bool {
+// pathIsHTTP checks if the given path appears to be http.
+func pathIsHTTP(path string) bool {
 	if strings.HasPrefix(path, "http://") {
 		return true
 	}
@@ -42,8 +42,9 @@ func PathIsHttp(path string) bool {
 	return false
 }
 
-// Compute the MD5 of the provided string.
-func MD5(url string) string {
+// cachedFilename returns the filename of a URL. The current implementation
+// returns the MD5 of the URL to create a somewhat unique key.
+func cachedFilename(url string) string {
 	h := md5.New()
 	io.WriteString(h, url)
 	return fmt.Sprintf("%x", h.Sum(nil))
@@ -124,10 +125,10 @@ func omxplayer(filepath string) *exec.Cmd {
 func player(tune Noise) *exec.Cmd {
 	var filepath string
 
-	if PathIsHttp(tune.Path) {
+	if pathIsHTTP(tune.Path) {
 
 		// Check if we have a local copy.
-		filepath = "tunes/" + MD5(tune.Path)
+		filepath = "tunes/" + cachedFilename(tune.Path)
 		file, err := os.Open(filepath)
 		if err != nil {
 			// No cache available, check content size.
@@ -140,7 +141,7 @@ func player(tune Noise) *exec.Cmd {
 			log.Printf("play: http content size is %d", size)
 
 			// Too big for local copy, let's stream.
-			if size > MaxCacheableSize {
+			if size > maxCacheableSize {
 				log.Printf("play: content is too large for caching")
 				filepath = tune.Path
 			} else {

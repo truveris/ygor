@@ -5,7 +5,6 @@ package main
 import (
 	"log"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/truveris/goturret"
@@ -101,24 +100,12 @@ func CloseTurrets() {
 
 // Turret executes the turret command on the minion.
 func Turret(data string) {
-	var cmd, value string
+	cmd, value := SplitTwo(data)
 
-	tokens := strings.Split(data, " ")
-	if len(tokens) == 0 {
-		Send("turret error no params")
-		log.Printf("turret: no params")
+	if cmd == "" {
+		Send("turret error no command")
+		log.Printf("turret: no command")
 		return
-	}
-
-	cmd = tokens[0]
-
-	if len(tokens) > 1 {
-		value = tokens[1]
-		if len(tokens) > 2 {
-			Send("turret error too many params")
-			log.Printf("turret: too many params")
-			return
-		}
 	}
 
 	for _, t := range turrets {
@@ -135,14 +122,20 @@ func Turret(data string) {
 			t.Fire(getShots(value))
 		case "left":
 			t.Left(getDuration(value))
+			t.Stop()
 		case "right":
 			t.Right(getDuration(value))
+			t.Stop()
 		case "up":
 			t.Up(getDuration(value))
+			t.Stop()
 		case "down":
 			t.Down(getDuration(value))
+			t.Stop()
 		case "reset":
 			t.Reset()
+		case "type":
+			Send("turret type " + t.HumanReadableType())
 		}
 	}
 

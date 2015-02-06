@@ -34,11 +34,15 @@ import (
 	"github.com/truveris/ygor"
 )
 
-// This is used for debugging.
-//
-// It fetches queue messages from stdin instead of AWS SQS.
-//
-func StartReceivingFromStdin(incoming chan *sqs.Message) error {
+var (
+	// RunningProcess is a reference to the last process we launched. This
+	// is useful to allow user to kill this process (e.g. stop the video).
+	RunningProcess *os.Process
+)
+
+// startReceivingFromStdin is used for debugging. It fetches queue messages
+// from stdin instead of AWS SQS.
+func startReceivingFromStdin(incoming chan *sqs.Message) error {
 	err := Register(cfg.Name, "fake-queue")
 	if err != nil {
 		return errors.New("registration failed: " + err.Error())
@@ -60,8 +64,10 @@ func StartReceivingFromStdin(incoming chan *sqs.Message) error {
 	return nil
 }
 
-func StartReceivingFromSQS(incoming chan *sqs.Message) error {
-	client, err := sqs.NewClient(cfg.AWSAccessKeyId, cfg.AWSSecretAccessKey,
+// startReceivingFromSQS is the call used in a production system to start
+// receiving messages. It is not used in test.
+func startReceivingFromSQS(incoming chan *sqs.Message) error {
+	client, err := sqs.NewClient(cfg.AWSAccessKeyID, cfg.AWSSecretAccessKey,
 		cfg.AWSRegionCode)
 	if err != nil {
 		return err
@@ -104,8 +110,8 @@ func StartReceivingFromSQS(incoming chan *sqs.Message) error {
 	return nil
 }
 
-// Separate command and data.
-func SplitBody(body string) (string, string) {
+// SplitTwo separates command and data in various contexts.
+func SplitTwo(body string) (string, string) {
 	var command, data string
 
 	tokens := strings.SplitN(body, " ", 2)
@@ -118,7 +124,7 @@ func SplitBody(body string) (string, string) {
 	return command, data
 }
 
-// XXX: replace this by an sqschan
+// Send is used to send message to ygord. TODO: replace this by an sqschan.
 func Send(message string) error {
 	log.Printf("send to ygord: %s", message)
 	if cfg.TestMode {
@@ -129,7 +135,7 @@ func Send(message string) error {
 		return nil
 	}
 
-	client, err := sqs.NewClient(cfg.AWSAccessKeyId, cfg.AWSSecretAccessKey,
+	client, err := sqs.NewClient(cfg.AWSAccessKeyID, cfg.AWSSecretAccessKey,
 		cfg.AWSRegionCode)
 	if err != nil {
 		return err
@@ -148,7 +154,8 @@ func Send(message string) error {
 	return nil
 }
 
-// Send a registration message to ygord: who we are and how to speak to us.
+// Register sends a registration message to ygord: who we are and how to speak
+// to us. TODO: this command should include capabilities (sound, turret, etc.)
 func Register(name, queueURL string) error {
 	message := fmt.Sprintf("register %s %s", cfg.Name, queueURL)
 	err := Send(message)
@@ -176,12 +183,12 @@ func main() {
 	// This is the message box.
 	incoming := make(chan *sqs.Message)
 	if cfg.TestMode {
-		err := StartReceivingFromStdin(incoming)
+		err := startReceivingFromStdin(incoming)
 		if err != nil {
 			log.Fatal(err)
 		}
 	} else {
-		err := StartReceivingFromSQS(incoming)
+		err := startReceivingFromSQS(incoming)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -189,7 +196,7 @@ func main() {
 
 	go ygor.WaitForTraceRequest()
 
-	go playNoise(NoiseInbox)
+	go playNoise()
 
 	if !cfg.TestMode {
 		mplayer.StartSlave(mplayerErrorHandler)
@@ -197,7 +204,7 @@ func main() {
 	}
 
 	for msg := range incoming {
-		command, data := SplitBody(sqs.SQSDecode(msg.Body))
+		command, data := SplitTwo(sqs.SQSDecode(msg.Body))
 
 		switch command {
 		case "play", "play-tune":

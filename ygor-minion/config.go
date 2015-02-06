@@ -1,4 +1,4 @@
-// Copyright 2014, Truveris Inc. All Rights Reserved.
+// Copyright 2014-2015, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 
 package main
@@ -11,12 +11,12 @@ import (
 	"github.com/jessevdk/go-flags"
 )
 
-type Cmd struct {
+type cmdDef struct {
 	ConfigFile string `short:"c" description:"Configuration file" default:"/etc/ygor-minion.conf"`
 }
 
-type Cfg struct {
-	AWSAccessKeyId     string
+type cfgDef struct {
+	AWSAccessKeyID     string
 	AWSSecretAccessKey string
 
 	// Name of the minion.
@@ -52,8 +52,8 @@ type Cfg struct {
 }
 
 var (
-	cfg = Cfg{}
-	cmd = Cmd{}
+	cfg = cfgDef{}
+	cmd = cmdDef{}
 )
 
 // Look in the current directory for an config.json file, provide validation
@@ -82,8 +82,8 @@ func parseConfigFile() error {
 		return errors.New("\"YgordQueueName\" is required")
 	}
 
-	if cfg.AWSAccessKeyId == "" {
-		return errors.New("\"AWSAccessKeyId\" is required")
+	if cfg.AWSAccessKeyID == "" {
+		return errors.New("\"AWSAccessKeyID\" is required")
 	}
 
 	if cfg.AWSSecretAccessKey == "" {
