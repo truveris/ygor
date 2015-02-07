@@ -15,6 +15,11 @@ func Xombrero(data string) {
 		return
 	}
 
+	if cfg.XombreroSocket == "" {
+		log.Printf("xombrero: no socket configured")
+		return
+	}
+
 	conn, err := net.Dial("unix", cfg.XombreroSocket)
 	if err != nil {
 		Send("xombrero error " + err.Error())
