@@ -1,4 +1,4 @@
-// Copyright 2014, Truveris Inc. All Rights Reserved.
+// Copyright 2014-2015, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 
 package main
@@ -6,20 +6,20 @@ package main
 import (
 	"strings"
 
-	"github.com/truveris/ygor"
 	"github.com/jessevdk/go-flags"
 )
 
-type SayCmd struct {
+// SayCmdLine is the schema for the command-line parser of the 'say' command.
+type SayCmdLine struct {
 	Voice string `short:"v" description:"Voice" default:"bruce"`
 }
 
+// SayModule controls all the 'say' commands.
 type SayModule struct{}
 
-func (module SayModule) PrivMsg(msg *ygor.PrivMsg) {}
-
-func SayCommand(msg *ygor.Message) {
-	cmd := SayCmd{}
+// PrivMsg is the message handler for user requests.
+func (module *SayModule) PrivMsg(msg *Message) {
+	cmd := SayCmdLine{}
 
 	flagParser := flags.NewParser(&cmd, flags.PassDoubleDash)
 	args, err := flagParser.ParseArgs(msg.Args)
@@ -32,10 +32,11 @@ func SayCommand(msg *ygor.Message) {
 	SendToChannelMinions(msg.ReplyTo, body)
 }
 
+// Init registers all the commands for this module.
 func (module SayModule) Init() {
-	ygor.RegisterCommand(ygor.Command{
+	RegisterCommand(Command{
 		Name:            "say",
-		PrivMsgFunction: SayCommand,
+		PrivMsgFunction: module.PrivMsg,
 		Addressed:       true,
 		AllowPrivate:    false,
 		AllowChannel:    true,

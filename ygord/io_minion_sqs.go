@@ -1,4 +1,4 @@
-// Copyright 2014, Truveris Inc. All Rights Reserved.
+// Copyright 2014-2015, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 //
 // The minion-sqs adapter allows ygord to send and receive data to the minions
@@ -13,12 +13,10 @@ import (
 
 	"github.com/truveris/sqs"
 	"github.com/truveris/sqs/sqschan"
-	"github.com/truveris/ygor"
 )
 
-// In standard operation, this is the entry point for this adapter. It reads
-// from the main ygord queue and assume all the incoming messages are minion
-// feedbacks.
+// StartMinionAdapter is the entry point for this IO adapter. It reads from the
+// main ygord queue and assume all the incoming messages are minion feedbacks.
 func StartMinionAdapter(client *sqs.Client) (<-chan error, error) {
 	errch := make(chan error, 0)
 
@@ -46,9 +44,10 @@ func StartMinionAdapter(client *sqs.Client) (<-chan error, error) {
 	return errch, nil
 }
 
-// Send a message to our friendly minions via their respective SQS queues.
+// SendToChannelMinions sends a message to all the minions of the given
+// channel.
 func SendToChannelMinions(channel, msg string) {
-	client, err := sqs.NewClient(cfg.AWSAccessKeyId, cfg.AWSSecretAccessKey,
+	client, err := sqs.NewClient(cfg.AWSAccessKeyID, cfg.AWSSecretAccessKey,
 		cfg.AWSRegionCode)
 	if err != nil {
 		Debug("error: " + err.Error())
@@ -82,14 +81,14 @@ func SendToChannelMinions(channel, msg string) {
 	}
 }
 
-// Send a message to our friendly minion via its SQS queue.
+// SendToQueue sends a message to our friendly minion via its SQS queue.
 func SendToQueue(queueURL, msg string) error {
 	if cfg.TestMode {
 		fmt.Printf("[SQS-SendToMinion] %s %s\n", queueURL, msg)
 		return nil
 	}
 
-	client, err := sqs.NewClient(cfg.AWSAccessKeyId, cfg.AWSSecretAccessKey,
+	client, err := sqs.NewClient(cfg.AWSAccessKeyID, cfg.AWSSecretAccessKey,
 		cfg.AWSRegionCode)
 	if err != nil {
 		return err
@@ -103,9 +102,9 @@ func SendToQueue(queueURL, msg string) error {
 	return nil
 }
 
-// This is the function used from main() when receiving data on the InputQueue.
-func MinionMessageHandler(msg *ygor.Message) {
-	for _, cmd := range ygor.RegisteredCommands {
+// MinionMessageHandler is used from main() when receiving data on the InputQueue.
+func MinionMessageHandler(msg *Message) {
+	for _, cmd := range RegisteredCommands {
 		if !cmd.MinionMessageMatches(msg) {
 			continue
 		}
@@ -120,10 +119,10 @@ func MinionMessageHandler(msg *ygor.Message) {
 	}
 }
 
-// Convert a raw minion line into an ygor message.
-func NewMessageFromMinionLine(line string) *ygor.Message {
-	msg := ygor.NewMessage()
-	msg.Type = ygor.MsgTypeMinion
+// NewMessageFromMinionLine converts a raw minion line into an ygor message.
+func NewMessageFromMinionLine(line string) *Message {
+	msg := NewMessage()
+	msg.Type = MsgTypeMinion
 	msg.Body = line
 
 	args := strings.Split(line, " ")
@@ -133,8 +132,8 @@ func NewMessageFromMinionLine(line string) *ygor.Message {
 	return msg
 }
 
-// Convert an SQS message into an ygor message.
-func NewMessageFromMinionSQS(sqsmsg *sqs.Message) *ygor.Message {
+// NewMessageFromMinionSQS converts an SQS message into an ygor message.
+func NewMessageFromMinionSQS(sqsmsg *sqs.Message) *Message {
 	msg := NewMessageFromMinionLine(sqs.SQSDecode(sqsmsg.Body))
 	msg.UserID = sqsmsg.UserID
 	return msg

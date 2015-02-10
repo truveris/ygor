@@ -222,6 +222,8 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 	`, user)
 }
 
+// HTTPServer starts an HTTP server at the given address.  This is started as a
+// go routine by StartHTTPAdapter.
 func HTTPServer(address string) {
 	log.Printf("starting http server on %s", address)
 	http.HandleFunc("/", homeHandler)
@@ -231,6 +233,7 @@ func HTTPServer(address string) {
 	http.ListenAndServe(address, nil)
 }
 
+// StartHTTPAdapter starts an HTTP server routine if an address is configured.
 func StartHTTPAdapter() error {
 	if cfg.HTTPServerAddress != "" {
 		go HTTPServer(cfg.HTTPServerAddress)

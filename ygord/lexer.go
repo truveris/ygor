@@ -1,4 +1,4 @@
-// Copyright 2014, Truveris Inc. All Rights Reserved.
+// Copyright 2014-2015, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 //
 // This is ygord's lexical analyser, use the Split() function to transform this
@@ -28,18 +28,23 @@ import (
 	"strings"
 )
 
+// Lexer is the lexical analysis struct, it's a tokenizer with some
+// understanding of "sentences", separated by semi-colons.
 type Lexer struct {
 	t *Tokenizer
 }
 
+// NewLexer allocates a new Lexer struct with the given Reader as main input.
 func NewLexer(input io.Reader) *Lexer {
 	l := &Lexer{}
 	l.t = NewTokenizer(input)
 	return l
 }
 
-func (l *Lexer) NextSentence() ([]string, error){
-	sentence := make([]string, 0)
+// NextSentence reads through the input ont token at a time to produce a single
+// sentence.
+func (l *Lexer) NextSentence() ([]string, error) {
+	var sentence []string
 	var err error
 	var word string
 
@@ -64,9 +69,12 @@ func (l *Lexer) NextSentence() ([]string, error){
 	return sentence, err
 }
 
+// LexerSplit iterates through NextSentence calls to return a list of all the
+// sentences parsed out from 's'.
 func LexerSplit(s string) ([][]string, error) {
+	var sentences [][]string
+
 	l := NewLexer(strings.NewReader(s))
-	sentences := make([][]string, 0)
 
 	for {
 		sentence, err := l.NextSentence()

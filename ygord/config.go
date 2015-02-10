@@ -1,4 +1,4 @@
-// Copyright 2014, Truveris Inc. All Rights Reserved.
+// Copyright 2014-2015, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 
 package main
@@ -9,23 +9,26 @@ import (
 	"os"
 
 	"github.com/jessevdk/go-flags"
-	"github.com/truveris/ygor"
 )
 
+// Cmd is a singleton used to store the command-line parameters.
 type Cmd struct {
 	ConfigFile string `short:"c" description:"Configuration file" default:"/etc/ygord.conf"`
 }
 
+// ChannelCfg represents a per-channel grouping of minions.
 type ChannelCfg struct {
 	Minions []string
 }
 
+// Cfg is a singleton used to store the file configuration.
 type Cfg struct {
 	// AWS Region to use for SQS access (e.g. us-east-1).
 	AWSRegionCode string
 
-	// AWS credentials (used to access ygord and minion queues).
-	AWSAccessKeyId     string
+	// AWS access key id
+	AWSAccessKeyID string
+	// AWS secret access key
 	AWSSecretAccessKey string
 
 	// In Test-mode, this program will not attempt to communicate with any
@@ -70,12 +73,12 @@ var (
 	cmd = Cmd{}
 )
 
-// Return a list of all the auto-join channels (all unique configured channels
-// and debug channels).
+// GetAutoJoinChannels returns a list of all the auto-join channels (all unique
+// configured channels and debug channels).
 func (cfg *Cfg) GetAutoJoinChannels() []string {
 	channels := make(StringSet, 0)
 
-	for name, _ := range cfg.Channels {
+	for name := range cfg.Channels {
 		channels.Add(name)
 	}
 
@@ -86,9 +89,9 @@ func (cfg *Cfg) GetAutoJoinChannels() []string {
 	return channels.Array()
 }
 
-// Return an array of minions configured for this ChannelCfg.
-func (channelCfg *ChannelCfg) GetMinions() ([]*ygor.Minion, error) {
-	minions := make([]*ygor.Minion, 0)
+// GetMinions returns an array of minions configured for this ChannelCfg.
+func (channelCfg *ChannelCfg) GetMinions() ([]*Minion, error) {
+	var minions []*Minion
 
 	for _, name := range channelCfg.Minions {
 		minion, err := Minions.Get(name)
@@ -102,10 +105,10 @@ func (channelCfg *ChannelCfg) GetMinions() ([]*ygor.Minion, error) {
 	return minions, nil
 }
 
-// Return an array of queue URLs. These URLs are extracted from the minions
-// attached to this channel.
+// GetQueueURLs returns an array of queue URLs. These URLs are extracted from
+// the minions attached to this channel.
 func (channelCfg *ChannelCfg) GetQueueURLs() ([]string, error) {
-	urls := make([]string, 0)
+	var urls []string
 
 	minions, err := channelCfg.GetMinions()
 	if err != nil {
@@ -124,7 +127,8 @@ func (channelCfg *ChannelCfg) GetQueueURLs() ([]string, error) {
 	return urls, nil
 }
 
-// Look in the current directory for an config.json file.
+// ParseConfigFile reads our JSON config file and validates its values, also
+// populating defaults when possible.
 func ParseConfigFile() error {
 	file, err := os.Open(cmd.ConfigFile)
 	if err != nil {
@@ -156,8 +160,8 @@ func ParseConfigFile() error {
 		return errors.New("'AWSRegionCode' is not defined")
 	}
 
-	if cfg.AWSAccessKeyId == "" {
-		return errors.New("'AWSAccessKeyId' is not defined")
+	if cfg.AWSAccessKeyID == "" {
+		return errors.New("'AWSAccessKeyID' is not defined")
 	}
 
 	if cfg.AWSSecretAccessKey == "" {
@@ -175,9 +179,9 @@ func ParseConfigFile() error {
 	return nil
 }
 
-// Return a list of channels given a minion name.
+// GetChannelsByMinionName returns a list of channels given a minion name.
 func GetChannelsByMinionName(name string) []string {
-	channels := make([]string, 0)
+	var channels []string
 
 	for channelName, channelCfg := range cfg.Channels {
 		for _, minionName := range channelCfg.Minions {
@@ -191,7 +195,8 @@ func GetChannelsByMinionName(name string) []string {
 	return channels
 }
 
-// Parse the command line arguments and populate the global cmd struct.
+// ParseCommandLine parses the command line arguments and populate the global
+// cmd struct.
 func ParseCommandLine() {
 	flagParser := flags.NewParser(&cmd, flags.PassDoubleDash)
 	_, err := flagParser.Parse()
@@ -202,8 +207,8 @@ func ParseCommandLine() {
 	}
 }
 
-// Return all the minions configured for that channel.
-func GetChannelMinions(channel string) []*ygor.Minion {
+// GetChannelMinions returns all the minions configured for that channel.
+func GetChannelMinions(channel string) []*Minion {
 	channelCfg, exists := cfg.Channels[channel]
 	if !exists {
 		Debug("error: " + channel + " has no queue(s) configured")

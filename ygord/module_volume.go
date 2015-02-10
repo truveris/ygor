@@ -1,4 +1,4 @@
-// Copyright 2014, Truveris Inc. All Rights Reserved.
+// Copyright 2014-2015, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 
 package main
@@ -7,18 +7,17 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-
-	"github.com/truveris/ygor"
 )
 
 var (
 	rePercentage = regexp.MustCompile(`^[-+]?\d+%$`)
 )
 
+// VolumeModule is the module handling all the volume related commands.
 type VolumeModule struct{}
 
-// Send the volume command to the minions.
-func (module VolumeModule) PrivMsg(msg *ygor.Message) {
+// PrivMsg is the message handler for user 'volume' requests.
+func (module VolumeModule) PrivMsg(msg *Message) {
 	if len(msg.Args) != 1 {
 		IRCPrivMsg(msg.ReplyTo, "usage: volume percent")
 		return
@@ -32,7 +31,9 @@ func (module VolumeModule) PrivMsg(msg *ygor.Message) {
 	SendToChannelMinions(msg.ReplyTo, "volume "+msg.Args[0])
 }
 
-func (module VolumeModule) MinionMsg(msg *ygor.Message) {
+// MinionMsg is the message handler for all the minion responses for 'volume'
+// requests.
+func (module VolumeModule) MinionMsg(msg *Message) {
 	if msg.Args[0] != "ok" {
 		minion, err := Minions.GetByUserID(msg.UserID)
 		if err != nil {
@@ -48,8 +49,9 @@ func (module VolumeModule) MinionMsg(msg *ygor.Message) {
 	}
 }
 
+// Init registers all the commands for this module.
 func (module VolumeModule) Init() {
-	ygor.RegisterCommand(ygor.Command{
+	RegisterCommand(Command{
 		Name:              "volume",
 		PrivMsgFunction:   module.PrivMsg,
 		MinionMsgFunction: module.MinionMsg,

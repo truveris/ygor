@@ -7,12 +7,14 @@ import (
 	"log"
 	"os"
 
-	"github.com/truveris/ygor"
+	"github.com/truveris/ygor/ygord/alias"
 )
 
+// These are the global registry for aliases and minions.  Both are in-memory
+// maps with permanent file storage.
 var (
-	Aliases *AliasFile
-	Minions *ygor.MinionsFile
+	Aliases *alias.File
+	Minions *MinionsFile
 )
 
 func main() {
@@ -25,12 +27,12 @@ func main() {
 
 	// We have global alias and minions files available to everyone. The
 	// alias module and irc io adapter use aliases and everything uses minions.
-	Aliases, err = OpenAliasFile(cfg.AliasFilePath)
+	Aliases, err = alias.Open(cfg.AliasFilePath)
 	if err != nil {
 		log.Fatal("alias file error: ", err.Error())
 	}
 
-	Minions, err = ygor.OpenMinionsFile(cfg.MinionsFilePath)
+	Minions, err = OpenMinionsFile(cfg.MinionsFilePath)
 	if err != nil {
 		log.Fatal("minions file error: ", err.Error())
 	}
@@ -43,9 +45,9 @@ func main() {
 	RegisterModule(&MinionsModule{})
 	RegisterModule(&NopModule{})
 	RegisterModule(&PingModule{})
+	RegisterModule(&PlayModule{})
 	RegisterModule(&SayModule{})
 	RegisterModule(&ShutUpModule{})
-	RegisterModule(&SoundBoardModule{})
 	RegisterModule(&TurretModule{})
 	RegisterModule(&VolumeModule{})
 	RegisterModule(&XombreroModule{})
@@ -56,7 +58,7 @@ func main() {
 		log.Fatal("failed to start adapters: ", err.Error())
 	}
 
-	go ygor.WaitForTraceRequest()
+	go waitForTraceRequest()
 
 	log.Printf("ready")
 	for {
@@ -67,16 +69,16 @@ func main() {
 			log.Printf("minion handler error: %s", err.Error())
 		case msg := <-InputQueue:
 			switch msg.Type {
-			case ygor.MsgTypeIRCChannel:
+			case MsgTypeIRCChannel:
 				go IRCMessageHandler(msg)
-			case ygor.MsgTypeIRCPrivate:
+			case MsgTypeIRCPrivate:
 				go IRCMessageHandler(msg)
-			case ygor.MsgTypeMinion:
+			case MsgTypeMinion:
 				go MinionMessageHandler(msg)
-			case ygor.MsgTypeExit:
+			case MsgTypeExit:
 				log.Printf("terminating: %s", msg.Body)
 				os.Exit(0)
-			case ygor.MsgTypeFatal:
+			case MsgTypeFatal:
 				log.Fatal("fatal error: " + msg.Body)
 			default:
 				log.Printf("msg handler error: un-handled type"+

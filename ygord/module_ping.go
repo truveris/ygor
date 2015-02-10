@@ -1,4 +1,4 @@
-// Copyright 2014, Truveris Inc. All Rights Reserved.
+// Copyright 2014-2015, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 //
 // This module allows for the registration and management of minions from IRC.
@@ -10,25 +10,20 @@ import (
 	"fmt"
 	"strconv"
 	"time"
-
-	"github.com/truveris/ygor"
 )
 
-// Basic module.
+// PingModule controls the 'ping' / 'pong' commands.
 type PingModule struct {
-	// When this is zero, there is no ping going on. If a ping is running,
-	// the first value contains the start time of the ping and second the
-	// channel/user to reply to.
+	// PingStartTime keeps track of the ping request start times on a
+	// per-minion basis.  The map key is the minion id and the time is the
+	// moment when the request was made.
 	PingStartTimes map[string]time.Time
 
-	// FIXME: once we have a request/response mechanism, this should be
-	// deleted.
+	// PingReplyTo sets who to send the results to.
 	PingReplyTo string
 }
 
-func (module *PingModule) PrivMsg(msg *ygor.Message) {}
-
-// Wrapper around Now which always returns the same time in test mode.
+// Now is a wrapper around Now which always returns the same time in test mode.
 func Now() time.Time {
 	if cfg.TestMode {
 		return time.Unix(1136239445, 0)
@@ -37,10 +32,11 @@ func Now() time.Time {
 	return time.Now()
 }
 
-// When the "ping" command is issued, send a ping command to all the minion
-// with a unique timestamp. This timestamp will be used to validated incoming
-// ping responses.
-func (module *PingModule) PingCmdFunc(msg *ygor.Message) {
+// PrivMsg is the message handler for 'play' requests.  When the "ping" command
+// is issued, a ping command is issued to all the minion with a unique
+// timestamp.  This timestamp will be used to validated incoming ping
+// responses.
+func (module *PingModule) PrivMsg(msg *Message) {
 	if len(module.PingStartTimes) > 0 {
 		IRCPrivMsg(msg.ReplyTo, "error: previous ping still running")
 		return
@@ -63,14 +59,15 @@ func (module *PingModule) PingCmdFunc(msg *ygor.Message) {
 	}()
 }
 
-// Reset all the ping internal variables.
+// PingReset resets all the ping internal variables.  This is used at the end
+// of a ping to prepare the module for the next ping.
 func (module *PingModule) PingReset() {
 	module.PingStartTimes = make(map[string]time.Time)
 	module.PingReplyTo = ""
 }
 
-// Minions reponding to ping.
-func (module *PingModule) PongCmdFunc(msg *ygor.Message) {
+// MinionMsg is the handler for minion responses.
+func (module *PingModule) MinionMsg(msg *Message) {
 	if len(msg.Args) != 1 {
 		Debug("pong: usage error")
 		return
@@ -108,20 +105,21 @@ func (module *PingModule) PongCmdFunc(msg *ygor.Message) {
 	IRCPrivMsg(module.PingReplyTo, reply)
 }
 
+// Init registers all the commands for this module.
 func (module *PingModule) Init() {
 	module.PingReset()
 
 	// ping/pong dance
-	ygor.RegisterCommand(ygor.Command{
+	RegisterCommand(Command{
 		Name:            "ping",
-		PrivMsgFunction: module.PingCmdFunc,
+		PrivMsgFunction: module.PrivMsg,
 		Addressed:       true,
 		AllowPrivate:    true,
 		AllowChannel:    true,
 	})
-	ygor.RegisterCommand(ygor.Command{
+	RegisterCommand(Command{
 		Name:              "pong",
-		MinionMsgFunction: module.PongCmdFunc,
+		MinionMsgFunction: module.MinionMsg,
 		Addressed:         true,
 		AllowPrivate:      true,
 		AllowChannel:      true,

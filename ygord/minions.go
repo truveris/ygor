@@ -1,10 +1,10 @@
-// Copyright 2014, Truveris Inc. All Rights Reserved.
+// Copyright 2014-2015, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 //
 // This file contains all the tools to handle the minions registry.
 //
 
-package ygor
+package main
 
 import (
 	"bufio"
@@ -16,14 +16,16 @@ import (
 	"time"
 )
 
-// Wrapper around your minions file, it abstracts the serialization of minions
-// and keeps an in-memory cache to avoid frequent reads.
+// MinionsFile is a wrapper around your minions file, it abstracts the
+// serialization of minions and keeps an in-memory cache to avoid frequent
+// reads.
 type MinionsFile struct {
-	path string
-	cache    map[string]*Minion
-	lastMod  time.Time
+	path    string
+	cache   map[string]*Minion
+	lastMod time.Time
 }
 
+// Minion represents a single minion in memory.
 type Minion struct {
 	Name     string
 	QueueURL string
@@ -31,18 +33,14 @@ type Minion struct {
 	LastSeen time.Time
 }
 
-// Generate a simple line for persistence, with new-line.
+// GetLine generates a simple line for persistence, with trailing new-line.
 func (minion *Minion) GetLine() string {
 	return fmt.Sprintf("%s\t%s\t%s\t%d\n", minion.Name, minion.QueueURL,
 		minion.UserID, minion.LastSeen.Unix())
 }
 
-func (minion *Minion) SplitValue() (string, []string) {
-	tokens := strings.Split(minion.QueueURL, " ")
-	return tokens[0], tokens[1:]
-}
-
-// Create and return a wrapper around the file-system storage for minions.
+// OpenMinionsFile creates and return a wrapper around the file-system storage
+// for minions.
 func OpenMinionsFile(path string) (*MinionsFile, error) {
 	file := &MinionsFile{path: path}
 	err := file.reload()
@@ -69,8 +67,10 @@ func (file *MinionsFile) needsReload() bool {
 	return false
 }
 
+// All returns all the minions store in cache and on disk.
 func (file *MinionsFile) All() ([]Minion, error) {
-	minions := make([]Minion, 0)
+	var minions []Minion
+
 	if file.needsReload() {
 		err := file.reload()
 		if err != nil {
@@ -85,6 +85,7 @@ func (file *MinionsFile) All() ([]Minion, error) {
 	return minions, nil
 }
 
+// Get returns a minion with its name.
 func (file *MinionsFile) Get(name string) (*Minion, error) {
 	if file.needsReload() {
 		err := file.reload()
@@ -102,6 +103,7 @@ func (file *MinionsFile) Get(name string) (*Minion, error) {
 	return nil, errors.New("minion not found: " + name)
 }
 
+// GetByUserID returns the minion registed with the given UserId.
 func (file *MinionsFile) GetByUserID(userID string) (*Minion, error) {
 	if file.needsReload() {
 		err := file.reload()
@@ -148,6 +150,8 @@ func (file *MinionsFile) Add(name, queueURL, userID string, lastSeen time.Time) 
 	return nil
 }
 
+// Delete removes a minion from the in-memory storage.  You still need to call
+// Save() to make it permanent.
 func (file *MinionsFile) Delete(name string) {
 	delete(file.cache, name)
 }
@@ -188,9 +192,8 @@ func (file *MinionsFile) reload() error {
 			}
 			fp.Close()
 			return nil
-		} else {
-			return err
 		}
+		return err
 	}
 	defer fp.Close()
 

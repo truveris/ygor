@@ -1,7 +1,7 @@
-// Copyright 2014, Truveris Inc. All Rights Reserved.
+// Copyright 2014-2015, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 
-package ygor
+package main
 
 import (
 	"regexp"
@@ -16,6 +16,8 @@ var (
 	reAddressed = regexp.MustCompile(`^(\w+)[:,.]*\s*(.*)`)
 )
 
+// PrivMsg represents a message sent to the bot, be it through a channel or
+// through a direct message.
 type PrivMsg struct {
 	// Who sent the message.
 	Nick string
@@ -39,6 +41,7 @@ type PrivMsg struct {
 	Direct bool
 }
 
+// NewPrivMsg creates a new PrivMsg from the given IRC line and author.
 func NewPrivMsg(line, nick string) *PrivMsg {
 	tokens := rePrivMsg.FindStringSubmatch(line)
 	if tokens == nil {

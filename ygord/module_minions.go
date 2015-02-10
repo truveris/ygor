@@ -1,4 +1,4 @@
-// Copyright 2014, Truveris Inc. All Rights Reserved.
+// Copyright 2014-2015, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 //
 // This module allows for the registration and management of minions from IRC.
@@ -9,18 +9,16 @@ package main
 import (
 	"sort"
 	"strings"
-
-	"github.com/truveris/ygor"
 )
 
-// Basic module.
-type MinionsModule struct {
-}
+// MinionsModule controls the registration process for minions via the
+// 'register' minion command.
+type MinionsModule struct{}
 
-func (module *MinionsModule) PrivMsg(msg *ygor.Message) {}
+// PrivMsg is the message handler for user 'minions' requests.
+func (module *MinionsModule) PrivMsg(msg *Message) {
+	var names []string
 
-func (module *MinionsModule) MinionsCmdFunc(msg *ygor.Message) {
-	names := make([]string, 0)
 	minions, err := Minions.All()
 	if err != nil {
 		Debug("GetMinions error: " + err.Error())
@@ -34,8 +32,8 @@ func (module *MinionsModule) MinionsCmdFunc(msg *ygor.Message) {
 	IRCPrivMsg(msg.ReplyTo, "currently registered: "+strings.Join(names, ", "))
 }
 
-// A minion is registering...
-func (module *MinionsModule) RegisterMinionMsgFunc(msg *ygor.Message) {
+// MinionMsg is the message handler for minions 'register' requests.
+func (module *MinionsModule) MinionMsg(msg *Message) {
 	if len(msg.Args) != 2 {
 		Debug("register: error: invalid register command issued")
 		return
@@ -57,18 +55,19 @@ func (module *MinionsModule) RegisterMinionMsgFunc(msg *ygor.Message) {
 	}
 }
 
+// Init registers all the commands for this module.
 func (module *MinionsModule) Init() {
-	ygor.RegisterCommand(ygor.Command{
+	RegisterCommand(Command{
 		Name:              "register",
-		MinionMsgFunction: module.RegisterMinionMsgFunc,
+		MinionMsgFunction: module.MinionMsg,
 		Addressed:         true,
 		AllowPrivate:      true,
 		AllowChannel:      true,
 	})
 
-	ygor.RegisterCommand(ygor.Command{
+	RegisterCommand(Command{
 		Name:            "minions",
-		PrivMsgFunction: module.MinionsCmdFunc,
+		PrivMsgFunction: module.PrivMsg,
 		Addressed:       true,
 		AllowPrivate:    true,
 		AllowChannel:    true,

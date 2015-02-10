@@ -1,4 +1,4 @@
-// Copyright 2014, Truveris Inc. All Rights Reserved.
+// Copyright 2014-2015, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 //
 // This module allows channel users to configure aliases themselves.
@@ -8,39 +8,49 @@ package main
 import (
 	"errors"
 	"fmt"
+	"math/rand"
 	"sort"
 	"strings"
 	"time"
-	"math/rand"
-
-	"github.com/truveris/ygor"
 )
 
 const (
-	// That should be plenty for most IRC servers to handle.
+	// MaxCharsPerPage is used to define the size of a page when breaking
+	// results into multiple messages.
 	MaxCharsPerPage = 444
 
-	// You can't list that many aliases without trouble...
+	// MaxAliasesForFullList is the number of alias 'aliases' can list.
 	MaxAliasesForFullList = 40
 
-	// We should stop at cat999.
-	MaxAliasIncrements = 1000
+	// MaxAliasIncrements defines how far we should check for increments
+	// within the same namespace.  This is really just here to avoid abuse
+	// more than anything.
+	MaxAliasIncrements = 10000
 )
 
-// Given an alias name, return a new name with increment if the name contains
-// the '#' rune.
-func GetIncrementedName(name string) (string, error) {
+var (
+	errTooManyHashes  = errors.New("too many '#'")
+	errTooManyAliases = errors.New("too many aliases with this prefix")
+)
+
+// getIncrementedName returns the next available alias with a trailing number
+// incremented if needed.  This is used when an alias has a trailing '#'.
+func getIncrementedName(name string) (string, error) {
 	cnt := strings.Count(name, "#")
 	if cnt == 0 {
 		return name, nil
 	} else if cnt > 1 {
-		return "", errors.New("too many '#'")
+		return "", errTooManyHashes
 	}
 
 	var newName string
 
-	for i := 1; i < MaxAliasIncrements; i++ {
+	for i := 1; ; i++ {
 		newName = strings.Replace(name, "#", fmt.Sprintf("%d", i), 1)
+
+		if i > MaxAliasIncrements {
+			return "", errTooManyAliases
+		}
 
 		if Aliases.Get(newName) == nil {
 			break
@@ -50,12 +60,11 @@ func GetIncrementedName(name string) (string, error) {
 	return newName, nil
 }
 
+// AliasModule controls all the alias-related commands.
 type AliasModule struct{}
 
-func (module AliasModule) PrivMsg(msg *ygor.PrivMsg) {}
-
-// Command used to set a new alias.
-func (module *AliasModule) AliasCmdFunc(msg *ygor.Message) {
+// AliasPrivMsg is the message handler for user 'alias' requests.
+func (module *AliasModule) AliasPrivMsg(msg *Message) {
 	var outputMsg string
 
 	if len(msg.Args) == 0 {
@@ -78,7 +87,7 @@ func (module *AliasModule) AliasCmdFunc(msg *ygor.Message) {
 	}
 
 	// Set a new alias.
-	cmd := ygor.GetCommand(name)
+	cmd := GetCommand(name)
 	if cmd != nil {
 		IRCPrivMsg(msg.ReplyTo, fmt.Sprintf("error: '%s' is already a"+
 			" command", name))
@@ -88,9 +97,9 @@ func (module *AliasModule) AliasCmdFunc(msg *ygor.Message) {
 	newValue := strings.Join(msg.Args[1:], " ")
 
 	if alias == nil {
-		newName, err := GetIncrementedName(name)
+		newName, err := getIncrementedName(name)
 		if err != nil {
-			IRCPrivMsg(msg.ReplyTo, "error: " + err.Error())
+			IRCPrivMsg(msg.ReplyTo, "error: "+err.Error())
 			return
 		}
 		if newName != name {
@@ -114,10 +123,10 @@ func (module *AliasModule) AliasCmdFunc(msg *ygor.Message) {
 	IRCPrivMsg(msg.ReplyTo, outputMsg)
 }
 
-// Take a list of aliases, return joined pages.
+// getPagesOfAliases takes a list of aliases and returns joined pages of them.
 func getPagesOfAliases(aliases []string) []string {
+	var pages []string
 	length := 0
-	pages := make([]string, 0)
 
 	for i := 0; i < len(aliases); {
 		var page []string
@@ -146,7 +155,8 @@ func getPagesOfAliases(aliases []string) []string {
 	return pages
 }
 
-func (module *AliasModule) UnAliasCmdFunc(msg *ygor.Message) {
+// UnAliasPrivMsg is the message handler for user 'unalias' requests.
+func (module *AliasModule) UnAliasPrivMsg(msg *Message) {
 	if len(msg.Args) != 1 {
 		IRCPrivMsg(msg.ReplyTo, "usage: unalias name")
 		return
@@ -158,14 +168,16 @@ func (module *AliasModule) UnAliasCmdFunc(msg *ygor.Message) {
 	if alias == nil {
 		IRCPrivMsg(msg.ReplyTo, "error: unknown alias")
 		return
-	} else {
-		Aliases.Delete(name)
-		IRCPrivMsg(msg.ReplyTo, "ok (deleted)")
 	}
+
+	Aliases.Delete(name)
 	Aliases.Save()
+	IRCPrivMsg(msg.ReplyTo, "ok (deleted)")
 }
 
-func (module *AliasModule) AliasesCmdFunc(msg *ygor.Message) {
+// AliasesPrivMsg is the message handler for user 'aliases' requests.  It lists
+// all the available aliases.
+func (module *AliasModule) AliasesPrivMsg(msg *Message) {
 	if len(msg.Args) != 0 {
 		IRCPrivMsg(msg.ReplyTo, "usage: aliases")
 		return
@@ -193,7 +205,9 @@ func (module *AliasModule) AliasesCmdFunc(msg *ygor.Message) {
 	}
 }
 
-func (module *AliasModule) GrepCmdFunc(msg *ygor.Message) {
+// GrepPrivMsg is the message handler for user 'grep' requests.  It lists
+// all the available aliases matching the provided pattern.
+func (module *AliasModule) GrepPrivMsg(msg *Message) {
 	if len(msg.Args) != 1 {
 		IRCPrivMsg(msg.ReplyTo, "usage: grep pattern")
 		return
@@ -216,7 +230,9 @@ func (module *AliasModule) GrepCmdFunc(msg *ygor.Message) {
 	IRCPrivMsg(msg.ReplyTo, found)
 }
 
-func (module *AliasModule) RandomCmdFunc(msg *ygor.Message) {
+// RandomPrivMsg is the message handler for user 'random' requests.  It picks a
+// random alias to execute based on the provided pattern or no pattern at all.
+func (module *AliasModule) RandomPrivMsg(msg *Message) {
 	var names []string
 
 	switch len(msg.Args) {
@@ -238,15 +254,15 @@ func (module *AliasModule) RandomCmdFunc(msg *ygor.Message) {
 
 	body, err := Aliases.Resolve(names[idx])
 	if err != nil {
-		IRCPrivMsg(msg.ReplyTo, "failed to resolve aliases: " +
+		IRCPrivMsg(msg.ReplyTo, "failed to resolve aliases: "+
 			err.Error())
 		return
 	}
 
 	newmsgs, err := NewMessagesFromBody(body)
 	if err != nil {
-		IRCPrivMsg(msg.ReplyTo, "error: failed to expand chose alias '" +
-			names[idx] + "': " + err.Error())
+		IRCPrivMsg(msg.ReplyTo, "error: failed to expand chose alias '"+
+			names[idx]+"': "+err.Error())
 		return
 	}
 
@@ -265,42 +281,43 @@ func (module *AliasModule) RandomCmdFunc(msg *ygor.Message) {
 	}
 }
 
+// Init registers all the commands for this module.
 func (module *AliasModule) Init() {
-	ygor.RegisterCommand(ygor.Command{
+	RegisterCommand(Command{
 		Name:            "alias",
-		PrivMsgFunction: module.AliasCmdFunc,
+		PrivMsgFunction: module.AliasPrivMsg,
 		Addressed:       true,
 		AllowPrivate:    false,
 		AllowChannel:    true,
 	})
 
-	ygor.RegisterCommand(ygor.Command{
+	RegisterCommand(Command{
 		Name:            "grep",
-		PrivMsgFunction: module.GrepCmdFunc,
+		PrivMsgFunction: module.GrepPrivMsg,
 		Addressed:       true,
 		AllowPrivate:    false,
 		AllowChannel:    true,
 	})
 
-	ygor.RegisterCommand(ygor.Command{
+	RegisterCommand(Command{
 		Name:            "random",
-		PrivMsgFunction: module.RandomCmdFunc,
+		PrivMsgFunction: module.RandomPrivMsg,
 		Addressed:       true,
 		AllowPrivate:    false,
 		AllowChannel:    true,
 	})
 
-	ygor.RegisterCommand(ygor.Command{
+	RegisterCommand(Command{
 		Name:            "unalias",
-		PrivMsgFunction: module.UnAliasCmdFunc,
+		PrivMsgFunction: module.UnAliasPrivMsg,
 		Addressed:       true,
 		AllowPrivate:    false,
 		AllowChannel:    true,
 	})
 
-	ygor.RegisterCommand(ygor.Command{
+	RegisterCommand(Command{
 		Name:            "aliases",
-		PrivMsgFunction: module.AliasesCmdFunc,
+		PrivMsgFunction: module.AliasesPrivMsg,
 		Addressed:       true,
 		AllowPrivate:    true,
 		AllowChannel:    true,

@@ -1,4 +1,4 @@
-// Copyright 2014, Truveris Inc. All Rights Reserved.
+// Copyright 2014-2015, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 //
 // The io_* portion of the ygord code base defines all the adapters feeding
@@ -11,16 +11,15 @@ import (
 	"errors"
 
 	"github.com/truveris/sqs"
-	"github.com/truveris/ygor"
 )
 
 var (
-	// All the normalized messages are pushed by the IO adapters, only the
-	// main loop reads from there.
-	InputQueue = make(chan *ygor.Message)
+	// InputQueue is the channel used to receive all the normalized
+	// messages pushed by the IO adapters, only the main loop reads it.
+	InputQueue = make(chan *Message)
 )
 
-// Start all the IO adapters (IRC, Stdin/Stdout, Minions, API, etc.)
+// StartAdapters starts all the IO adapters (IRC, Stdin/Stdout, Minions, API)
 func StartAdapters() (<-chan error, <-chan error, error) {
 	err := StartHTTPAdapter()
 	if err != nil {
@@ -32,7 +31,7 @@ func StartAdapters() (<-chan error, <-chan error, error) {
 		return StartStdioHandler()
 	}
 
-	client, err := sqs.NewClient(cfg.AWSAccessKeyId, cfg.AWSSecretAccessKey,
+	client, err := sqs.NewClient(cfg.AWSAccessKeyID, cfg.AWSSecretAccessKey,
 		cfg.AWSRegionCode)
 	if err != nil {
 		return nil, nil, err

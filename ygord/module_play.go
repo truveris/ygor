@@ -1,4 +1,4 @@
-// Copyright 2014, Truveris Inc. All Rights Reserved.
+// Copyright 2014-2015, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 
 package main
@@ -6,24 +6,14 @@ package main
 import (
 	"fmt"
 	"time"
-
-	"github.com/truveris/ygor"
 )
 
-type SoundBoardModule struct{}
+// PlayModule controls the 'play' and 'africa' commands.
+type PlayModule struct{}
 
-func formatPlayTuneCommand(filename, duration string) string {
-	if duration != "" {
-		return fmt.Sprintf("play %s %s", filename, duration)
-	} else {
-		return fmt.Sprintf("play %s", filename)
-	}
-}
-
-func (module SoundBoardModule) PrivMsg(msg *ygor.Message) {}
-
-func Play(msg *ygor.Message) {
-	var duration string
+// PrivMsg is the message handler for 'play' requests.
+func (module *PlayModule) PrivMsg(msg *Message) {
+	var duration, cmd string
 
 	if len(msg.Args) == 0 {
 		IRCPrivMsg(msg.ReplyTo, "usage: play sound [duration]")
@@ -35,13 +25,20 @@ func Play(msg *ygor.Message) {
 		duration = msg.Args[1]
 	}
 
-	SendToChannelMinions(msg.ReplyTo, formatPlayTuneCommand(filename, duration))
+	if duration != "" {
+		cmd = fmt.Sprintf("play %s %s", filename, duration)
+	} else {
+		cmd = fmt.Sprintf("play %s", filename)
+	}
+
+	SendToChannelMinions(msg.ReplyTo, cmd)
 }
 
-func PlayAfrica(msg *ygor.Message) {
+// PrivMsgAfrica is the message handler for 'africa' requests.
+func (module *PlayModule) PrivMsgAfrica(msg *Message) {
 	msg.Args = append([]string{"tunes/africa.ogg"}, msg.Args...)
 
-	Play(msg)
+	module.PrivMsg(msg)
 
 	go func() {
 		time.Sleep(2 * time.Second)
@@ -55,18 +52,19 @@ func PlayAfrica(msg *ygor.Message) {
 	}()
 }
 
-func (module SoundBoardModule) Init() {
-	ygor.RegisterCommand(ygor.Command{
+// Init registers all the commands for this module.
+func (module *PlayModule) Init() {
+	RegisterCommand(Command{
 		Name:            "play",
-		PrivMsgFunction: Play,
+		PrivMsgFunction: module.PrivMsg,
 		Addressed:       true,
 		AllowPrivate:    false,
 		AllowChannel:    true,
 	})
 
-	ygor.RegisterCommand(ygor.Command{
+	RegisterCommand(Command{
 		Name:            "africa",
-		PrivMsgFunction: PlayAfrica,
+		PrivMsgFunction: module.PrivMsgAfrica,
 		Addressed:       false,
 		AllowPrivate:    false,
 		AllowChannel:    true,

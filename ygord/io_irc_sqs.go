@@ -1,4 +1,4 @@
-// Copyright 2014, Truveris Inc. All Rights Reserved.
+// Copyright 2014-2015, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 //
 // The io_irc_sqs portion of the ygor code base defines the adapter used to
@@ -19,15 +19,16 @@ import (
 
 	"github.com/truveris/sqs"
 	"github.com/truveris/sqs/sqschan"
-	"github.com/truveris/ygor"
 )
 
 var (
+	// IRCOutgoing is the queue of all outgoing IRC messages.  All strings
+	// going into this channel should formatted exactly as if they were
+	// sent directly to the IRC server.
 	IRCOutgoing = make(chan string, 0)
-	IRCNickname string
 )
 
-func ExpandSentence(words []string) ([][]string, error) {
+func expandSentence(words []string) ([][]string, error) {
 	sentences := make([][]string, len(words))
 
 	// Resolve any alias found as first word.
@@ -48,7 +49,7 @@ func ExpandSentence(words []string) ([][]string, error) {
 }
 
 // Expand sentences through aliases.
-func ExpandSentences(ss [][]string) ([][]string, error) {
+func expandSentences(ss [][]string) ([][]string, error) {
 	sentences := make([][]string, len(ss))
 
 	for _, words := range ss {
@@ -56,7 +57,7 @@ func ExpandSentences(ss [][]string) ([][]string, error) {
 			continue
 		}
 
-		newsentences, err := ExpandSentence(words)
+		newsentences, err := expandSentence(words)
 		if err != nil {
 			return nil, err
 		}
@@ -66,9 +67,10 @@ func ExpandSentences(ss [][]string) ([][]string, error) {
 	return sentences, nil
 }
 
-// Create a new ygor message from a plain string.
-func NewMessagesFromBody(body string) ([]*ygor.Message, error) {
-	msgs := make([]*ygor.Message, 0)
+// NewMessagesFromBody creates a new ygor message from a plain string.
+func NewMessagesFromBody(body string) ([]*Message, error) {
+	var msgs []*Message
+
 	sentences, err := LexerSplit(body)
 	if err != nil {
 		return nil, err
@@ -76,7 +78,7 @@ func NewMessagesFromBody(body string) ([]*ygor.Message, error) {
 
 	// TODO: make that recursive.
 	for i := 0; i < 3; i++ {
-		sentences, err = ExpandSentences(sentences)
+		sentences, err = expandSentences(sentences)
 		if err != nil {
 			return nil, err
 		}
@@ -87,7 +89,7 @@ func NewMessagesFromBody(body string) ([]*ygor.Message, error) {
 			continue
 		}
 
-		msg := ygor.NewMessage()
+		msg := NewMessage()
 
 		msg.Body = strings.Join(words, " ")
 		msg.Command = words[0]
@@ -102,12 +104,12 @@ func NewMessagesFromBody(body string) ([]*ygor.Message, error) {
 	return msgs, nil
 }
 
-// Create a new ygor message from a parsed PRIVMSG.
-func NewMessagesFromPrivMsg(privmsg *ygor.PrivMsg) []*ygor.Message {
+// NewMessagesFromPrivMsg create a new ygor message from a parsed PRIVMSG.
+func NewMessagesFromPrivMsg(privmsg *PrivMsg) []*Message {
 	msgs, err := NewMessagesFromBody(privmsg.Body)
 	if err != nil {
 		if privmsg.Addressed {
-			IRCPrivMsg(privmsg.ReplyTo, "lexer/expand error: " +
+			IRCPrivMsg(privmsg.ReplyTo, "lexer/expand error: "+
 				err.Error())
 		}
 		return nil
@@ -115,13 +117,13 @@ func NewMessagesFromPrivMsg(privmsg *ygor.PrivMsg) []*ygor.Message {
 
 	for _, msg := range msgs {
 		if privmsg.Direct {
-			msg.Type = ygor.MsgTypeIRCPrivate
+			msg.Type = MsgTypeIRCPrivate
 		} else {
 			// Channel messages have to be prefixes with the bot's nick.
 			if !privmsg.Addressed && !privmsg.Direct {
 				return nil
 			}
-			msg.Type = ygor.MsgTypeIRCChannel
+			msg.Type = MsgTypeIRCChannel
 		}
 
 		msg.UserID = privmsg.Nick
@@ -131,8 +133,8 @@ func NewMessagesFromPrivMsg(privmsg *ygor.PrivMsg) []*ygor.Message {
 	return msgs
 }
 
-// Create a new ygor message from an SQS message.
-func NewMessagesFromIRCSQS(sqsmsg *sqs.Message) []*ygor.Message {
+// NewMessagesFromIRCSQS creates a new message from an SQS message.
+func NewMessagesFromIRCSQS(sqsmsg *sqs.Message) []*Message {
 	msgs := NewMessagesFromIRCLine(strings.Trim(sqsmsg.Body, "\r\n"))
 	for _, msg := range msgs {
 		if msg != nil {
@@ -142,9 +144,9 @@ func NewMessagesFromIRCSQS(sqsmsg *sqs.Message) []*ygor.Message {
 	return msgs
 }
 
-// Create a new Message based on the raw IRC line.
-func NewMessagesFromIRCLine(line string) []*ygor.Message {
-	privmsg := ygor.NewPrivMsg(line, cfg.IRCNickname)
+// NewMessagesFromIRCLine creates a new Message based on the raw IRC line.
+func NewMessagesFromIRCLine(line string) []*Message {
+	privmsg := NewPrivMsg(line, cfg.IRCNickname)
 	if privmsg == nil {
 		// Not a PRIVMSG.
 		return nil
@@ -160,8 +162,9 @@ func NewMessagesFromIRCLine(line string) []*ygor.Message {
 	return NewMessagesFromPrivMsg(privmsg)
 }
 
-// Convert an SQS message to an ygor Message and feed it to the InputQueue if
-// it is a valid IRC message. The SQS message is then deleted.
+// ReceiveSQSMessageForIRC converts an SQS message to an ygor Message and feed
+// it to the InputQueue if it is a valid IRC message.  The SQS message is then
+// deleted.
 func ReceiveSQSMessageForIRC(client *sqs.Client, sqsmsg *sqs.Message) error {
 	msgs := NewMessagesFromIRCSQS(sqsmsg)
 
@@ -181,8 +184,8 @@ func ReceiveSQSMessageForIRC(client *sqs.Client, sqsmsg *sqs.Message) error {
 	return nil
 }
 
-// Reads all input from the IRC incoming queue passing errors to the error
-// channel.
+// StartIRCIncomingQueueReader reads all input from the IRC incoming queue
+// passing errors to the error channel.
 func StartIRCIncomingQueueReader(client *sqs.Client) (<-chan error, error) {
 	errch := make(chan error, 0)
 
@@ -208,7 +211,7 @@ func StartIRCIncomingQueueReader(client *sqs.Client) (<-chan error, error) {
 	return errch, nil
 }
 
-// Write all the messages from the outgoing channel.
+// StartIRCOutgoingQueueWriter writes all the messages from the outgoing channel.
 func StartIRCOutgoingQueueWriter(client *sqs.Client) (<-chan error, error) {
 	ch, errch, err := sqschan.Outgoing(client, cfg.IRCOutgoingQueueName)
 	if err != nil {
@@ -224,7 +227,8 @@ func StartIRCOutgoingQueueWriter(client *sqs.Client) (<-chan error, error) {
 	return errch, nil
 }
 
-// Start the incoming and outgoing handlers and multiplex their error channels.
+// StartIRCAdapter boots the incoming and outgoing handlers and multiplex their
+// error channels.
 func StartIRCAdapter(client *sqs.Client) (chan error, error) {
 	errch := make(chan error, 0)
 
@@ -253,8 +257,10 @@ func StartIRCAdapter(client *sqs.Client) (chan error, error) {
 	return errch, nil
 }
 
-func IRCMessageHandler(msg *ygor.Message) {
-	for _, cmd := range ygor.RegisteredCommands {
+// IRCMessageHandler loops through the command registry to find a matching
+// command and executes it.
+func IRCMessageHandler(msg *Message) {
+	for _, cmd := range RegisteredCommands {
 		if !cmd.IRCMessageMatches(msg) {
 			continue
 		}
@@ -278,8 +284,8 @@ func IRCMessageHandler(msg *ygor.Message) {
 // They are convenience functions for ygor to speak.
 //
 
-// Send a message to a channel. Construct a PRIVMSG and send the raw client
-// line to the server (via SQS).
+// IRCPrivMsg sends a message to a channel. Construct a PRIVMSG and send the
+// raw client line to the server (via SQS).
 func IRCPrivMsg(channel, msg string) {
 	lines := strings.Split(msg, "\n")
 	for i := 0; i < len(lines); i++ {
@@ -290,18 +296,18 @@ func IRCPrivMsg(channel, msg string) {
 	}
 }
 
-// Send an action message to a channel. This function is the equivalent of
-// using the /ME command in a normal IRC client.
+// IRCPrivAction sends an action message to a channel.  This function is the
+// equivalent of using the /ME command in a normal IRC client.
 func IRCPrivAction(channel, msg string) {
 	IRCOutgoing <- fmt.Sprintf("PRIVMSG %s :\x01ACTION %s\x01", channel, msg)
 }
 
-// Send a /JOIN command to the server.
+// JoinChannel sends a /JOIN command to the server.
 func JoinChannel(channel string) {
 	IRCOutgoing <- "JOIN " + channel
 }
 
-// Send the message to the configured debug channel if any.
+// Debug sends the message to the configured debug channel if any.
 func Debug(msg string) {
 	if cfg.AdminChannel == "" {
 		return
@@ -309,7 +315,7 @@ func Debug(msg string) {
 	IRCPrivMsg(cfg.AdminChannel, msg)
 }
 
-// Auto-join all the configured channels.
+// AutoJoin all the configured channels.
 func AutoJoin() {
 	// Make test mode faster.
 	if cfg.TestMode {

@@ -1,4 +1,4 @@
-// Copyright 2014, Truveris Inc. All Rights Reserved.
+// Copyright 2014-2015, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 
 package main
@@ -6,14 +6,13 @@ package main
 import (
 	"fmt"
 	"strings"
-
-	"github.com/truveris/ygor"
 )
 
+// XombreroModule is the module handling all the browser-related commands.
 type XombreroModule struct{}
 
-// Send the xombrero command to the minions.
-func (module XombreroModule) PrivMsg(msg *ygor.Message) {
+// PrivMsg is the message handler for 'xombrero' user requests.
+func (module XombreroModule) PrivMsg(msg *Message) {
 	if len(msg.Args) == 0 {
 		IRCPrivMsg(msg.ReplyTo, "usage: xombrero [command [param ...]]")
 		return
@@ -22,8 +21,8 @@ func (module XombreroModule) PrivMsg(msg *ygor.Message) {
 	SendToChannelMinions(msg.ReplyTo, "xombrero "+strings.Join(msg.Args, " "))
 }
 
-// Shortcut for xombrero open.
-func (module XombreroModule) WebPrivMsg(msg *ygor.Message) {
+// WebPrivMsg is the message handler for 'web' user requests.
+func (module XombreroModule) WebPrivMsg(msg *Message) {
 	if len(msg.Args) != 1 {
 		IRCPrivMsg(msg.ReplyTo, "usage: web url")
 		return
@@ -32,7 +31,8 @@ func (module XombreroModule) WebPrivMsg(msg *ygor.Message) {
 	SendToChannelMinions(msg.ReplyTo, "xombrero open "+msg.Args[0])
 }
 
-func (module XombreroModule) MinionMsg(msg *ygor.Message) {
+// MinionMsg is the message handler for all messages coming from the minions.
+func (module XombreroModule) MinionMsg(msg *Message) {
 	if msg.Args[0] != "ok" {
 		minion, err := Minions.GetByUserID(msg.UserID)
 		if err != nil {
@@ -48,8 +48,9 @@ func (module XombreroModule) MinionMsg(msg *ygor.Message) {
 	}
 }
 
+// Init registers all the commands for this module.
 func (module XombreroModule) Init() {
-	ygor.RegisterCommand(ygor.Command{
+	RegisterCommand(Command{
 		Name:              "xombrero",
 		PrivMsgFunction:   module.PrivMsg,
 		MinionMsgFunction: module.MinionMsg,
@@ -58,7 +59,7 @@ func (module XombreroModule) Init() {
 		AllowChannel:      true,
 	})
 
-	ygor.RegisterCommand(ygor.Command{
+	RegisterCommand(Command{
 		Name:            "web",
 		PrivMsgFunction: module.WebPrivMsg,
 		Addressed:       true,

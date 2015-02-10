@@ -1,29 +1,26 @@
-// Copyright 2014, Truveris Inc. All Rights Reserved.
+// Copyright 2014-2015, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 //
-// TODO: Make this module wait for 3 request within 15 minutes to execute the
-// reboot.
+// TODO: Make this module wait for 3 request from three users within 15 minutes
+// to execute the reboot.
 //
 
 package main
 
-import (
-	"github.com/truveris/ygor"
-)
-
+// RebootModule controls the 'reboot' function.
 type RebootModule struct{}
 
-func (module RebootModule) PrivMsg(msg *ygor.PrivMsg) {}
-
-func RebootFunc(msg *ygor.Message) {
+// PrivMsg is the message handler for user requests.
+func (module *RebootModule) PrivMsg(msg *Message) {
 	SendToChannelMinions(msg.ReplyTo, "reboot")
 	IRCPrivMsg(msg.ReplyTo, "attempting to reboot "+msg.ReplyTo+" minions...")
 }
 
+// Init registers all the commands for this module.
 func (module RebootModule) Init() {
-	ygor.RegisterCommand(ygor.Command{
+	RegisterCommand(Command{
 		Name:            "reboot",
-		PrivMsgFunction: RebootFunc,
+		PrivMsgFunction: module.PrivMsg,
 		Addressed:       true,
 		AllowPrivate:    false,
 		AllowChannel:    true,

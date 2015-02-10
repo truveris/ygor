@@ -1,15 +1,24 @@
-// Copyright 2014, Truveris Inc. All Rights Reserved.
+// Copyright 2014-2015, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 
-package ygor
+package main
 
 var (
+	// RegisteredCommands is the in-memory command registry.
 	RegisteredCommands = make(map[string]Command)
 )
 
+// MessageFunction is used as a type of function that receives a Message either
+// from IRC or from a minion.
 type MessageFunction func(*Message)
+
+// ToggleFunction is a type of function that is used to check if a module
+// should be executed based on the provided Message.  It should return a
+// boolean.
 type ToggleFunction func(*Message) bool
 
+// Command is the definition of a command to be executed either when a message
+// is received from users (IRC) or from minions.
 type Command struct {
 	// How to call this command from IRC.
 	Name string
@@ -34,7 +43,7 @@ type Command struct {
 	AllowChannel bool
 }
 
-// Check if the given PrivMsg matches the command.
+// IRCMessageMatches checks if the given Message matches the command.
 func (cmd Command) IRCMessageMatches(msg *Message) bool {
 	// Not even the right command.
 	if cmd.ToggleFunction != nil {
@@ -53,9 +62,9 @@ func (cmd Command) IRCMessageMatches(msg *Message) bool {
 	return true
 }
 
-// Check if the given MinionMsg matches the command. We do not bother with
-// ToggleFunction in this case. There is no reason to be broad since machines
-// are producing the messages.
+// MinionMessageMatches check if the given Message matches the command. We do
+// not bother with ToggleFunction in this case. There is no reason to be broad
+// since machines are producing the messages.
 func (cmd Command) MinionMessageMatches(msg *Message) bool {
 	if cmd.Name != msg.Command {
 		return false
@@ -64,7 +73,7 @@ func (cmd Command) MinionMessageMatches(msg *Message) bool {
 	return true
 }
 
-// Return a registered command or nil.
+// GetCommand returns a registered command or nil.
 func GetCommand(name string) *Command {
 	if cmd, ok := RegisteredCommands[name]; ok {
 		return &cmd
@@ -73,7 +82,8 @@ func GetCommand(name string) *Command {
 	return nil
 }
 
-// Register this command by name. There could be only one.
+// RegisterCommand adds a command to the registry.  There could be only one
+// command registered for each name.
 func RegisterCommand(cmd Command) {
 	RegisteredCommands[cmd.Name] = cmd
 }

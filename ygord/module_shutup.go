@@ -1,4 +1,4 @@
-// Copyright 2014, Truveris Inc. All Rights Reserved.
+// Copyright 2014-2015, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 
 package main
@@ -6,8 +6,6 @@ package main
 import (
 	"regexp"
 	"strings"
-
-	"github.com/truveris/ygor"
 )
 
 var (
@@ -15,11 +13,11 @@ var (
 	reShhh = regexp.MustCompile(`^s+[sh]+\b`)
 )
 
+// ShutUpModule controls all the 'shut up', 'stop', 'sshhhh' commands.
 type ShutUpModule struct{}
 
-func (module ShutUpModule) PrivMsg(msg *ygor.PrivMsg) {}
-
-func isShutUpRequest(msg *ygor.Message) bool {
+// Toggle determines whether the given message triggered this command.
+func (module *ShutUpModule) Toggle(msg *Message) bool {
 	body := strings.ToLower(msg.Body)
 	if reStop.MatchString(body) {
 		return true
@@ -33,16 +31,18 @@ func isShutUpRequest(msg *ygor.Message) bool {
 	return false
 }
 
-func ShutUpCommand(msg *ygor.Message) {
+// PrivMsg is the message handler for user requests.
+func (module *ShutUpModule) PrivMsg(msg *Message) {
 	SendToChannelMinions(msg.ReplyTo, "shutup")
 	IRCPrivMsg(msg.ReplyTo, "ok...")
 }
 
+// Init registers all the commands for this module.
 func (module ShutUpModule) Init() {
-	ygor.RegisterCommand(ygor.Command{
+	RegisterCommand(Command{
 		Name:            "shutup",
-		ToggleFunction:  isShutUpRequest,
-		PrivMsgFunction: ShutUpCommand,
+		ToggleFunction:  module.Toggle,
+		PrivMsgFunction: module.PrivMsg,
 		Addressed:       true,
 		AllowPrivate:    false,
 		AllowChannel:    true,

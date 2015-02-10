@@ -6,14 +6,13 @@ package main
 import (
 	"fmt"
 	"strings"
-
-	"github.com/truveris/ygor"
 )
 
+// TurretModule is the module handling all the turret commands.
 type TurretModule struct{}
 
-// Send a turret command to the minions.
-func (module TurretModule) PrivMsg(msg *ygor.Message) {
+// PrivMsg is the message handler for user-received 'turret' commands.
+func (module TurretModule) PrivMsg(msg *Message) {
 	if len(msg.Args) == 0 || len(msg.Args) > 2 {
 		IRCPrivMsg(msg.ReplyTo, "usage: turret command [param]")
 		return
@@ -22,7 +21,8 @@ func (module TurretModule) PrivMsg(msg *ygor.Message) {
 	SendToChannelMinions(msg.ReplyTo, "turret "+strings.Join(msg.Args, " "))
 }
 
-func (module TurretModule) MinionMsg(msg *ygor.Message) {
+// MinionMsg is the message handler for minion-received 'turret' commands.
+func (module TurretModule) MinionMsg(msg *Message) {
 	if msg.Args[0] != "ok" {
 		minion, err := Minions.GetByUserID(msg.UserID)
 		if err != nil {
@@ -38,8 +38,9 @@ func (module TurretModule) MinionMsg(msg *ygor.Message) {
 	}
 }
 
+// Init registers all the commands for this module.
 func (module TurretModule) Init() {
-	ygor.RegisterCommand(ygor.Command{
+	RegisterCommand(Command{
 		Name:              "turret",
 		PrivMsgFunction:   module.PrivMsg,
 		MinionMsgFunction: module.MinionMsg,

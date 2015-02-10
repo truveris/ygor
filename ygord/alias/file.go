@@ -1,52 +1,38 @@
-// Copyright 2014, Truveris Inc. All Rights Reserved.
+// Copyright 2014-2015, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 //
 // This file contains all the tools to handle the aliases registry.
 //
 
-package main
+package alias
 
 import (
 	"bufio"
 	"errors"
-	"fmt"
 	"os"
 	"sort"
 	"strings"
 	"time"
 )
 
-// Wrapper around your alias file, it abstracts the serialization of aliases
-// and keeps an in-memory cache to avoid frequent reads.
-type AliasFile struct {
-	path string
-	cache    map[string]*Alias
-	lastMod  time.Time
-}
-
-// Definition of a single alias, used for in-memory storage.
-type Alias struct {
-	Name  string
-	Value string
-}
-
 const (
+	// MaxRecursionLevel defines the number or run allowed while resolving
+	// an alias.
 	MaxRecursionLevel = 8
 )
 
-// Generate a simple line for persistence, with new-line.
-func (alias *Alias) GetLine() string {
-	return fmt.Sprintf("%s\t%s\n", alias.Name, alias.Value)
+// File wraps your alias file, it abstracts the serialization of aliases and
+// keeps an in-memory cache to avoid frequent reads.
+type File struct {
+	path    string
+	cache   map[string]*Alias
+	lastMod time.Time
 }
 
-func (alias *Alias) SplitValue() (string, []string) {
-	tokens := strings.Split(alias.Value, " ")
-	return tokens[0], tokens[1:]
-}
-
-// Create and return a wrapper around the file-system storage for aliases.
-func OpenAliasFile(path string) (*AliasFile, error) {
-	file := &AliasFile{path: path}
+// Open creates and returns a wrapper around the file-system storage for
+// aliases.
+func Open(path string) (*File, error) {
+	file := &File{path: path}
 	err := file.reload()
 	if err != nil {
 		return nil, err
@@ -56,7 +42,7 @@ func OpenAliasFile(path string) (*AliasFile, error) {
 
 // Check if the underlying file has been updated. It also returns false if we
 // can't read the file. XXX should return error instead.
-func (file *AliasFile) needsReload() bool {
+func (file *File) needsReload() bool {
 	si, err := os.Stat(file.path)
 	if err != nil {
 		return false
@@ -71,7 +57,8 @@ func (file *AliasFile) needsReload() bool {
 	return false
 }
 
-func (file *AliasFile) Get(name string) *Alias {
+// Get returns the alias given its name.  Returns nil if not found.
+func (file *File) Get(name string) *Alias {
 	if file.needsReload() {
 		file.reload()
 	}
@@ -85,12 +72,11 @@ func (file *AliasFile) Get(name string) *Alias {
 	return nil
 }
 
-// Return a sorted []string of all the alias names. FIXME: is there really no
-// better way to get the keys of a map?
-func (file *AliasFile) Names() []string {
+// Names returns a sorted list of all the alias names.
+func (file *File) Names() []string {
 	idx := 0
 	names := make([]string, len(file.cache))
-	for name, _ := range file.cache {
+	for name := range file.cache {
 		names[idx] = name
 		idx++
 	}
@@ -98,19 +84,23 @@ func (file *AliasFile) Names() []string {
 	return names
 }
 
-func (file *AliasFile) Add(name, value string) {
+// Add creates a new alias in the in-memory cache.  It will be saved
+// permanently once Save is called.
+func (file *File) Add(name, value string) {
 	alias := &Alias{}
 	alias.Name = name
 	alias.Value = value
 	file.cache[alias.Name] = alias
 }
 
-func (file *AliasFile) Delete(name string) {
+// Delete removes an alias by name from the local cache. It will not be saved
+// permanently until Save is called.
+func (file *File) Delete(name string) {
 	delete(file.cache, name)
 }
 
 // Save all the aliases to disk.
-func (file *AliasFile) Save() error {
+func (file *File) Save() error {
 	// Maybe an easier way is to use ioutil.WriteFile
 	fp, err := os.OpenFile(file.path, os.O_TRUNC|os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
@@ -131,7 +121,7 @@ func (file *AliasFile) Save() error {
 }
 
 // Reload all the cached aliases from disk.
-func (file *AliasFile) reload() error {
+func (file *File) reload() error {
 	file.cache = make(map[string]*Alias)
 
 	// It's acceptable for the file not to exist at this point, we just
@@ -146,9 +136,8 @@ func (file *AliasFile) reload() error {
 			}
 			fp.Close()
 			return nil
-		} else {
-			return err
 		}
+		return err
 	}
 	defer fp.Close()
 
@@ -173,8 +162,8 @@ func (file *AliasFile) reload() error {
 	return nil
 }
 
-// Recursively resolve aliases from a given line.
-func (file *AliasFile) RecursiveResolve(line string, level int) (string, error) {
+// recursiveResolve is the recursive function resolving aliases.
+func (file *File) recursiveResolve(line string, level int) (string, error) {
 	if level >= MaxRecursionLevel {
 		return line, errors.New("max recursion reached")
 	}
@@ -195,7 +184,7 @@ func (file *AliasFile) RecursiveResolve(line string, level int) (string, error) 
 		line = alias.Value
 	}
 
-	line, err := file.RecursiveResolve(line, level+1)
+	line, err := file.recursiveResolve(line, level+1)
 	if err != nil {
 		return "", err
 	}
@@ -203,14 +192,16 @@ func (file *AliasFile) RecursiveResolve(line string, level int) (string, error) 
 	return line, nil
 }
 
-// Recursively resolve aliases from a given line. Error out if we're 8 level
-// deep and can't seem to resolve anything.
-func (file *AliasFile) Resolve(line string) (string, error) {
-	return file.RecursiveResolve(line, 0)
+// Resolve recursively resolves aliases from a given line. Error out if the
+// MaxRecursionLevel is reached and we're not getting anywhere.
+func (file *File) Resolve(line string) (string, error) {
+	return file.recursiveResolve(line, 0)
 }
 
-func (file *AliasFile) All() ([]Alias, error) {
-	aliases := make([]Alias, 0)
+// All returns all the aliases in the system.
+func (file *File) All() ([]Alias, error) {
+	var aliases []Alias
+
 	if file.needsReload() {
 		err := file.reload()
 		if err != nil {
@@ -228,8 +219,10 @@ func (file *AliasFile) All() ([]Alias, error) {
 	return aliases, nil
 }
 
-func (file *AliasFile) Find(pattern string) []string {
-	results := make([]string, 0)
+// Find returns the name of all aliases matching the provided pattern.
+func (file *File) Find(pattern string) []string {
+	var results []string
+
 	aliases := file.Names()
 
 	for _, name := range aliases {

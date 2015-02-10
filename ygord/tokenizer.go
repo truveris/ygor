@@ -1,4 +1,4 @@
-// Copyright 2014, Truveris Inc. All Rights Reserved.
+// Copyright 2014-2015, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 //
 // This is ygord's tokenizer. It takes strings of characters such as:
@@ -27,141 +27,150 @@ import (
 	"strings"
 )
 
-var (
-)
-
+// Tokenizer States
 const (
-	STATE_START TokenizerState = iota
-	STATE_INWORD TokenizerState = iota
-	STATE_QUOTED TokenizerState = iota
-	STATE_QUOTED_ESCAPED TokenizerState = iota
-	STATE_ESCAPED TokenizerState = iota
-	STATE_INWORD_ESCAPED TokenizerState = iota
-
-	RUNETYPE_EOF RuneType = iota
-	RUNETYPE_EOS RuneType = iota
-	RUNETYPE_CHAR RuneType = iota
-	RUNETYPE_SPACE RuneType = iota
-	RUNETYPE_QUOTE RuneType = iota
-	RUNETYPE_BACKSLASH RuneType = iota
+	StateStart         TokenizerState = iota
+	StateInWord        TokenizerState = iota
+	StateQuoted        TokenizerState = iota
+	StateQuotedEscaped TokenizerState = iota
+	StateEscaped       TokenizerState = iota
+	StateInWordEscaped TokenizerState = iota
 )
 
+// Rune types
+const (
+	RuneTypeEOF       RuneType = iota
+	RuneTypeEOS       RuneType = iota
+	RuneTypeChar      RuneType = iota
+	RuneTypeSpace     RuneType = iota
+	RuneTypeQuote     RuneType = iota
+	RuneTypeBackslash RuneType = iota
+)
+
+// RuneType defines a rune type as defined in the constants above.
 type RuneType int
+
+// TokenizerState defines the current state of the Tokenizer, should be one the
+// constants above with the State* prefix.
 type TokenizerState int
 
+// Tokenizer wraps a Reader from which tokens are extracted.
 type Tokenizer struct {
 	input *bufio.Reader
 }
 
+// NewTokenizer allocates a new Tokenizer from the provided Reader.
 func NewTokenizer(input io.Reader) *Tokenizer {
 	t := &Tokenizer{bufio.NewReader(input)}
 	return t
 }
 
+// GetRuneType returns the type of the given run.
 func (t *Tokenizer) GetRuneType(r rune) RuneType {
 	switch {
 	case r == ';':
-		return RUNETYPE_EOS
+		return RuneTypeEOS
 	case r == '"':
-		return RUNETYPE_QUOTE
+		return RuneTypeQuote
 	case r == '\\':
-		return RUNETYPE_BACKSLASH
+		return RuneTypeBackslash
 	case strings.ContainsRune(" \t\n\r", r):
-		return RUNETYPE_SPACE
+		return RuneTypeSpace
 	}
 
-	return RUNETYPE_CHAR
+	return RuneTypeChar
 }
 
+// NextToken reads a single token from the tokenizer's input.
 func (t *Tokenizer) NextToken() (string, error) {
-	state := STATE_START
-	token := make([]rune, 0)
+	state := StateStart
+	var token []rune
 	for {
 		nextRune, _, err := t.input.ReadRune()
 		nextRuneType := t.GetRuneType(nextRune)
 		if err != nil {
 			if err == io.EOF {
-				nextRuneType = RUNETYPE_EOF
+				nextRuneType = RuneTypeEOF
 			} else {
 				return "", err
 			}
 		}
 
 		switch state {
-		case STATE_START:
+		case StateStart:
 			switch nextRuneType {
-			case RUNETYPE_EOF:
+			case RuneTypeEOF:
 				return "", io.EOF
-			case RUNETYPE_CHAR:
-				state = STATE_INWORD
+			case RuneTypeChar:
+				state = StateInWord
 				token = append(token, nextRune)
-			case RUNETYPE_EOS:
+			case RuneTypeEOS:
 				return ";", nil
-			case RUNETYPE_SPACE:
+			case RuneTypeSpace:
 				continue
-			case RUNETYPE_BACKSLASH:
-				state = STATE_INWORD_ESCAPED
-			case RUNETYPE_QUOTE:
-				state = STATE_QUOTED
+			case RuneTypeBackslash:
+				state = StateInWordEscaped
+			case RuneTypeQuote:
+				state = StateQuoted
 			}
-		case STATE_INWORD:
+		case StateInWord:
 			switch nextRuneType {
-			case RUNETYPE_EOF:
+			case RuneTypeEOF:
 				return string(token), io.EOF
-			case RUNETYPE_CHAR:
+			case RuneTypeChar:
 				token = append(token, nextRune)
-			case RUNETYPE_SPACE:
+			case RuneTypeSpace:
 				return string(token), nil
-			case RUNETYPE_BACKSLASH:
-				state = STATE_INWORD_ESCAPED
-			case RUNETYPE_EOS:
+			case RuneTypeBackslash:
+				state = StateInWordEscaped
+			case RuneTypeEOS:
 				t.input.UnreadRune()
 				return string(token), nil
-			case RUNETYPE_QUOTE:
-				state = STATE_QUOTED
+			case RuneTypeQuote:
+				state = StateQuoted
 			}
-		case STATE_QUOTED:
+		case StateQuoted:
 			switch nextRuneType {
-			case RUNETYPE_EOF:
+			case RuneTypeEOF:
 				return string(token), errors.New("missing quote termination")
-			case RUNETYPE_CHAR, RUNETYPE_SPACE, RUNETYPE_EOS:
+			case RuneTypeChar, RuneTypeSpace, RuneTypeEOS:
 				token = append(token, nextRune)
-			case RUNETYPE_BACKSLASH:
-				state = STATE_QUOTED_ESCAPED
-			case RUNETYPE_QUOTE:
-				state = STATE_INWORD
+			case RuneTypeBackslash:
+				state = StateQuotedEscaped
+			case RuneTypeQuote:
+				state = StateInWord
 			}
-		case STATE_INWORD_ESCAPED:
+		case StateInWordEscaped:
 			switch nextRuneType {
-			case RUNETYPE_EOF:
+			case RuneTypeEOF:
 				return string(token), errors.New("unterminated escape character")
-			case RUNETYPE_CHAR:
+			case RuneTypeChar:
 				token = append(token, '\\')
 				token = append(token, nextRune)
-				state = STATE_INWORD
-			case RUNETYPE_QUOTE:
+				state = StateInWord
+			case RuneTypeQuote:
 				token = append(token, '"')
-				state = STATE_INWORD
-			case RUNETYPE_BACKSLASH:
+				state = StateInWord
+			case RuneTypeBackslash:
 				token = append(token, '\\')
-				state = STATE_INWORD
+				state = StateInWord
 			default:
 				return string(token), errors.New("unknown escape character")
 			}
-		case STATE_QUOTED_ESCAPED:
+		case StateQuotedEscaped:
 			switch nextRuneType {
-			case RUNETYPE_EOF:
+			case RuneTypeEOF:
 				return string(token), errors.New("unterminated escape character")
-			case RUNETYPE_CHAR:
+			case RuneTypeChar:
 				token = append(token, '\\')
 				token = append(token, nextRune)
-				state = STATE_QUOTED
-			case RUNETYPE_QUOTE:
+				state = StateQuoted
+			case RuneTypeQuote:
 				token = append(token, '"')
-				state = STATE_QUOTED
-			case RUNETYPE_BACKSLASH:
+				state = StateQuoted
+			case RuneTypeBackslash:
 				token = append(token, '\\')
-				state = STATE_QUOTED
+				state = StateQuoted
 			default:
 				return string(token), errors.New("unknown escape character")
 			}

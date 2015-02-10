@@ -1,17 +1,13 @@
-// Copyright 2014, Truveris Inc. All Rights Reserved.
+// Copyright 2014-2015, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 
 package main
 
-import (
-	"github.com/truveris/ygor"
-)
-
+// ImageModule controls the 'image' command.
 type ImageModule struct{}
 
-func (module ImageModule) PrivMsg(msg *ygor.Message) {}
-
-func ImageFunc(msg *ygor.Message) {
+// PrivMsg is the message handler for user 'image' requests.
+func (module *ImageModule) PrivMsg(msg *Message) {
 	if len(msg.Args) != 1 {
 		IRCPrivMsg(msg.ReplyTo, "usage: image url")
 		return
@@ -20,10 +16,11 @@ func ImageFunc(msg *ygor.Message) {
 	SendToChannelMinions(msg.ReplyTo, "xombrero open http://truveris.github.io/fullscreen-image/?"+msg.Args[0])
 }
 
+// Init registers all the commands for this module.
 func (module ImageModule) Init() {
-	ygor.RegisterCommand(ygor.Command{
+	RegisterCommand(Command{
 		Name:            "image",
-		PrivMsgFunction: ImageFunc,
+		PrivMsgFunction: module.PrivMsg,
 		Addressed:       true,
 		AllowPrivate:    false,
 		AllowChannel:    true,

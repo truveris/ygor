@@ -31,7 +31,6 @@ import (
 	"github.com/tamentis/go-mplayer"
 	"github.com/truveris/sqs"
 	"github.com/truveris/sqs/sqschan"
-	"github.com/truveris/ygor"
 )
 
 var (
@@ -194,7 +193,7 @@ func main() {
 		}
 	}
 
-	go ygor.WaitForTraceRequest()
+	go waitForTraceRequest()
 
 	go playNoise()
 

@@ -1,7 +1,7 @@
 // Copyright 2014-2015, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 
-package ygor
+package main
 
 import (
 	"log"
@@ -11,10 +11,9 @@ import (
 	"syscall"
 )
 
-// WaitForTraceRequest is executed on programs such as ygord and ygor-minion as
-// a go routine. It watches for USR1 signal and dumps all the stack traces in the
-// logs.
-func WaitForTraceRequest() {
+// waitForTraceRequest is useful as a go routine. It watches for USR1 signal
+// and dumps all the stack traces in the logs.
+func waitForTraceRequest() {
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, syscall.SIGUSR1)
 

@@ -1,4 +1,4 @@
-// Copyright 2014, Truveris Inc. All Rights Reserved.
+// Copyright 2014-2015, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 //
 // The io_stdio adapter is primarily used for debugging and allows the user to
@@ -15,14 +15,11 @@ import (
 	"log"
 	"os"
 	"strings"
-
-	"github.com/truveris/ygor"
 )
 
-// This is used for debugging and local tests.
-//
-// It fetches queue messages from stdin instead of AWS SQS. It also write to
-// stdout anything meant for IRC output.
+// StartStdioHandler is used for debugging and local tests.  It fetches queue
+// messages from stdin instead of AWS SQS. It also write to stdout anything
+// meant for IRC output.
 func StartStdioHandler() (chan error, chan error, error) {
 	errch := make(chan error, 0)
 
@@ -32,7 +29,9 @@ func StartStdioHandler() (chan error, chan error, error) {
 	return errch, nil, nil
 }
 
-// Go routine used to write all the IRC output to stdout.
+// WriteIRCOutgointToStdout is a go routine used to write all the IRC output to
+// stdout, this is particularly useful for the test suite where the bot is
+// disconnected from SQS.
 func WriteIRCOutgointToStdout(errch chan error) {
 	for {
 		line := <-IRCOutgoing
@@ -43,18 +42,19 @@ func WriteIRCOutgointToStdout(errch chan error) {
 	}
 }
 
-// Go routine used to read all ygord input from Stdin (instead of IRC, minions,
-// etc.). This is mostly used for debugging/testing.
+// ReadAllInputFromStdin is a go routine used to read all ygord input from
+// Stdin (instead of IRC, minions, etc.). This is mostly used for
+// debugging/testing.
 func ReadAllInputFromStdin(errch chan error) {
 	br := bufio.NewReader(os.Stdin)
 	for {
 		line, err := br.ReadString('\n')
 		if err != nil {
-			var msg *ygor.Message
+			var msg *Message
 			if err == io.EOF {
-				msg = ygor.NewExitMessage(err.Error())
+				msg = NewExitMessage(err.Error())
 			} else {
-				msg = ygor.NewFatalMessage(err.Error())
+				msg = NewFatalMessage(err.Error())
 			}
 			InputQueue <- msg
 			continue

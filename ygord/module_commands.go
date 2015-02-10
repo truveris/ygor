@@ -1,4 +1,4 @@
-// Copyright 2014, Truveris Inc. All Rights Reserved.
+// Copyright 2014-2015, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 //
 // This module allows channel users to configure aliases themselves.
@@ -8,18 +8,17 @@ package main
 import (
 	"sort"
 	"strings"
-
-	"github.com/truveris/ygor"
 )
 
+// CommandsModule controls the 'commands' command which lists all the known
+// commands publicly.
 type CommandsModule struct{}
 
-func (module CommandsModule) PrivMsg(msg *ygor.PrivMsg) {}
+// PrivMsg is the message handler for user 'commands' requests.
+func (module *CommandsModule) PrivMsg(msg *Message) {
+	var names []string
 
-func (module *CommandsModule) CommandsCmdFunc(msg *ygor.Message) {
-	names := make([]string, 0)
-
-	for name, cmd := range ygor.RegisteredCommands {
+	for name, cmd := range RegisteredCommands {
 		// Attempt to only return user commands (skip minion commands).
 		if cmd.PrivMsgFunction == nil {
 			continue
@@ -35,10 +34,11 @@ func (module *CommandsModule) CommandsCmdFunc(msg *ygor.Message) {
 	IRCPrivMsg(msg.ReplyTo, found)
 }
 
+// Init registers all the commands for this module.
 func (module *CommandsModule) Init() {
-	ygor.RegisterCommand(ygor.Command{
+	RegisterCommand(Command{
 		Name:            "commands",
-		PrivMsgFunction: module.CommandsCmdFunc,
+		PrivMsgFunction: module.PrivMsg,
 		Addressed:       true,
 		AllowPrivate:    false,
 		AllowChannel:    true,
