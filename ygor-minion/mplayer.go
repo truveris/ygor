@@ -145,7 +145,6 @@ func player(tune Noise) *exec.Cmd {
 				log.Printf("play: content is too large for caching")
 				filepath = tune.Path
 			} else {
-				Send("play caching start")
 				log.Printf("play: attempting to cache file...")
 				err = downloadFile(tune.Path, filepath)
 				if err != nil {
