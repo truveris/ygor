@@ -135,6 +135,6 @@ func NewMessageFromMinionLine(line string) *Message {
 // NewMessageFromMinionSQS converts an SQS message into an ygor message.
 func NewMessageFromMinionSQS(sqsmsg *sqs.Message) *Message {
 	msg := NewMessageFromMinionLine(sqs.SQSDecode(sqsmsg.Body))
-	msg.UserID = sqsmsg.UserID
+	msg.UserID = sqsmsg.SenderID
 	return msg
 }

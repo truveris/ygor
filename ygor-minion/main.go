@@ -56,7 +56,7 @@ func startReceivingFromStdin(incoming chan *sqs.Message) error {
 			}
 			line = strings.TrimSpace(line)
 
-			incoming <- &sqs.Message{Body: line, UserID: "fakeUserID"}
+			incoming <- &sqs.Message{Body: line, SenderID: "fakeUserID"}
 		}
 	}()
 
