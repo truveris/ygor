@@ -98,10 +98,13 @@ func startReceivingFromSQS(incoming chan *sqs.Message) error {
 		for {
 			select {
 			case err = <-errch:
-				log.Printf("error reading sqs message: " + err.Error())
+				log.Printf("error reading sqs message: %s", err.Error())
 			case msg := <-ch:
 				incoming <- msg
-				client.DeleteMessage(msg)
+				err = client.DeleteMessage(msg)
+				if err != nil {
+					log.Printf("error deleting sqs message: %s", err.Error())
+				}
 			}
 		}
 	}()
