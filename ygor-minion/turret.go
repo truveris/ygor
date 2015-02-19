@@ -120,7 +120,7 @@ func Turret(data string) {
 	}
 
 	for _, t := range turrets {
-		t.Shutdown()
+		t.Close()
 	}
 
 	ctx.Close()
