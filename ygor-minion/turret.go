@@ -11,11 +11,6 @@ import (
 	"github.com/truveris/gousb/usb"
 )
 
-var (
-	turrets []*turret.Turret
-	ctx     *usb.Context
-)
-
 func getInt(s string) int {
 	if s == "" {
 		return 0
@@ -75,29 +70,6 @@ func getBoolean(s string) bool {
 	return false
 }
 
-// OpenTurrets creates a new USB context and opens all the devices known to be
-// turrets.
-func OpenTurrets() {
-	var err error
-
-	ctx = usb.NewContext()
-
-	turrets, err = turret.Find(ctx)
-	if err != nil {
-		log.Printf("turret: %s", err)
-		return
-	}
-}
-
-// CloseTurrets closes all the known Turret devices and closes the USB context.
-func CloseTurrets() {
-	for _, t := range turrets {
-		t.Close()
-	}
-
-	ctx.Close()
-}
-
 // Turret executes the turret command on the minion.
 func Turret(data string) {
 	cmd, value := SplitTwo(data)
@@ -105,6 +77,14 @@ func Turret(data string) {
 	if cmd == "" {
 		Send("turret error no command")
 		log.Printf("turret: no command")
+		return
+	}
+
+	ctx := usb.NewContext()
+	turrets, err := turret.Find(ctx)
+	if err != nil {
+		Send("turret error " + err.Error())
+		log.Printf("turret: %s", err)
 		return
 	}
 
@@ -138,6 +118,12 @@ func Turret(data string) {
 			Send("turret type " + t.HumanReadableType())
 		}
 	}
+
+	for _, t := range turrets {
+		t.Close()
+	}
+
+	ctx.Close()
 
 	Send("turret ok")
 }

@@ -199,7 +199,6 @@ func main() {
 
 	if !cfg.TestMode {
 		mplayer.StartSlave(mplayerErrorHandler)
-		OpenTurrets()
 	}
 
 	for msg := range incoming {
@@ -232,9 +231,5 @@ func main() {
 		default:
 			log.Printf("unknown command: %s", msg)
 		}
-	}
-
-	if !cfg.TestMode {
-		CloseTurrets()
 	}
 }
