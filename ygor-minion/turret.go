@@ -106,12 +106,19 @@ func Turret(data string) {
 			t.Stop()
 		case "dance":
 			t.BlinkOn(3)
-			t.Left(1 * time.Second)
-			t.Right(1 * time.Second)
+			t.Left(2 * time.Second)
+			t.Stop()
+
 			t.BlinkOn(3)
-			t.Left(1 * time.Second)
-			t.Right(1 * time.Second)
-			t.BlinkOff(3)
+			t.Up(2 * time.Second)
+			t.Stop()
+
+			t.BlinkOn(3)
+			t.Right(2 * time.Second)
+			t.Stop()
+
+			t.BlinkOn(3)
+			t.Down(2 * time.Second)
 			t.Stop()
 		case "right":
 			t.Right(getDuration(value))
