@@ -9,7 +9,7 @@ test_command "whatevz anything goes"
 cat > test.expected <<EOF
 bobert-von-cheesecake starting up
 send to ygord: register bobert-von-cheesecake fake-queue
-unknown command: &{ whatevz anything goes  fakeUserID}
+unknown command: &{   whatevz anything goes  fakeUserID %!s(uint64=0) %!s(uint64=0) %!s(uint64=0)}
 terminating: EOF
 EOF
 assert_output && pass

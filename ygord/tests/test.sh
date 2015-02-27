@@ -152,7 +152,7 @@ cleanup
 announce "commands"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: commands"
 cat > test.expected <<EOF
-PRIVMSG #test :africa, alias, aliases, commands, grep, image, minions, nop, ping, play, random, reboot, say, shutup, turret, unalias, volume, web, xombrero
+PRIVMSG #test :africa, alias, aliases, commands, grep, image, minions, nop, ping, play, random, reboot, say, shutup, skip, turret, unalias, volume, web, xombrero
 EOF
 assert_output && pass
 cleanup

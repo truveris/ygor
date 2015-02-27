@@ -88,6 +88,12 @@ func ShutUp() {
 	}
 }
 
+// Skip to the next entry.
+func Skip() {
+	log.Printf("skip")
+	mplayer.Skip()
+}
+
 // AddToPlayList pushes noise down the pipeline.
 func AddToPlayList(n Noise) {
 	playlist <- n

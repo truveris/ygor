@@ -47,6 +47,7 @@ func main() {
 	RegisterModule(&PingModule{})
 	RegisterModule(&PlayModule{})
 	RegisterModule(&SayModule{})
+	RegisterModule(&SkipModule{})
 	RegisterModule(&ShutUpModule{})
 	RegisterModule(&TurretModule{})
 	RegisterModule(&VolumeModule{})

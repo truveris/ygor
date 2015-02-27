@@ -216,14 +216,16 @@ func main() {
 			Xombrero(data)
 		case "shutup":
 			ShutUp()
+		case "skip":
+			Skip()
 		case "reboot":
 			Reboot()
 		case "ping":
 			Ping(data)
 		case "volume":
 			Volume(data)
-		case "turret":
-			Turret(data)
+		//case "turret":
+		//	Turret(data)
 		case "error":
 			// These errors are typically received when the queue
 			// systems fails to fetch a message. There is no reason

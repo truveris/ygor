@@ -1,4 +1,5 @@
 // Copyright 2015, Truveris Inc. All Rights Reserved.
+// +build ignore
 
 package main
 

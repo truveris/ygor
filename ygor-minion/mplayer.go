@@ -91,7 +91,8 @@ func downloadFile(url, filepath string) error {
 }
 
 func mplayerErrorHandler(err error) {
-	Send("play error: " + err.Error())
+	log.Printf("play: mplayer exited: %s", err.Error())
+	Send("play error: mplayer error: " + err.Error())
 }
 
 func mplayerPlayAndWaitWithDuration(filepath string, duration time.Duration) {
