@@ -86,6 +86,13 @@ func main() {
 				log.Printf("msg handler error: un-handled type"+
 					" '%d'", msg.Type)
 			}
+
+			// This delay allows each scheduled routine to start.
+			// This is not particularly pretty but in case a user
+			// sends multiple commands in the same request (e.g.
+			// say 1; say 2; say 3), it should give enough time for
+			// the output messages to be processed in the same
+			// order they were received.
 			time.Sleep(50 * time.Millisecond)
 		}
 	}
