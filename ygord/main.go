@@ -6,6 +6,7 @@ package main
 import (
 	"log"
 	"os"
+	"time"
 
 	"github.com/truveris/ygor/ygord/alias"
 )
@@ -85,6 +86,7 @@ func main() {
 				log.Printf("msg handler error: un-handled type"+
 					" '%d'", msg.Type)
 			}
+			time.Sleep(50 * time.Millisecond)
 		}
 	}
 }
