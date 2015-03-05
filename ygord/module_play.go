@@ -5,7 +5,6 @@ package main
 
 import (
 	"fmt"
-	"time"
 )
 
 // PlayModule controls the 'play'
