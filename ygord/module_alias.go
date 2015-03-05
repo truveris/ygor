@@ -35,7 +35,7 @@ var (
 
 // getIncrementedName returns the next available alias with a trailing number
 // incremented if needed.  This is used when an alias has a trailing '#'.
-func getIncrementedName(name string) (string, error) {
+func getIncrementedName(name, value string) (string, error) {
 	cnt := strings.Count(name, "#")
 	if cnt == 0 {
 		return name, nil
@@ -52,8 +52,13 @@ func getIncrementedName(name string) (string, error) {
 			return "", errTooManyAliases
 		}
 
-		if Aliases.Get(newName) == nil {
+		alias := Aliases.Get(newName)
+		if alias == nil {
 			break
+		}
+
+		if alias.Value == value {
+			return "", errors.New("already exists as '" + alias.Name + "'")
 		}
 	}
 
@@ -97,7 +102,7 @@ func (module *AliasModule) AliasPrivMsg(msg *Message) {
 	newValue := strings.Join(msg.Args[1:], " ")
 
 	if alias == nil {
-		newName, err := getIncrementedName(name)
+		newName, err := getIncrementedName(name, newValue)
 		if err != nil {
 			IRCPrivMsg(msg.ReplyTo, "error: "+err.Error())
 			return

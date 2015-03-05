@@ -305,9 +305,9 @@ cleanup
 
 
 announce "set an incremental alias"
-test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias cat# play stuff.ogg"
-test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias cat# play stuff.ogg"
-test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias cat# play stuff.ogg"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias cat# play stuff1.ogg"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias cat# play stuff2.ogg"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias cat# play stuff3.ogg"
 cat > test.expected <<EOF
 PRIVMSG #test :ok (created as "cat3")
 EOF
@@ -319,6 +319,16 @@ announce "set an incremental alias (error)"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias cat## play stuff.ogg"
 cat > test.expected <<EOF
 PRIVMSG #test :error: too many '#'
+EOF
+assert_output && pass
+cleanup
+
+
+announce "set an incremental alias (already exist)"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias dog# play stuff.ogg"
+test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias dog# play stuff.ogg"
+cat > test.expected <<EOF
+PRIVMSG #test :error: already exists as 'dog1'
 EOF
 assert_output && pass
 cleanup

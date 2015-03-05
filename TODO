@@ -1,4 +1,5 @@
 # TODO
+ - switch all protocols to json
  - send the capabilities to the master
  - implement volume as a stateful system (pass the volume to all the players)
  - find out why omxplayer can't be killed...

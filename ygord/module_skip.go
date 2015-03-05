@@ -3,6 +3,7 @@
 
 package main
 
+// SkipModule controls the 'skip' command.
 type SkipModule struct{}
 
 // PrivMsg is the message handler for user requests.
