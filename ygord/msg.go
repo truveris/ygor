@@ -32,7 +32,7 @@ type Message struct {
 	UserID     string
 	Command    string
 	Body       string
-	// In the case of an IRC message, this is a nickname.
+	// In the case of an IRC message, this is a nickname or a channel.
 	ReplyTo string
 	Args    []string
 }

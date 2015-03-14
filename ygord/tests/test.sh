@@ -375,7 +375,7 @@ announce "get this new alias"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play stuff.ogg"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla"
 cat > test.expected <<EOF
-PRIVMSG #test :'blabla' is an alias for 'play stuff.ogg'
+PRIVMSG #test :blabla="play stuff.ogg" (created by jimmy on 2000-01-01T00:00:00Z)
 EOF
 assert_output && pass
 cleanup
@@ -386,7 +386,7 @@ test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias babble blabla 8s"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias babble"
 cat > test.expected <<EOF
-PRIVMSG #test :'babble' is an alias for 'blabla 8s'
+PRIVMSG #test :babble="blabla 8s" (created by jimmy on 2000-01-01T00:00:00Z)
 EOF
 assert_output && pass
 cleanup
@@ -417,7 +417,7 @@ test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla play things.ogg"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias blabla"
 cat > test.expected <<EOF
-PRIVMSG #test :'blabla' is an alias for 'play things.ogg'
+PRIVMSG #test :blabla="play things.ogg" (created by jimmy on 2000-01-01T00:00:00Z)
 EOF
 assert_output && pass
 cleanup
@@ -610,7 +610,7 @@ announce "alias with percent sign"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias 60% play stuff"
 test_line "irc :jimmy!dev@truveris.com PRIVMSG #test :whygore: alias 60%"
 cat > test.expected <<EOF
-PRIVMSG #test :'60%' is an alias for 'play stuff'
+PRIVMSG #test :60%="play stuff" (created by jimmy on 2000-01-01T00:00:00Z)
 EOF
 assert_output && pass
 cleanup

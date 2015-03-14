@@ -86,15 +86,15 @@ func (module *AliasModule) AliasPrivMsg(msg *Message) {
 			IRCPrivMsg(msg.ReplyTo, "error: unknown alias")
 			return
 		}
-		IRCPrivMsg(msg.ReplyTo, fmt.Sprintf("'%s' is an alias for '%s'",
-			alias.Name, alias.Value))
+		IRCPrivMsg(msg.ReplyTo, fmt.Sprintf("%s=\"%s\" (created by %s on %s)",
+			alias.Name, alias.Value, alias.Author, alias.HumanTime()))
 		return
 	}
 
 	// Set a new alias.
 	cmd := GetCommand(name)
 	if cmd != nil {
-		IRCPrivMsg(msg.ReplyTo, fmt.Sprintf("error: '%s' is already a"+
+		IRCPrivMsg(msg.ReplyTo, fmt.Sprintf("error: '%s' is a"+
 			" command", name))
 		return
 	}
@@ -102,6 +102,8 @@ func (module *AliasModule) AliasPrivMsg(msg *Message) {
 	newValue := strings.Join(msg.Args[1:], " ")
 
 	if alias == nil {
+		var creationTime time.Time
+
 		newName, err := getIncrementedName(name, newValue)
 		if err != nil {
 			IRCPrivMsg(msg.ReplyTo, "error: "+err.Error())
@@ -112,7 +114,12 @@ func (module *AliasModule) AliasPrivMsg(msg *Message) {
 		} else {
 			outputMsg = "ok (created)"
 		}
-		Aliases.Add(newName, newValue)
+		if cfg.TestMode {
+			creationTime = time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
+		} else {
+			creationTime = time.Now()
+		}
+		Aliases.Add(newName, newValue, msg.UserID, creationTime)
 	} else if alias.Value == newValue {
 		outputMsg = "no changes"
 	} else {

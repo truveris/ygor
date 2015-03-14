@@ -86,10 +86,12 @@ func (file *File) Names() []string {
 
 // Add creates a new alias in the in-memory cache.  It will be saved
 // permanently once Save is called.
-func (file *File) Add(name, value string) {
+func (file *File) Add(name, value, author string, time time.Time) {
 	alias := &Alias{}
 	alias.Name = name
 	alias.Value = value
+	alias.Author = author
+	alias.CreationTime = time
 	file.cache[alias.Name] = alias
 }
 
@@ -114,7 +116,7 @@ func (file *File) Save() error {
 	}
 
 	for _, alias := range file.cache {
-		fp.WriteString(alias.GetLine())
+		fp.WriteString(alias.String() + "\n")
 	}
 
 	return nil
@@ -151,12 +153,17 @@ func (file *File) reload() error {
 		line = strings.TrimSpace(line)
 
 		// Break appart name and value.
-		tokens := strings.SplitN(line, "\t", 2)
-		if len(tokens) != 2 {
+		tokens := strings.SplitN(line, "\t", 4)
+		if len(tokens) != 4 {
 			continue
 		}
 
-		file.Add(tokens[0], tokens[1])
+		date, err := time.Parse(time.RFC3339, tokens[3])
+		if err != nil {
+			date = time.Now()
+		}
+
+		file.Add(tokens[0], tokens[1], tokens[2], date)
 	}
 
 	return nil
