@@ -9,12 +9,13 @@ import (
 )
 
 var (
-	rePercentage = regexp.MustCompile(`^[-+]?\d+%$`)
+	rePercentage = regexp.MustCompile(`^\d+%$`)
+	reDecibel    = regexp.MustCompile(`^\d+dB[+-]?$`)
 )
 
 // Volume sets the volume via the alsa mixer command.
 func Volume(data string) {
-	if !rePercentage.MatchString(data) {
+	if !rePercentage.MatchString(data) && !reDecibel.MatchString(data) {
 		Send("volume error invalid input")
 		log.Printf("volume: invalid input '%s'", data)
 		return
