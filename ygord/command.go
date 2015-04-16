@@ -8,6 +8,12 @@ var (
 	RegisteredCommands = make(map[string]Command)
 )
 
+type ModuleResponse struct {
+	Type    string
+	Target  string
+	Message string
+}
+
 // MessageFunction is used as a type of function that receives a Message either
 // from IRC or from a minion.
 type MessageFunction func(*Message)

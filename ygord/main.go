@@ -55,7 +55,7 @@ func main() {
 	RegisterModule(&XombreroModule{})
 
 	log.Printf("starting i/o adapters")
-	ircerrch, minionerrch, err := StartAdapters()
+	minionerrch, err := StartAdapters()
 	if err != nil {
 		log.Fatal("failed to start adapters: ", err.Error())
 	}
@@ -65,8 +65,6 @@ func main() {
 	log.Printf("ready")
 	for {
 		select {
-		case err := <-ircerrch:
-			log.Printf("irc handler error: %s", err.Error())
 		case err := <-minionerrch:
 			log.Printf("minion handler error: %s", err.Error())
 		case msg := <-InputQueue:

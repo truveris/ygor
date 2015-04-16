@@ -20,34 +20,30 @@ var (
 )
 
 // StartAdapters starts all the IO adapters (IRC, Stdin/Stdout, Minions, API)
-func StartAdapters() (<-chan error, <-chan error, error) {
+func StartAdapters() (<-chan error, error) {
 	err := StartHTTPAdapter()
 	if err != nil {
-		return nil, nil, errors.New("error starting http adapter: " +
+		return nil, errors.New("error starting http adapter: " +
 			err.Error())
-	}
-
-	if cfg.TestMode {
-		return StartStdioHandler()
 	}
 
 	client, err := sqs.NewClient(cfg.AWSAccessKeyID, cfg.AWSSecretAccessKey,
 		cfg.AWSRegionCode)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	ircerrch, err := StartIRCAdapter(client)
+	err = StartIRCAdapter()
 	if err != nil {
-		return nil, nil, errors.New("error starting IRC adapter: " +
+		return nil, errors.New("error starting IRC adapter: " +
 			err.Error())
 	}
 
 	minionerrch, err := StartMinionAdapter(client)
 	if err != nil {
-		return nil, nil, errors.New("error starting minion adapter: " +
+		return nil, errors.New("error starting minion adapter: " +
 			err.Error())
 	}
 
-	return ircerrch, minionerrch, nil
+	return minionerrch, nil
 }

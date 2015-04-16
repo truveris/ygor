@@ -25,10 +25,6 @@ type PingModule struct {
 
 // Now is a wrapper around Now which always returns the same time in test mode.
 func Now() time.Time {
-	if cfg.TestMode {
-		return time.Unix(1136239445, 0)
-	}
-
 	return time.Now()
 }
 

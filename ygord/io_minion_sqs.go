@@ -8,7 +8,6 @@
 package main
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/truveris/sqs"
@@ -68,11 +67,6 @@ func SendToChannelMinions(channel, msg string) {
 
 	// Send the same exact data to all this channel's minion.
 	for _, url := range urls {
-		if cfg.TestMode {
-			fmt.Printf("[SQS-SendToMinion] %s %s\n", url, msg)
-			continue
-		}
-
 		err := client.SendMessage(url, sqs.SQSEncode(msg))
 		if err != nil {
 			Debug("error sending to minion: " + err.Error())
@@ -83,11 +77,6 @@ func SendToChannelMinions(channel, msg string) {
 
 // SendToQueue sends a message to our friendly minion via its SQS queue.
 func SendToQueue(queueURL, msg string) error {
-	if cfg.TestMode {
-		fmt.Printf("[SQS-SendToMinion] %s %s\n", queueURL, msg)
-		return nil
-	}
-
 	client, err := sqs.NewClient(cfg.AWSAccessKeyID, cfg.AWSSecretAccessKey,
 		cfg.AWSRegionCode)
 	if err != nil {

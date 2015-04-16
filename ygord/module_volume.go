@@ -31,6 +31,26 @@ func (module VolumeModule) PrivMsg(msg *Message) {
 	SendToChannelMinions(msg.ReplyTo, "volume "+msg.Args[0])
 }
 
+// PrivMsgPlusPlus is the message handler for user 'volume++' requests, it
+// increments the volume by 1dB.
+func (module VolumeModule) PrivMsgPlusPlus(msg *Message) {
+	if len(msg.Args) != 0 {
+		IRCPrivMsg(msg.ReplyTo, "usage: volume++")
+		return
+	}
+	SendToChannelMinions(msg.ReplyTo, "volume 1db+")
+}
+
+// PrivMsgMinusMinus is the message handler for user 'volume--' requests, it
+// decrements the volume by 1dB.
+func (module VolumeModule) PrivMsgMinusMinus(msg *Message) {
+	if len(msg.Args) != 0 {
+		IRCPrivMsg(msg.ReplyTo, "usage: volume--")
+		return
+	}
+	SendToChannelMinions(msg.ReplyTo, "volume 1db-")
+}
+
 // MinionMsg is the message handler for all the minion responses for 'volume'
 // requests.
 func (module VolumeModule) MinionMsg(msg *Message) {
@@ -58,5 +78,21 @@ func (module VolumeModule) Init() {
 		Addressed:         true,
 		AllowPrivate:      false,
 		AllowChannel:      true,
+	})
+
+	RegisterCommand(Command{
+		Name:            "volume++",
+		PrivMsgFunction: module.PrivMsgPlusPlus,
+		Addressed:       true,
+		AllowPrivate:    false,
+		AllowChannel:    true,
+	})
+
+	RegisterCommand(Command{
+		Name:            "volume--",
+		PrivMsgFunction: module.PrivMsgMinusMinus,
+		Addressed:       true,
+		AllowPrivate:    false,
+		AllowChannel:    true,
 	})
 }

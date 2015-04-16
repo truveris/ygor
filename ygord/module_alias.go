@@ -114,11 +114,7 @@ func (module *AliasModule) AliasPrivMsg(msg *Message) {
 		} else {
 			outputMsg = "ok (created)"
 		}
-		if cfg.TestMode {
-			creationTime = time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
-		} else {
-			creationTime = time.Now()
-		}
+		creationTime = time.Now()
 		Aliases.Add(newName, newValue, msg.UserID, creationTime)
 	} else if alias.Value == newValue {
 		outputMsg = "no changes"
@@ -211,9 +207,7 @@ func (module *AliasModule) AliasesPrivMsg(msg *Message) {
 		} else {
 			IRCPrivMsg(msg.ReplyTo, "... "+page)
 		}
-		if !cfg.TestMode {
-			time.Sleep(500 * time.Millisecond)
-		}
+		time.Sleep(500 * time.Millisecond)
 	}
 }
 
@@ -278,7 +272,7 @@ func (module *AliasModule) RandomPrivMsg(msg *Message) {
 		return
 	}
 
-	IRCPrivMsg(msg.ReplyTo, "the codes have chosen "+names[idx])
+	IRCPrivAction(msg.ReplyTo, "picks "+names[idx])
 
 	for _, newmsg := range newmsgs {
 		newmsg.ReplyTo = msg.ReplyTo

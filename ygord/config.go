@@ -31,12 +31,6 @@ type Cfg struct {
 	// AWS secret access key
 	AWSSecretAccessKey string
 
-	// In Test-mode, this program will not attempt to communicate with any
-	// external systems (e.g. SQS and will print everything to stdout).
-	// Additionally, all delays are reduced to a minimum to speed up the
-	// test suite.
-	TestMode bool
-
 	// All the configured channels. ygord will JOIN every single one of
 	// them and will push commands to the configured associated minions.
 	Channels map[string]ChannelCfg
@@ -44,9 +38,8 @@ type Cfg struct {
 	// Queue used by ygord to receive feedback from the minions.
 	QueueName string
 
-	// IRC Queues
-	IRCIncomingQueueName string
-	IRCOutgoingQueueName string
+	// Hostname and port to use to connect to the IRC server.
+	IRCServer string
 
 	// Nickname of the bot. FIXME: this is not currently synchronized
 	IRCNickname string
@@ -144,16 +137,12 @@ func ParseConfigFile() error {
 		return errors.New("'QueueName' is not defined")
 	}
 
+	if cfg.IRCServer == "" {
+		return errors.New("'IRCServer' is not defined")
+	}
+
 	if cfg.IRCNickname == "" {
 		return errors.New("'IRCNickname' is not defined")
-	}
-
-	if cfg.IRCIncomingQueueName == "" {
-		return errors.New("'IRCIncomingQueueName' is not defined")
-	}
-
-	if cfg.IRCOutgoingQueueName == "" {
-		return errors.New("'IRCOutgoingQueueName' is not defined")
 	}
 
 	if cfg.AWSRegionCode == "" {
