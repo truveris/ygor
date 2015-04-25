@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"regexp"
 	"strings"
 )
@@ -17,7 +18,7 @@ var (
 type VolumeModule struct{}
 
 // PrivMsg is the message handler for user 'volume' requests.
-func (module VolumeModule) PrivMsg(msg *Message) {
+func (module VolumeModule) PrivMsg(srv *Server, msg *Message) {
 	if len(msg.Args) != 1 {
 		IRCPrivMsg(msg.ReplyTo, "usage: volume percent")
 		return
@@ -28,40 +29,39 @@ func (module VolumeModule) PrivMsg(msg *Message) {
 		return
 	}
 
-	SendToChannelMinions(msg.ReplyTo, "volume "+msg.Args[0])
+	srv.SendToChannelMinions(msg.ReplyTo, "volume "+msg.Args[0])
 }
 
 // PrivMsgPlusPlus is the message handler for user 'volume++' requests, it
 // increments the volume by 1dB.
-func (module VolumeModule) PrivMsgPlusPlus(msg *Message) {
+func (module VolumeModule) PrivMsgPlusPlus(srv *Server, msg *Message) {
 	if len(msg.Args) != 0 {
 		IRCPrivMsg(msg.ReplyTo, "usage: volume++")
 		return
 	}
-	SendToChannelMinions(msg.ReplyTo, "volume 1db+")
+	srv.SendToChannelMinions(msg.ReplyTo, "volume 1db+")
 }
 
 // PrivMsgMinusMinus is the message handler for user 'volume--' requests, it
 // decrements the volume by 1dB.
-func (module VolumeModule) PrivMsgMinusMinus(msg *Message) {
+func (module VolumeModule) PrivMsgMinusMinus(srv *Server, msg *Message) {
 	if len(msg.Args) != 0 {
 		IRCPrivMsg(msg.ReplyTo, "usage: volume--")
 		return
 	}
-	SendToChannelMinions(msg.ReplyTo, "volume 1db-")
+	srv.SendToChannelMinions(msg.ReplyTo, "volume 1db-")
 }
 
 // MinionMsg is the message handler for all the minion responses for 'volume'
 // requests.
-func (module VolumeModule) MinionMsg(msg *Message) {
+func (module VolumeModule) MinionMsg(srv *Server, msg *Message) {
 	if msg.Args[0] != "ok" {
-		minion, err := Minions.GetByUserID(msg.UserID)
+		minion, err := srv.Minions.GetByUserID(msg.UserID)
 		if err != nil {
-			Debug(fmt.Sprintf("volume: can't find minion for %s",
-				msg.UserID))
+			log.Printf("volume: can't find minion for %s", msg.UserID)
 			return
 		}
-		channels := GetChannelsByMinionName(minion.Name)
+		channels := srv.GetChannelsByMinionName(minion.Name)
 		for _, channel := range channels {
 			s := fmt.Sprintf("volume@%s: %s", minion.Name, strings.Join(msg.Args, " "))
 			IRCPrivMsg(channel, s)

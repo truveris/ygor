@@ -8,20 +8,14 @@ var (
 	RegisteredCommands = make(map[string]Command)
 )
 
-type ModuleResponse struct {
-	Type    string
-	Target  string
-	Message string
-}
-
 // MessageFunction is used as a type of function that receives a Message either
 // from IRC or from a minion.
-type MessageFunction func(*Message)
+type MessageFunction func(*Server, *Message)
 
 // ToggleFunction is a type of function that is used to check if a module
 // should be executed based on the provided Message.  It should return a
 // boolean.
-type ToggleFunction func(*Message) bool
+type ToggleFunction func(*Server, *Message) bool
 
 // Command is the definition of a command to be executed either when a message
 // is received from users (IRC) or from minions.
@@ -50,10 +44,10 @@ type Command struct {
 }
 
 // IRCMessageMatches checks if the given Message matches the command.
-func (cmd Command) IRCMessageMatches(msg *Message) bool {
+func (cmd Command) IRCMessageMatches(srv *Server, msg *Message) bool {
 	// Not even the right command.
 	if cmd.ToggleFunction != nil {
-		if !cmd.ToggleFunction(msg) {
+		if !cmd.ToggleFunction(srv, msg) {
 			return false
 		}
 	} else if cmd.Name != msg.Command {

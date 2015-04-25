@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"strings"
 )
 
@@ -12,25 +13,24 @@ import (
 type TurretModule struct{}
 
 // PrivMsg is the message handler for user-received 'turret' commands.
-func (module TurretModule) PrivMsg(msg *Message) {
+func (module TurretModule) PrivMsg(srv *Server, msg *Message) {
 	if len(msg.Args) == 0 || len(msg.Args) > 2 {
 		IRCPrivMsg(msg.ReplyTo, "usage: turret command [param]")
 		return
 	}
 
-	SendToChannelMinions(msg.ReplyTo, "turret "+strings.Join(msg.Args, " "))
+	srv.SendToChannelMinions(msg.ReplyTo, "turret "+strings.Join(msg.Args, " "))
 }
 
 // MinionMsg is the message handler for minion-received 'turret' commands.
-func (module TurretModule) MinionMsg(msg *Message) {
+func (module TurretModule) MinionMsg(srv *Server, msg *Message) {
 	if msg.Args[0] != "ok" {
-		minion, err := Minions.GetByUserID(msg.UserID)
+		minion, err := srv.Minions.GetByUserID(msg.UserID)
 		if err != nil {
-			Debug(fmt.Sprintf("turret: can't find minion for %s",
-				msg.UserID))
+			log.Printf("turret: can't find minion for %s", msg.UserID)
 			return
 		}
-		channels := GetChannelsByMinionName(minion.Name)
+		channels := srv.GetChannelsByMinionName(minion.Name)
 		for _, channel := range channels {
 			s := fmt.Sprintf("turret@%s: %s", minion.Name, strings.Join(msg.Args, " "))
 			IRCPrivMsg(channel, s)

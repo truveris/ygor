@@ -18,7 +18,7 @@
 //    - \" should be used to produce a single "
 //
 
-package main
+package lexer
 
 import (
 	"bufio"

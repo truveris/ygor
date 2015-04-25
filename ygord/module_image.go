@@ -4,16 +4,19 @@
 package main
 
 // ImageModule controls the 'image' command.
-type ImageModule struct{}
+type ImageModule struct {
+	*Server
+}
 
 // PrivMsg is the message handler for user 'image' requests.
-func (module *ImageModule) PrivMsg(msg *Message) {
+func (module *ImageModule) PrivMsg(srv *Server, msg *Message) {
 	if len(msg.Args) != 1 {
 		IRCPrivMsg(msg.ReplyTo, "usage: image url")
 		return
 	}
 
-	SendToChannelMinions(msg.ReplyTo, "xombrero open http://truveris.github.io/fullscreen-image/?"+msg.Args[0])
+	srv.SendToChannelMinions(msg.ReplyTo,
+		"xombrero open http://truveris.github.io/fullscreen-image/?"+msg.Args[0])
 }
 
 // Init registers all the commands for this module.

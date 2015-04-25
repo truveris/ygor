@@ -8,6 +8,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 )
@@ -32,7 +33,7 @@ func Now() time.Time {
 // is issued, a ping command is issued to all the minion with a unique
 // timestamp.  This timestamp will be used to validated incoming ping
 // responses.
-func (module *PingModule) PrivMsg(msg *Message) {
+func (module *PingModule) PrivMsg(srv *Server, msg *Message) {
 	if len(module.PingStartTimes) > 0 {
 		IRCPrivMsg(msg.ReplyTo, "error: previous ping still running")
 		return
@@ -40,12 +41,12 @@ func (module *PingModule) PrivMsg(msg *Message) {
 
 	module.PingReplyTo = msg.ReplyTo
 
-	for _, minion := range GetChannelMinions(msg.ReplyTo) {
+	for _, minion := range srv.GetChannelMinions(msg.ReplyTo) {
 		now := Now()
 		module.PingStartTimes[minion.UserID] = now
 		body := fmt.Sprintf("ping %d", now.UnixNano())
-		SendToQueue(minion.QueueURL, body)
-		Debug(fmt.Sprintf("sent to %s: %s", minion.Name, body))
+		srv.SendToQueue(minion.QueueURL, body)
+		log.Printf("sent to %s: %s", minion.Name, body)
 	}
 
 	// After 10 seconds, give up.
@@ -63,34 +64,34 @@ func (module *PingModule) PingReset() {
 }
 
 // MinionMsg is the handler for minion responses.
-func (module *PingModule) MinionMsg(msg *Message) {
+func (module *PingModule) MinionMsg(srv *Server, msg *Message) {
 	if len(msg.Args) != 1 {
-		Debug("pong: usage error")
+		log.Printf("pong: usage error")
 		return
 	}
 
 	timestamp, err := strconv.ParseInt(msg.Args[0], 10, 0)
 	if err != nil {
-		Debug("pong: invalid timestamp: " + err.Error())
+		log.Printf("pong: invalid timestamp: %s", err.Error())
 		return
 	}
 
 	start, ok := module.PingStartTimes[msg.UserID]
 	if !ok {
-		Debug("pong: unknown minion: " + msg.UserID)
+		log.Printf("pong: unknown minion: %s", msg.UserID)
 		return
 	}
 	delete(module.PingStartTimes, msg.UserID)
 
 	if timestamp != start.UnixNano() {
-		Debug(fmt.Sprintf("pong: got old ping reponse (%d)", timestamp))
+		log.Printf("pong: got old ping reponse (%d)", timestamp)
 		return
 	}
 
 	duration := time.Since(start)
 
 	var name string
-	minion, err := Minions.GetByUserID(msg.UserID)
+	minion, err := srv.Minions.GetByUserID(msg.UserID)
 	if err != nil {
 		name = "no name (" + msg.UserID + ")"
 	} else {

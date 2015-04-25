@@ -7,21 +7,24 @@
 package main
 
 import (
+	"log"
 	"sort"
 	"strings"
 )
 
 // MinionsModule controls the registration process for minions via the
 // 'register' minion command.
-type MinionsModule struct{}
+type MinionsModule struct {
+	*Server
+}
 
 // PrivMsg is the message handler for user 'minions' requests.
-func (module *MinionsModule) PrivMsg(msg *Message) {
+func (module *MinionsModule) PrivMsg(srv *Server, msg *Message) {
 	var names []string
 
-	minions, err := Minions.All()
+	minions, err := srv.Minions.All()
 	if err != nil {
-		Debug("GetMinions error: " + err.Error())
+		log.Printf("GetMinions error: %s", err.Error())
 		return
 	}
 
@@ -29,29 +32,30 @@ func (module *MinionsModule) PrivMsg(msg *Message) {
 		names = append(names, minion.Name)
 	}
 	sort.Strings(names)
-	IRCPrivMsg(msg.ReplyTo, "currently registered: "+strings.Join(names, ", "))
+	IRCPrivMsg(msg.ReplyTo,
+		"currently registered: "+strings.Join(names, ", "))
 }
 
 // MinionMsg is the message handler for minions 'register' requests.
-func (module *MinionsModule) MinionMsg(msg *Message) {
+func (module *MinionsModule) MinionMsg(srv *Server, msg *Message) {
 	if len(msg.Args) != 2 {
-		Debug("register: error: invalid register command issued")
+		log.Printf("register: error: invalid register command issued")
 		return
 	}
 
 	name := msg.Args[0]
 	queueURL := msg.Args[1]
 
-	err := Minions.Register(name, queueURL, msg.UserID)
+	err := srv.Minions.Register(name, queueURL, msg.UserID)
 	if err != nil {
-		Debug("register: error: " + err.Error())
+		log.Printf("register: error: %s", err.Error())
 		return
 	}
 
-	Minions.Save()
-	err = SendToQueue(queueURL, "register success")
+	srv.Minions.Save()
+	err = module.Server.SendToQueue(queueURL, "register success")
 	if err != nil {
-		Debug("register: error: " + err.Error())
+		log.Printf("register: error: %s", err.Error())
 	}
 }
 

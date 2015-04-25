@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"strings"
 )
 
@@ -12,35 +13,34 @@ import (
 type XombreroModule struct{}
 
 // PrivMsg is the message handler for 'xombrero' user requests.
-func (module XombreroModule) PrivMsg(msg *Message) {
+func (module XombreroModule) PrivMsg(srv *Server, msg *Message) {
 	if len(msg.Args) == 0 {
 		IRCPrivMsg(msg.ReplyTo, "usage: xombrero [command [param ...]]")
 		return
 	}
 
-	SendToChannelMinions(msg.ReplyTo, "xombrero "+strings.Join(msg.Args, " "))
+	srv.SendToChannelMinions(msg.ReplyTo, "xombrero "+strings.Join(msg.Args, " "))
 }
 
 // WebPrivMsg is the message handler for 'web' user requests.
-func (module XombreroModule) WebPrivMsg(msg *Message) {
+func (module XombreroModule) WebPrivMsg(srv *Server, msg *Message) {
 	if len(msg.Args) != 1 {
 		IRCPrivMsg(msg.ReplyTo, "usage: web url")
 		return
 	}
 
-	SendToChannelMinions(msg.ReplyTo, "xombrero open "+msg.Args[0])
+	srv.SendToChannelMinions(msg.ReplyTo, "xombrero open "+msg.Args[0])
 }
 
 // MinionMsg is the message handler for all messages coming from the minions.
-func (module XombreroModule) MinionMsg(msg *Message) {
+func (module XombreroModule) MinionMsg(srv *Server, msg *Message) {
 	if msg.Args[0] != "ok" {
-		minion, err := Minions.GetByUserID(msg.UserID)
+		minion, err := srv.Minions.GetByUserID(msg.UserID)
 		if err != nil {
-			Debug(fmt.Sprintf("xombrero: can't find minion for %s",
-				msg.UserID))
+			log.Printf("xombrero: can't find minion for %s", msg.UserID)
 			return
 		}
-		channels := GetChannelsByMinionName(minion.Name)
+		channels := srv.GetChannelsByMinionName(minion.Name)
 		for _, channel := range channels {
 			s := fmt.Sprintf("xombrero@%s: %s", minion.Name, strings.Join(msg.Args, " "))
 			IRCPrivMsg(channel, s)

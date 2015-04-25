@@ -18,7 +18,11 @@ import (
 	"strings"
 )
 
-func aliasesTxtHandler(w http.ResponseWriter, r *http.Request) {
+type AliasesTXTHandler struct {
+	*Server
+}
+
+func (handler *AliasesTXTHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	_, err := auth(r)
 	if err != nil {
 		log.Printf("Authentication failed: %s", err.Error())
@@ -26,7 +30,7 @@ func aliasesTxtHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	aliases, err := Aliases.All()
+	aliases, err := handler.Server.Aliases.All()
 	if err != nil {
 		http.Error(w, "error: "+err.Error(), 500)
 		return
@@ -38,7 +42,11 @@ func aliasesTxtHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func aliasesHandler(w http.ResponseWriter, r *http.Request) {
+type AliasesHTMLHandler struct {
+	*Server
+}
+
+func (handler *AliasesHTMLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	user, err := auth(r)
 	if err != nil {
 		log.Printf("Authentication failed: %s", err.Error())
@@ -46,7 +54,7 @@ func aliasesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	aliases, err := Aliases.All()
+	aliases, err := handler.Server.Aliases.All()
 	if err != nil {
 		http.Error(w, "error: "+err.Error(), 500)
 		return
@@ -93,7 +101,11 @@ func aliasesHandler(w http.ResponseWriter, r *http.Request) {
 	`)
 }
 
-func minionsHandler(w http.ResponseWriter, r *http.Request) {
+type MinionsHTMLHandler struct {
+	*Server
+}
+
+func (handler *MinionsHTMLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	user, err := auth(r)
 	if err != nil {
 		log.Printf("Authentication failed: %s", err.Error())
@@ -101,7 +113,7 @@ func minionsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	minions, err := Minions.All()
+	minions, err := handler.Server.Minions.All()
 	if err != nil {
 		http.Error(w, "error: "+err.Error(), 500)
 		return
@@ -224,19 +236,19 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 
 // HTTPServer starts an HTTP server at the given address.  This is started as a
 // go routine by StartHTTPAdapter.
-func HTTPServer(address string) {
+func HTTPServer(srv *Server, address string) {
 	log.Printf("starting http server on %s", address)
 	http.HandleFunc("/", homeHandler)
-	http.HandleFunc("/aliases.txt", aliasesTxtHandler)
-	http.HandleFunc("/aliases", aliasesHandler)
-	http.HandleFunc("/minions", minionsHandler)
+	http.Handle("/aliases.txt", &AliasesTXTHandler{srv})
+	http.Handle("/aliases", &AliasesHTMLHandler{srv})
+	http.Handle("/minions", &MinionsHTMLHandler{srv})
 	http.ListenAndServe(address, nil)
 }
 
 // StartHTTPAdapter starts an HTTP server routine if an address is configured.
-func StartHTTPAdapter() error {
-	if cfg.HTTPServerAddress != "" {
-		go HTTPServer(cfg.HTTPServerAddress)
+func (srv *Server) StartHTTPAdapter(address string) error {
+	if address != "" {
+		go HTTPServer(srv, address)
 	}
 	return nil
 }

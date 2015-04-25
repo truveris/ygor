@@ -7,55 +7,36 @@ import (
 	"log"
 	"os"
 	"time"
-
-	"github.com/truveris/ygor/ygord/alias"
-)
-
-// These are the global registry for aliases and minions.  Both are in-memory
-// maps with permanent file storage.
-var (
-	Aliases *alias.File
-	Minions *MinionsFile
 )
 
 func main() {
-	ParseCommandLine()
+	cmdline := ParseCommandLine()
 
-	err := ParseConfigFile()
+	cfg, err := ParseConfigFile(cmdline)
 	if err != nil {
 		log.Fatal("config error: ", err.Error())
 	}
 
-	// We have global alias and minions files available to everyone. The
-	// alias module and irc io adapter use aliases and everything uses minions.
-	Aliases, err = alias.Open(cfg.AliasFilePath)
-	if err != nil {
-		log.Fatal("alias file error: ", err.Error())
-	}
-
-	Minions, err = OpenMinionsFile(cfg.MinionsFilePath)
-	if err != nil {
-		log.Fatal("minions file error: ", err.Error())
-	}
+	srv := CreateServer(cfg)
 
 	log.Printf("registering modules")
-	RegisterModule(&AliasModule{})
-	RegisterModule(&CommandsModule{})
-	RegisterModule(&ImageModule{})
-	RegisterModule(&RebootModule{})
-	RegisterModule(&MinionsModule{})
-	RegisterModule(&NopModule{})
-	RegisterModule(&PingModule{})
-	RegisterModule(&PlayModule{})
-	RegisterModule(&SayModule{})
-	RegisterModule(&SkipModule{})
-	RegisterModule(&ShutUpModule{})
-	RegisterModule(&TurretModule{})
-	RegisterModule(&VolumeModule{})
-	RegisterModule(&XombreroModule{})
+	srv.RegisterModule(&AliasModule{})
+	srv.RegisterModule(&CommandsModule{})
+	srv.RegisterModule(&ImageModule{})
+	srv.RegisterModule(&RebootModule{})
+	srv.RegisterModule(&MinionsModule{})
+	srv.RegisterModule(&NopModule{})
+	srv.RegisterModule(&PingModule{})
+	srv.RegisterModule(&PlayModule{})
+	srv.RegisterModule(&SayModule{})
+	srv.RegisterModule(&SkipModule{})
+	srv.RegisterModule(&ShutUpModule{})
+	srv.RegisterModule(&TurretModule{})
+	srv.RegisterModule(&VolumeModule{})
+	srv.RegisterModule(&XombreroModule{})
 
 	log.Printf("starting i/o adapters")
-	minionerrch, err := StartAdapters()
+	minionerrch, err := srv.StartAdapters()
 	if err != nil {
 		log.Fatal("failed to start adapters: ", err.Error())
 	}
@@ -70,11 +51,11 @@ func main() {
 		case msg := <-InputQueue:
 			switch msg.Type {
 			case MsgTypeIRCChannel:
-				go IRCMessageHandler(msg)
+				go srv.IRCMessageHandler(msg)
 			case MsgTypeIRCPrivate:
-				go IRCMessageHandler(msg)
+				go srv.IRCMessageHandler(msg)
 			case MsgTypeMinion:
-				go MinionMessageHandler(msg)
+				go srv.MinionMessageHandler(msg)
 			case MsgTypeExit:
 				log.Printf("terminating: %s", msg.Body)
 				os.Exit(0)

@@ -11,8 +11,8 @@ package main
 type RebootModule struct{}
 
 // PrivMsg is the message handler for user requests.
-func (module *RebootModule) PrivMsg(msg *Message) {
-	SendToChannelMinions(msg.ReplyTo, "reboot")
+func (module *RebootModule) PrivMsg(srv *Server, msg *Message) {
+	srv.SendToChannelMinions(msg.ReplyTo, "reboot")
 	IRCPrivMsg(msg.ReplyTo, "attempting to reboot "+msg.ReplyTo+" minions...")
 }
 

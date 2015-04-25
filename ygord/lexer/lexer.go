@@ -21,7 +21,7 @@
 // into sentences, each separated by semi-colons.
 //
 
-package main
+package lexer
 
 import (
 	"io"
@@ -34,8 +34,8 @@ type Lexer struct {
 	t *Tokenizer
 }
 
-// NewLexer allocates a new Lexer struct with the given Reader as main input.
-func NewLexer(input io.Reader) *Lexer {
+// New allocates a new Lexer struct with the given Reader as main input.
+func New(input io.Reader) *Lexer {
 	l := &Lexer{}
 	l.t = NewTokenizer(input)
 	return l
@@ -71,10 +71,10 @@ func (l *Lexer) NextSentence() ([]string, error) {
 
 // LexerSplit iterates through NextSentence calls to return a list of all the
 // sentences parsed out from 's'.
-func LexerSplit(s string) ([][]string, error) {
+func Split(s string) ([][]string, error) {
 	var sentences [][]string
 
-	l := NewLexer(strings.NewReader(s))
+	l := New(strings.NewReader(s))
 
 	for {
 		sentence, err := l.NextSentence()

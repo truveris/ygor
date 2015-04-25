@@ -11,7 +11,7 @@ import (
 type PlayModule struct{}
 
 // PrivMsg is the message handler for 'play' requests.
-func (module *PlayModule) PrivMsg(msg *Message) {
+func (module *PlayModule) PrivMsg(srv *Server, msg *Message) {
 	var duration, cmd string
 
 	if len(msg.Args) == 0 {
@@ -30,7 +30,7 @@ func (module *PlayModule) PrivMsg(msg *Message) {
 		cmd = fmt.Sprintf("play %s", filename)
 	}
 
-	SendToChannelMinions(msg.ReplyTo, cmd)
+	srv.SendToChannelMinions(msg.ReplyTo, cmd)
 }
 
 // Init registers all the commands for this module.

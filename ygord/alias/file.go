@@ -9,16 +9,29 @@ package alias
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"os"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/truveris/ygor/ygord/lexer"
+)
+
+var (
+	errTooManyHashes  = errors.New("too many '#'")
+	errTooManyAliases = errors.New("too many aliases with this prefix")
 )
 
 const (
 	// MaxRecursionLevel defines the number or run allowed while resolving
 	// an alias.
 	MaxRecursionLevel = 8
+
+	// MaxAliasIncrements defines how far we should check for increments
+	// within the same namespace.  This is really just here to avoid abuse
+	// more than anything.
+	MaxAliasIncrements = 10000
 )
 
 // File wraps your alias file, it abstracts the serialization of aliases and
@@ -239,4 +252,75 @@ func (file *File) Find(pattern string) []string {
 	}
 
 	return results
+}
+
+func (file *File) ExpandSentence(words []string) ([][]string, error) {
+	sentences := make([][]string, len(words))
+
+	// Resolve any alias found as first word.
+	expanded, err := file.Resolve(words[0])
+	if err != nil {
+		return nil, err
+	}
+
+	sentences, err = lexer.Split(expanded)
+	if err != nil {
+		return nil, err
+	}
+
+	last := len(sentences) - 1
+	sentences[last] = append(sentences[last], words[1:]...)
+
+	return sentences, nil
+}
+
+// Expand sentences through aliases.
+func (file *File) ExpandSentences(ss [][]string) ([][]string, error) {
+	sentences := make([][]string, len(ss))
+
+	for _, words := range ss {
+		if len(words) == 0 {
+			continue
+		}
+
+		newsentences, err := file.ExpandSentence(words)
+		if err != nil {
+			return nil, err
+		}
+		sentences = append(sentences, newsentences...)
+	}
+
+	return sentences, nil
+}
+
+// GetIncrementedName returns the next available alias with a trailing number
+// incremented if needed.  This is used when an alias has a trailing '#'.
+func (file *File) GetIncrementedName(name, value string) (string, error) {
+	cnt := strings.Count(name, "#")
+	if cnt == 0 {
+		return name, nil
+	} else if cnt > 1 {
+		return "", errTooManyHashes
+	}
+
+	var newName string
+
+	for i := 1; ; i++ {
+		newName = strings.Replace(name, "#", fmt.Sprintf("%d", i), 1)
+
+		if i > MaxAliasIncrements {
+			return "", errTooManyAliases
+		}
+
+		alias := file.Get(newName)
+		if alias == nil {
+			break
+		}
+
+		if alias.Value == value {
+			return "", errors.New("already exists as '" + alias.Name + "'")
+		}
+	}
+
+	return newName, nil
 }

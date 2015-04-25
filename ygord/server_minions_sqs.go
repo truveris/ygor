@@ -8,18 +8,23 @@
 package main
 
 import (
+	"log"
 	"strings"
 
 	"github.com/truveris/sqs"
 	"github.com/truveris/sqs/sqschan"
 )
 
+var (
+	InputQueue = make(chan *Message)
+)
+
 // StartMinionAdapter is the entry point for this IO adapter. It reads from the
 // main ygord queue and assume all the incoming messages are minion feedbacks.
-func StartMinionAdapter(client *sqs.Client) (<-chan error, error) {
+func StartMinionAdapter(client *sqs.Client, queueName string) (<-chan error, error) {
 	errch := make(chan error, 0)
 
-	ch, sqserrch, err := sqschan.Incoming(client, cfg.QueueName)
+	ch, sqserrch, err := sqschan.Incoming(client, queueName)
 	if err != nil {
 		return nil, err
 	}
@@ -43,67 +48,19 @@ func StartMinionAdapter(client *sqs.Client) (<-chan error, error) {
 	return errch, nil
 }
 
-// SendToChannelMinions sends a message to all the minions of the given
-// channel.
-func SendToChannelMinions(channel, msg string) {
-	client, err := sqs.NewClient(cfg.AWSAccessKeyID, cfg.AWSSecretAccessKey,
-		cfg.AWSRegionCode)
-	if err != nil {
-		Debug("error: " + err.Error())
-		return
-	}
-
-	channelCfg, exists := cfg.Channels[channel]
-	if !exists {
-		Debug("error: " + channel + " has no queue(s) configured")
-		return
-	}
-
-	urls, err := channelCfg.GetQueueURLs()
-	if err != nil {
-		Debug("error: unable to load queue URLs, " + err.Error())
-		return
-	}
-
-	// Send the same exact data to all this channel's minion.
-	for _, url := range urls {
-		err := client.SendMessage(url, sqs.SQSEncode(msg))
-		if err != nil {
-			Debug("error sending to minion: " + err.Error())
-			continue
-		}
-	}
-}
-
-// SendToQueue sends a message to our friendly minion via its SQS queue.
-func SendToQueue(queueURL, msg string) error {
-	client, err := sqs.NewClient(cfg.AWSAccessKeyID, cfg.AWSSecretAccessKey,
-		cfg.AWSRegionCode)
-	if err != nil {
-		return err
-	}
-
-	err = client.SendMessage(queueURL, msg)
-	if err != nil {
-		Debug("error sending to minion: " + err.Error())
-	}
-
-	return nil
-}
-
 // MinionMessageHandler is used from main() when receiving data on the InputQueue.
-func MinionMessageHandler(msg *Message) {
+func (srv *Server) MinionMessageHandler(msg *Message) {
 	for _, cmd := range RegisteredCommands {
 		if !cmd.MinionMessageMatches(msg) {
 			continue
 		}
 
 		if cmd.MinionMsgFunction == nil {
-			Debug("unhandled minion message: " + msg.Body)
+			log.Printf("unhandled minion message: %s", msg.Body)
 			continue
 		}
 
-		cmd.MinionMsgFunction(msg)
+		cmd.MinionMsgFunction(srv, msg)
 		break
 	}
 }

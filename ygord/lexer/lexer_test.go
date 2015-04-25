@@ -1,7 +1,7 @@
-// Copyright 2014, Truveris Inc. All Rights Reserved.
+// Copyright 2014-2015, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 
-package main
+package lexer
 
 import (
 	"strings"
@@ -48,7 +48,7 @@ func TestLexerSplit(t *testing.T) {
 	if len(ss) != 1 {
 		t.Errorf("bad result: %s", ss)
 	}
-	if ! EqualSentences(ss[0], []string{"foo", "bar", "baz"}) {
+	if !EqualSentences(ss[0], []string{"foo", "bar", "baz"}) {
 		t.Errorf("bad result: %s", ss)
 	}
 }

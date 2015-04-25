@@ -12,9 +12,3 @@ var (
 type Module interface {
 	Init()
 }
-
-// RegisterModule adds a module to our global registry.
-func RegisterModule(module Module) {
-	module.Init()
-	modules = append(modules, module)
-}

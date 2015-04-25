@@ -16,6 +16,8 @@ import (
 	"log"
 	"regexp"
 	"strings"
+
+	"github.com/truveris/ygor/ygord/lexer"
 )
 
 var (
@@ -30,57 +32,18 @@ var (
 	reAddressed = regexp.MustCompile(`^(\w+)[:,.]*\s*(.*)`)
 )
 
-func expandSentence(words []string) ([][]string, error) {
-	sentences := make([][]string, len(words))
-
-	// Resolve any alias found as first word.
-	expanded, err := Aliases.Resolve(words[0])
-	if err != nil {
-		return nil, err
-	}
-
-	sentences, err = LexerSplit(expanded)
-	if err != nil {
-		return nil, err
-	}
-
-	last := len(sentences) - 1
-	sentences[last] = append(sentences[last], words[1:]...)
-
-	return sentences, nil
-}
-
-// Expand sentences through aliases.
-func expandSentences(ss [][]string) ([][]string, error) {
-	sentences := make([][]string, len(ss))
-
-	for _, words := range ss {
-		if len(words) == 0 {
-			continue
-		}
-
-		newsentences, err := expandSentence(words)
-		if err != nil {
-			return nil, err
-		}
-		sentences = append(sentences, newsentences...)
-	}
-
-	return sentences, nil
-}
-
 // NewMessagesFromBody creates a new ygor message from a plain string.
-func NewMessagesFromBody(body string) ([]*Message, error) {
+func (srv *Server) NewMessagesFromBody(body string) ([]*Message, error) {
 	var msgs []*Message
 
-	sentences, err := LexerSplit(body)
+	sentences, err := lexer.Split(body)
 	if err != nil {
 		return nil, err
 	}
 
 	// TODO: make that recursive.
 	for i := 0; i < 3; i++ {
-		sentences, err = expandSentences(sentences)
+		sentences, err = srv.Aliases.ExpandSentences(sentences)
 		if err != nil {
 			return nil, err
 		}
@@ -106,37 +69,10 @@ func NewMessagesFromBody(body string) ([]*Message, error) {
 	return msgs, nil
 }
 
-// NewMessagesFromPrivMsg create a new ygor message from a parsed PRIVMSG.
-// func NewMessagesFromPrivMsg(privmsg *PrivMsg) []*Message {
-// 	msgs, err := NewMessagesFromBody(privmsg.Body)
-// 	if err != nil {
-// 		if privmsg.Addressed {
-// 			IRCPrivMsg(privmsg.ReplyTo, "lexer/expand error: "+
-// 				err.Error())
-// 		}
-// 		return nil
-// 	}
-//
-// 	for _, msg := range msgs {
-// 		if privmsg.Direct {
-// 			msg.Type = MsgTypeIRCPrivate
-// 		} else {
-// 			// Channel messages have to be prefixes with the bot's nick.
-// 			if !privmsg.Addressed && !privmsg.Direct {
-// 				return nil
-// 			}
-// 			msg.Type = MsgTypeIRCChannel
-// 		}
-//
-// 		msg.UserID = privmsg.Nick
-// 		msg.ReplyTo = privmsg.ReplyTo
-// 	}
-//
-// 	return msgs
-// }
-
 // NewMessagesFromEvent creates a new array of messages based on a PRIVMSG event.
-func NewMessagesFromEvent(e *irc.Event, nick string) []*Message {
+func (srv *Server) NewMessagesFromEvent(e *irc.Event) []*Message {
+	cfg := srv.Config
+
 	// Check if we should ignore this message.
 	for _, ignore := range cfg.Ignore {
 		if ignore == e.Nick {
@@ -148,7 +84,7 @@ func NewMessagesFromEvent(e *irc.Event, nick string) []*Message {
 	// Ignore the message if not prefixed with our nickname.  If it is,
 	// remove this prefix from the body of the message.
 	tokens := reAddressed.FindStringSubmatch(e.Message())
-	if tokens == nil || tokens[1] != nick {
+	if tokens == nil || tokens[1] != cfg.IRCNickname {
 		return nil
 	}
 
@@ -156,12 +92,12 @@ func NewMessagesFromEvent(e *irc.Event, nick string) []*Message {
 	target := e.Arguments[0]
 
 	// Sent directly to the bot, fuck that.  Everything is public.
-	if target == nick {
+	if target == cfg.IRCNickname {
 		log.Printf("Ignoring private message: %s", e)
 		return nil
 	}
 
-	msgs, err := NewMessagesFromBody(body)
+	msgs, err := srv.NewMessagesFromBody(body)
 	if err != nil {
 		IRCPrivMsg(target, "lexer/expand error: "+err.Error())
 		return nil
@@ -176,29 +112,11 @@ func NewMessagesFromEvent(e *irc.Event, nick string) []*Message {
 	return msgs
 }
 
-// NewMessagesFromIRCLine creates a new Message based on the raw IRC line.
-// func NewMessagesFromIRCLine(line string) []*Message {
-// 	privmsg := NewPrivMsg(line, cfg.IRCNickname)
-// 	if privmsg == nil {
-// 		// Not a PRIVMSG.
-// 		return nil
-// 	}
-//
-// 	// Check if we should ignore this message.
-// 	for _, ignore := range cfg.Ignore {
-// 		if ignore == privmsg.Nick {
-// 			return nil
-// 		}
-// 	}
-//
-// 	return NewMessagesFromPrivMsg(privmsg)
-// }
-
 // IRCMessageHandler loops through the command registry to find a matching
 // command and executes it.
-func IRCMessageHandler(msg *Message) {
+func (srv *Server) IRCMessageHandler(msg *Message) {
 	for _, cmd := range RegisteredCommands {
-		if !cmd.IRCMessageMatches(msg) {
+		if !cmd.IRCMessageMatches(srv, msg) {
 			continue
 		}
 
@@ -208,7 +126,7 @@ func IRCMessageHandler(msg *Message) {
 			continue
 		}
 
-		cmd.PrivMsgFunction(msg)
+		cmd.PrivMsgFunction(srv, msg)
 		return
 	}
 
@@ -237,42 +155,4 @@ func IRCPrivMsg(channel, msg string) {
 // equivalent of using the /ME command in a normal IRC client.
 func IRCPrivAction(channel, msg string) {
 	conn.Action(channel, msg)
-}
-
-// JoinChannel sends a /JOIN command to the server.
-func JoinChannel(channel string) {
-}
-
-// Debug sends the message to the configured debug channel if any.
-func Debug(msg string) {
-	if cfg.AdminChannel == "" {
-		return
-	}
-	IRCPrivMsg(cfg.AdminChannel, msg)
-}
-
-func StartIRCAdapter() error {
-	conn = irc.IRC(cfg.IRCNickname, cfg.IRCNickname)
-	//conn.VerboseCallbackHandler = true
-	//conn.Debug = true
-
-	err := conn.Connect(cfg.IRCServer)
-	if err != nil {
-		return err
-	}
-
-	conn.AddCallback("001", func(e *irc.Event) {
-		for _, c := range cfg.GetAutoJoinChannels() {
-			conn.Join(c)
-		}
-	})
-
-	conn.AddCallback("PRIVMSG", func(e *irc.Event) {
-		msgs := NewMessagesFromEvent(e, cfg.IRCNickname)
-		for _, msg := range msgs {
-			IRCMessageHandler(msg)
-		}
-	})
-
-	return nil
 }

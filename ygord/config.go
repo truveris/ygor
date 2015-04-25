@@ -6,13 +6,14 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"os"
 
 	"github.com/jessevdk/go-flags"
 )
 
 // Cmd is a singleton used to store the command-line parameters.
-type Cmd struct {
+type CmdLine struct {
 	ConfigFile string `short:"c" description:"Configuration file" default:"/etc/ygord.conf"`
 }
 
@@ -21,8 +22,8 @@ type ChannelCfg struct {
 	Minions []string
 }
 
-// Cfg is a singleton used to store the file configuration.
-type Cfg struct {
+// Config is a singleton used to store the file configuration.
+type Config struct {
 	// AWS Region to use for SQS access (e.g. us-east-1).
 	AWSRegionCode string
 
@@ -61,14 +62,9 @@ type Cfg struct {
 	HTTPServerAddress string
 }
 
-var (
-	cfg = Cfg{}
-	cmd = Cmd{}
-)
-
 // GetAutoJoinChannels returns a list of all the auto-join channels (all unique
 // configured channels and debug channels).
-func (cfg *Cfg) GetAutoJoinChannels() []string {
+func (cfg *Config) GetAutoJoinChannels() []string {
 	channels := make(StringSet, 0)
 
 	for name := range cfg.Channels {
@@ -83,11 +79,11 @@ func (cfg *Cfg) GetAutoJoinChannels() []string {
 }
 
 // GetMinions returns an array of minions configured for this ChannelCfg.
-func (channelCfg *ChannelCfg) GetMinions() ([]*Minion, error) {
+func (channelCfg *ChannelCfg) GetMinions(srv *Server) ([]*Minion, error) {
 	var minions []*Minion
 
 	for _, name := range channelCfg.Minions {
-		minion, err := Minions.Get(name)
+		minion, err := srv.Minions.Get(name)
 		if err != nil {
 			return nil, err
 		}
@@ -100,17 +96,17 @@ func (channelCfg *ChannelCfg) GetMinions() ([]*Minion, error) {
 
 // GetQueueURLs returns an array of queue URLs. These URLs are extracted from
 // the minions attached to this channel.
-func (channelCfg *ChannelCfg) GetQueueURLs() ([]string, error) {
+func (channelCfg *ChannelCfg) GetQueueURLs(srv *Server) ([]string, error) {
 	var urls []string
 
-	minions, err := channelCfg.GetMinions()
+	minions, err := channelCfg.GetMinions(srv)
 	if err != nil {
 		return urls, err
 	}
 
 	for _, minion := range minions {
 		if minion.QueueURL == "" {
-			Debug("minion without QueueURL: " + minion.Name)
+			log.Printf("minion without QueueURL: %s", minion.Name)
 			continue
 		}
 
@@ -122,39 +118,41 @@ func (channelCfg *ChannelCfg) GetQueueURLs() ([]string, error) {
 
 // ParseConfigFile reads our JSON config file and validates its values, also
 // populating defaults when possible.
-func ParseConfigFile() error {
+func ParseConfigFile(cmd *CmdLine) (*Config, error) {
+	cfg := &Config{}
+
 	file, err := os.Open(cmd.ConfigFile)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	decoder := json.NewDecoder(file)
 	err = decoder.Decode(&cfg)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if cfg.QueueName == "" {
-		return errors.New("'QueueName' is not defined")
+		return cfg, errors.New("'QueueName' is not defined")
 	}
 
 	if cfg.IRCServer == "" {
-		return errors.New("'IRCServer' is not defined")
+		return cfg, errors.New("'IRCServer' is not defined")
 	}
 
 	if cfg.IRCNickname == "" {
-		return errors.New("'IRCNickname' is not defined")
+		return cfg, errors.New("'IRCNickname' is not defined")
 	}
 
 	if cfg.AWSRegionCode == "" {
-		return errors.New("'AWSRegionCode' is not defined")
+		return cfg, errors.New("'AWSRegionCode' is not defined")
 	}
 
 	if cfg.AWSAccessKeyID == "" {
-		return errors.New("'AWSAccessKeyID' is not defined")
+		return cfg, errors.New("'AWSAccessKeyID' is not defined")
 	}
 
 	if cfg.AWSSecretAccessKey == "" {
-		return errors.New("'AWSSecretAccessKey' is not defined")
+		return cfg, errors.New("'AWSSecretAccessKey' is not defined")
 	}
 
 	if cfg.AliasFilePath == "" {
@@ -165,49 +163,19 @@ func ParseConfigFile() error {
 		cfg.MinionsFilePath = "minions.cfg"
 	}
 
-	return nil
-}
-
-// GetChannelsByMinionName returns a list of channels given a minion name.
-func GetChannelsByMinionName(name string) []string {
-	var channels []string
-
-	for channelName, channelCfg := range cfg.Channels {
-		for _, minionName := range channelCfg.Minions {
-			if minionName == name {
-				channels = append(channels, channelName)
-				break
-			}
-		}
-	}
-
-	return channels
+	return cfg, nil
 }
 
 // ParseCommandLine parses the command line arguments and populate the global
 // cmd struct.
-func ParseCommandLine() {
-	flagParser := flags.NewParser(&cmd, flags.PassDoubleDash)
+func ParseCommandLine() *CmdLine {
+	cmd := &CmdLine{}
+	flagParser := flags.NewParser(cmd, flags.PassDoubleDash)
 	_, err := flagParser.Parse()
 	if err != nil {
 		println("command line error: " + err.Error())
 		flagParser.WriteHelp(os.Stderr)
 		os.Exit(1)
 	}
-}
-
-// GetChannelMinions returns all the minions configured for that channel.
-func GetChannelMinions(channel string) []*Minion {
-	channelCfg, exists := cfg.Channels[channel]
-	if !exists {
-		Debug("error: " + channel + " has no queue(s) configured")
-		return nil
-	}
-
-	minions, err := channelCfg.GetMinions()
-	if err != nil {
-		Debug("error: GetChannelMinions: " + err.Error())
-	}
-
-	return minions
+	return cmd
 }

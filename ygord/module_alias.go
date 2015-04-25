@@ -6,8 +6,8 @@
 package main
 
 import (
-	"errors"
 	"fmt"
+	"log"
 	"math/rand"
 	"sort"
 	"strings"
@@ -21,55 +21,13 @@ const (
 
 	// MaxAliasesForFullList is the number of alias 'aliases' can list.
 	MaxAliasesForFullList = 40
-
-	// MaxAliasIncrements defines how far we should check for increments
-	// within the same namespace.  This is really just here to avoid abuse
-	// more than anything.
-	MaxAliasIncrements = 10000
 )
-
-var (
-	errTooManyHashes  = errors.New("too many '#'")
-	errTooManyAliases = errors.New("too many aliases with this prefix")
-)
-
-// getIncrementedName returns the next available alias with a trailing number
-// incremented if needed.  This is used when an alias has a trailing '#'.
-func getIncrementedName(name, value string) (string, error) {
-	cnt := strings.Count(name, "#")
-	if cnt == 0 {
-		return name, nil
-	} else if cnt > 1 {
-		return "", errTooManyHashes
-	}
-
-	var newName string
-
-	for i := 1; ; i++ {
-		newName = strings.Replace(name, "#", fmt.Sprintf("%d", i), 1)
-
-		if i > MaxAliasIncrements {
-			return "", errTooManyAliases
-		}
-
-		alias := Aliases.Get(newName)
-		if alias == nil {
-			break
-		}
-
-		if alias.Value == value {
-			return "", errors.New("already exists as '" + alias.Name + "'")
-		}
-	}
-
-	return newName, nil
-}
 
 // AliasModule controls all the alias-related commands.
 type AliasModule struct{}
 
 // AliasPrivMsg is the message handler for user 'alias' requests.
-func (module *AliasModule) AliasPrivMsg(msg *Message) {
+func (module *AliasModule) AliasPrivMsg(srv *Server, msg *Message) {
 	var outputMsg string
 
 	if len(msg.Args) == 0 {
@@ -78,7 +36,7 @@ func (module *AliasModule) AliasPrivMsg(msg *Message) {
 	}
 
 	name := msg.Args[0]
-	alias := Aliases.Get(name)
+	alias := srv.Aliases.Get(name)
 
 	// Request the value of an alias.
 	if len(msg.Args) == 1 {
@@ -104,7 +62,7 @@ func (module *AliasModule) AliasPrivMsg(msg *Message) {
 	if alias == nil {
 		var creationTime time.Time
 
-		newName, err := getIncrementedName(name, newValue)
+		newName, err := srv.Aliases.GetIncrementedName(name, newValue)
 		if err != nil {
 			IRCPrivMsg(msg.ReplyTo, "error: "+err.Error())
 			return
@@ -115,7 +73,7 @@ func (module *AliasModule) AliasPrivMsg(msg *Message) {
 			outputMsg = "ok (created)"
 		}
 		creationTime = time.Now()
-		Aliases.Add(newName, newValue, msg.UserID, creationTime)
+		srv.Aliases.Add(newName, newValue, msg.UserID, creationTime)
 	} else if alias.Value == newValue {
 		outputMsg = "no changes"
 	} else {
@@ -123,7 +81,7 @@ func (module *AliasModule) AliasPrivMsg(msg *Message) {
 		alias.Value = newValue
 	}
 
-	err := Aliases.Save()
+	err := srv.Aliases.Save()
 	if err != nil {
 		outputMsg = "error: " + err.Error()
 	}
@@ -164,34 +122,34 @@ func getPagesOfAliases(aliases []string) []string {
 }
 
 // UnAliasPrivMsg is the message handler for user 'unalias' requests.
-func (module *AliasModule) UnAliasPrivMsg(msg *Message) {
+func (module *AliasModule) UnAliasPrivMsg(srv *Server, msg *Message) {
 	if len(msg.Args) != 1 {
 		IRCPrivMsg(msg.ReplyTo, "usage: unalias name")
 		return
 	}
 
 	name := msg.Args[0]
-	alias := Aliases.Get(name)
+	alias := srv.Aliases.Get(name)
 
 	if alias == nil {
 		IRCPrivMsg(msg.ReplyTo, "error: unknown alias")
 		return
 	}
 
-	Aliases.Delete(name)
-	Aliases.Save()
+	srv.Aliases.Delete(name)
+	srv.Aliases.Save()
 	IRCPrivMsg(msg.ReplyTo, "ok (deleted)")
 }
 
 // AliasesPrivMsg is the message handler for user 'aliases' requests.  It lists
 // all the available aliases.
-func (module *AliasModule) AliasesPrivMsg(msg *Message) {
+func (module *AliasModule) AliasesPrivMsg(srv *Server, msg *Message) {
 	if len(msg.Args) != 0 {
 		IRCPrivMsg(msg.ReplyTo, "usage: aliases")
 		return
 	}
 
-	aliases := Aliases.Names()
+	aliases := srv.Aliases.Names()
 
 	if len(aliases) > MaxAliasesForFullList {
 		IRCPrivMsg(msg.ReplyTo, "error: too many results, use grep")
@@ -213,13 +171,13 @@ func (module *AliasModule) AliasesPrivMsg(msg *Message) {
 
 // GrepPrivMsg is the message handler for user 'grep' requests.  It lists
 // all the available aliases matching the provided pattern.
-func (module *AliasModule) GrepPrivMsg(msg *Message) {
+func (module *AliasModule) GrepPrivMsg(srv *Server, msg *Message) {
 	if len(msg.Args) != 1 {
 		IRCPrivMsg(msg.ReplyTo, "usage: grep pattern")
 		return
 	}
 
-	results := Aliases.Find(msg.Args[0])
+	results := srv.Aliases.Find(msg.Args[0])
 	sort.Strings(results)
 
 	if len(results) == 0 {
@@ -238,14 +196,14 @@ func (module *AliasModule) GrepPrivMsg(msg *Message) {
 
 // RandomPrivMsg is the message handler for user 'random' requests.  It picks a
 // random alias to execute based on the provided pattern or no pattern at all.
-func (module *AliasModule) RandomPrivMsg(msg *Message) {
+func (module *AliasModule) RandomPrivMsg(srv *Server, msg *Message) {
 	var names []string
 
 	switch len(msg.Args) {
 	case 0:
-		names = Aliases.Names()
+		names = srv.Aliases.Names()
 	case 1:
-		names = Aliases.Find(msg.Args[0])
+		names = srv.Aliases.Find(msg.Args[0])
 	default:
 		IRCPrivMsg(msg.ReplyTo, "usage: random [pattern]")
 		return
@@ -258,14 +216,14 @@ func (module *AliasModule) RandomPrivMsg(msg *Message) {
 
 	idx := rand.Intn(len(names))
 
-	body, err := Aliases.Resolve(names[idx])
+	body, err := srv.Aliases.Resolve(names[idx])
 	if err != nil {
 		IRCPrivMsg(msg.ReplyTo, "failed to resolve aliases: "+
 			err.Error())
 		return
 	}
 
-	newmsgs, err := NewMessagesFromBody(body)
+	newmsgs, err := srv.NewMessagesFromBody(body)
 	if err != nil {
 		IRCPrivMsg(msg.ReplyTo, "error: failed to expand chose alias '"+
 			names[idx]+"': "+err.Error())
@@ -280,7 +238,7 @@ func (module *AliasModule) RandomPrivMsg(msg *Message) {
 		newmsg.UserID = msg.UserID
 		newmsg.ReplyTo = msg.ReplyTo
 		if newmsg == nil {
-			Debug("failed to convert PRIVMSG")
+			log.Printf("failed to convert PRIVMSG")
 			return
 		}
 		InputQueue <- newmsg

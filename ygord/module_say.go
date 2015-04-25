@@ -18,7 +18,7 @@ type SayCmdLine struct {
 type SayModule struct{}
 
 // PrivMsg is the message handler for user requests.
-func (module *SayModule) PrivMsg(msg *Message) {
+func (module *SayModule) PrivMsg(srv *Server, msg *Message) {
 	cmd := SayCmdLine{}
 
 	flagParser := flags.NewParser(&cmd, flags.PassDoubleDash)
@@ -29,7 +29,7 @@ func (module *SayModule) PrivMsg(msg *Message) {
 	}
 
 	body := "say -v " + cmd.Voice + " " + strings.Join(args, " ")
-	SendToChannelMinions(msg.ReplyTo, body)
+	srv.SendToChannelMinions(msg.ReplyTo, body)
 }
 
 // Init registers all the commands for this module.
