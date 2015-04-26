@@ -12,8 +12,8 @@ func (module *SkipModule) PrivMsg(srv *Server, msg *Message) {
 }
 
 // Init registers all the commands for this module.
-func (module SkipModule) Init() {
-	RegisterCommand(Command{
+func (module SkipModule) Init(srv *Server) {
+	srv.RegisterCommand(Command{
 		Name:            "skip",
 		PrivMsgFunction: module.PrivMsg,
 		Addressed:       true,

@@ -34,12 +34,12 @@ func (module *ShutUpModule) Toggle(srv *Server, msg *Message) bool {
 // PrivMsg is the message handler for user requests.
 func (module *ShutUpModule) PrivMsg(srv *Server, msg *Message) {
 	srv.SendToChannelMinions(msg.ReplyTo, "shutup")
-	IRCPrivMsg(msg.ReplyTo, "ok...")
+	srv.IRCPrivMsg(msg.ReplyTo, "ok...")
 }
 
 // Init registers all the commands for this module.
-func (module ShutUpModule) Init() {
-	RegisterCommand(Command{
+func (module ShutUpModule) Init(srv *Server) {
+	srv.RegisterCommand(Command{
 		Name:            "shutup",
 		ToggleFunction:  module.Toggle,
 		PrivMsgFunction: module.PrivMsg,

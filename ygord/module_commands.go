@@ -18,7 +18,7 @@ type CommandsModule struct{}
 func (module *CommandsModule) PrivMsg(srv *Server, msg *Message) {
 	var names []string
 
-	for name, cmd := range RegisteredCommands {
+	for name, cmd := range srv.RegisteredCommands {
 		// Attempt to only return user commands (skip minion commands).
 		if cmd.PrivMsgFunction == nil {
 			continue
@@ -31,12 +31,12 @@ func (module *CommandsModule) PrivMsg(srv *Server, msg *Message) {
 
 	found := strings.Join(names, ", ")
 
-	IRCPrivMsg(msg.ReplyTo, found)
+	srv.IRCPrivMsg(msg.ReplyTo, found)
 }
 
 // Init registers all the commands for this module.
-func (module *CommandsModule) Init() {
-	RegisterCommand(Command{
+func (module *CommandsModule) Init(srv *Server) {
+	srv.RegisterCommand(Command{
 		Name:            "commands",
 		PrivMsgFunction: module.PrivMsg,
 		Addressed:       true,

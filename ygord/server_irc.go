@@ -21,14 +21,7 @@ import (
 )
 
 var (
-	// IRCOutgoing is the queue of all outgoing IRC messages.  All strings
-	// going into this channel should formatted exactly as if they were
-	// sent directly to the IRC server.
-	IRCOutgoing   = make(chan string)
-	IRCIncoming   = make(chan string)
-	IRCDisconnect = make(chan string)
-	conn          *irc.Connection
-
+	conn        *irc.Connection
 	reAddressed = regexp.MustCompile(`^(\w+)[:,.]*\s*(.*)`)
 )
 
@@ -99,7 +92,7 @@ func (srv *Server) NewMessagesFromEvent(e *irc.Event) []*Message {
 
 	msgs, err := srv.NewMessagesFromBody(body)
 	if err != nil {
-		IRCPrivMsg(target, "lexer/expand error: "+err.Error())
+		srv.IRCPrivMsg(target, "lexer/expand error: "+err.Error())
 		return nil
 	}
 
@@ -115,7 +108,7 @@ func (srv *Server) NewMessagesFromEvent(e *irc.Event) []*Message {
 // IRCMessageHandler loops through the command registry to find a matching
 // command and executes it.
 func (srv *Server) IRCMessageHandler(msg *Message) {
-	for _, cmd := range RegisteredCommands {
+	for _, cmd := range srv.RegisteredCommands {
 		if !cmd.IRCMessageMatches(srv, msg) {
 			continue
 		}
@@ -131,7 +124,7 @@ func (srv *Server) IRCMessageHandler(msg *Message) {
 	}
 
 	// If we got that far, we didn't find a command.
-	IRCPrivMsg(msg.ReplyTo, "command not found: "+msg.Command)
+	srv.IRCPrivMsg(msg.ReplyTo, "command not found: "+msg.Command)
 }
 
 //
@@ -141,18 +134,55 @@ func (srv *Server) IRCMessageHandler(msg *Message) {
 
 // IRCPrivMsg sends a message to a channel. Construct a PRIVMSG and send the
 // raw client line to the server.
-func IRCPrivMsg(channel, msg string) {
+func (srv *Server) IRCPrivMsg(channel, msg string) {
 	lines := strings.Split(msg, "\n")
 	for i := 0; i < len(lines); i++ {
 		if lines[i] == "" {
 			continue
 		}
-		conn.Privmsg(channel, lines[i])
+		outmsg := &OutgoingMessage{
+			Type:    OutMsgTypePrivMsg,
+			Channel: channel,
+			Body:    lines[i],
+		}
+		srv.OutputQueue <- outmsg
 	}
 }
 
 // IRCPrivAction sends an action message to a channel.  This function is the
 // equivalent of using the /ME command in a normal IRC client.
-func IRCPrivAction(channel, msg string) {
-	conn.Action(channel, msg)
+func (srv *Server) IRCPrivAction(channel, msg string) {
+	outmsg := &OutgoingMessage{
+		Type:    OutMsgTypeAction,
+		Channel: channel,
+		Body:    msg,
+	}
+	srv.OutputQueue <- outmsg
+}
+
+func (srv *Server) StartIRCAdapter() error {
+	cfg := srv.Config
+	conn = irc.IRC(cfg.IRCNickname, cfg.IRCNickname)
+	//conn.VerboseCallbackHandler = true
+	//conn.Debug = true
+
+	err := conn.Connect(cfg.IRCServer)
+	if err != nil {
+		return err
+	}
+
+	conn.AddCallback("001", func(e *irc.Event) {
+		for _, c := range cfg.GetAutoJoinChannels() {
+			conn.Join(c)
+		}
+	})
+
+	conn.AddCallback("PRIVMSG", func(e *irc.Event) {
+		msgs := srv.NewMessagesFromEvent(e)
+		for _, msg := range msgs {
+			srv.InputQueue <- msg
+		}
+	})
+
+	return nil
 }

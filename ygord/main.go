@@ -6,12 +6,10 @@ package main
 import (
 	"log"
 	"os"
-	"time"
 )
 
 func main() {
 	cmdline := ParseCommandLine()
-
 	cfg, err := ParseConfigFile(cmdline)
 	if err != nil {
 		log.Fatal("config error: ", err.Error())
@@ -48,14 +46,14 @@ func main() {
 		select {
 		case err := <-minionerrch:
 			log.Printf("minion handler error: %s", err.Error())
-		case msg := <-InputQueue:
+		case msg := <-srv.InputQueue:
 			switch msg.Type {
 			case MsgTypeIRCChannel:
-				go srv.IRCMessageHandler(msg)
+				srv.IRCMessageHandler(msg)
 			case MsgTypeIRCPrivate:
-				go srv.IRCMessageHandler(msg)
+				srv.IRCMessageHandler(msg)
 			case MsgTypeMinion:
-				go srv.MinionMessageHandler(msg)
+				srv.MinionMessageHandler(msg)
 			case MsgTypeExit:
 				log.Printf("terminating: %s", msg.Body)
 				os.Exit(0)
@@ -65,14 +63,16 @@ func main() {
 				log.Printf("msg handler error: un-handled type"+
 					" '%d'", msg.Type)
 			}
-
-			// This delay allows each scheduled routine to start.
-			// This is not particularly pretty but in case a user
-			// sends multiple commands in the same request (e.g.
-			// say 1; say 2; say 3), it should give enough time for
-			// the output messages to be processed in the same
-			// order they were received.
-			time.Sleep(50 * time.Millisecond)
+		case msg := <-srv.OutputQueue:
+			switch msg.Type {
+			case OutMsgTypePrivMsg:
+				conn.Privmsg(msg.Channel, msg.Body)
+			case OutMsgTypeAction:
+				conn.Action(msg.Channel, msg.Body)
+			default:
+				log.Printf("outmsg handler error: un-handled type"+
+					" '%d'", msg.Type)
+			}
 		}
 	}
 }

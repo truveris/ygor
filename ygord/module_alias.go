@@ -31,7 +31,7 @@ func (module *AliasModule) AliasPrivMsg(srv *Server, msg *Message) {
 	var outputMsg string
 
 	if len(msg.Args) == 0 {
-		IRCPrivMsg(msg.ReplyTo, "usage: alias name [command [params ...]]")
+		srv.IRCPrivMsg(msg.ReplyTo, "usage: alias name [command [params ...]]")
 		return
 	}
 
@@ -41,18 +41,18 @@ func (module *AliasModule) AliasPrivMsg(srv *Server, msg *Message) {
 	// Request the value of an alias.
 	if len(msg.Args) == 1 {
 		if alias == nil {
-			IRCPrivMsg(msg.ReplyTo, "error: unknown alias")
+			srv.IRCPrivMsg(msg.ReplyTo, "error: unknown alias")
 			return
 		}
-		IRCPrivMsg(msg.ReplyTo, fmt.Sprintf("%s=\"%s\" (created by %s on %s)",
+		srv.IRCPrivMsg(msg.ReplyTo, fmt.Sprintf("%s=\"%s\" (created by %s on %s)",
 			alias.Name, alias.Value, alias.Author, alias.HumanTime()))
 		return
 	}
 
 	// Set a new alias.
-	cmd := GetCommand(name)
+	cmd := srv.GetCommand(name)
 	if cmd != nil {
-		IRCPrivMsg(msg.ReplyTo, fmt.Sprintf("error: '%s' is a"+
+		srv.IRCPrivMsg(msg.ReplyTo, fmt.Sprintf("error: '%s' is a"+
 			" command", name))
 		return
 	}
@@ -64,7 +64,7 @@ func (module *AliasModule) AliasPrivMsg(srv *Server, msg *Message) {
 
 		newName, err := srv.Aliases.GetIncrementedName(name, newValue)
 		if err != nil {
-			IRCPrivMsg(msg.ReplyTo, "error: "+err.Error())
+			srv.IRCPrivMsg(msg.ReplyTo, "error: "+err.Error())
 			return
 		}
 		if newName != name {
@@ -86,7 +86,7 @@ func (module *AliasModule) AliasPrivMsg(srv *Server, msg *Message) {
 		outputMsg = "error: " + err.Error()
 	}
 
-	IRCPrivMsg(msg.ReplyTo, outputMsg)
+	srv.IRCPrivMsg(msg.ReplyTo, outputMsg)
 }
 
 // getPagesOfAliases takes a list of aliases and returns joined pages of them.
@@ -124,7 +124,7 @@ func getPagesOfAliases(aliases []string) []string {
 // UnAliasPrivMsg is the message handler for user 'unalias' requests.
 func (module *AliasModule) UnAliasPrivMsg(srv *Server, msg *Message) {
 	if len(msg.Args) != 1 {
-		IRCPrivMsg(msg.ReplyTo, "usage: unalias name")
+		srv.IRCPrivMsg(msg.ReplyTo, "usage: unalias name")
 		return
 	}
 
@@ -132,27 +132,27 @@ func (module *AliasModule) UnAliasPrivMsg(srv *Server, msg *Message) {
 	alias := srv.Aliases.Get(name)
 
 	if alias == nil {
-		IRCPrivMsg(msg.ReplyTo, "error: unknown alias")
+		srv.IRCPrivMsg(msg.ReplyTo, "error: unknown alias")
 		return
 	}
 
 	srv.Aliases.Delete(name)
 	srv.Aliases.Save()
-	IRCPrivMsg(msg.ReplyTo, "ok (deleted)")
+	srv.IRCPrivMsg(msg.ReplyTo, "ok (deleted)")
 }
 
 // AliasesPrivMsg is the message handler for user 'aliases' requests.  It lists
 // all the available aliases.
 func (module *AliasModule) AliasesPrivMsg(srv *Server, msg *Message) {
 	if len(msg.Args) != 0 {
-		IRCPrivMsg(msg.ReplyTo, "usage: aliases")
+		srv.IRCPrivMsg(msg.ReplyTo, "usage: aliases")
 		return
 	}
 
 	aliases := srv.Aliases.Names()
 
 	if len(aliases) > MaxAliasesForFullList {
-		IRCPrivMsg(msg.ReplyTo, "error: too many results, use grep")
+		srv.IRCPrivMsg(msg.ReplyTo, "error: too many results, use grep")
 		return
 	}
 
@@ -160,10 +160,10 @@ func (module *AliasModule) AliasesPrivMsg(srv *Server, msg *Message) {
 	first := true
 	for _, page := range getPagesOfAliases(aliases) {
 		if first {
-			IRCPrivMsg(msg.ReplyTo, "known aliases: "+page)
+			srv.IRCPrivMsg(msg.ReplyTo, "known aliases: "+page)
 			first = false
 		} else {
-			IRCPrivMsg(msg.ReplyTo, "... "+page)
+			srv.IRCPrivMsg(msg.ReplyTo, "... "+page)
 		}
 		time.Sleep(500 * time.Millisecond)
 	}
@@ -173,7 +173,7 @@ func (module *AliasModule) AliasesPrivMsg(srv *Server, msg *Message) {
 // all the available aliases matching the provided pattern.
 func (module *AliasModule) GrepPrivMsg(srv *Server, msg *Message) {
 	if len(msg.Args) != 1 {
-		IRCPrivMsg(msg.ReplyTo, "usage: grep pattern")
+		srv.IRCPrivMsg(msg.ReplyTo, "usage: grep pattern")
 		return
 	}
 
@@ -181,17 +181,17 @@ func (module *AliasModule) GrepPrivMsg(srv *Server, msg *Message) {
 	sort.Strings(results)
 
 	if len(results) == 0 {
-		IRCPrivMsg(msg.ReplyTo, "error: no results")
+		srv.IRCPrivMsg(msg.ReplyTo, "error: no results")
 		return
 	}
 
 	found := strings.Join(results, ", ")
 	if len(found) > MaxCharsPerPage {
-		IRCPrivMsg(msg.ReplyTo, "error: too many results, refine your search")
+		srv.IRCPrivMsg(msg.ReplyTo, "error: too many results, refine your search")
 		return
 	}
 
-	IRCPrivMsg(msg.ReplyTo, found)
+	srv.IRCPrivMsg(msg.ReplyTo, found)
 }
 
 // RandomPrivMsg is the message handler for user 'random' requests.  It picks a
@@ -205,12 +205,12 @@ func (module *AliasModule) RandomPrivMsg(srv *Server, msg *Message) {
 	case 1:
 		names = srv.Aliases.Find(msg.Args[0])
 	default:
-		IRCPrivMsg(msg.ReplyTo, "usage: random [pattern]")
+		srv.IRCPrivMsg(msg.ReplyTo, "usage: random [pattern]")
 		return
 	}
 
 	if len(names) <= 0 {
-		IRCPrivMsg(msg.ReplyTo, "no matches found")
+		srv.IRCPrivMsg(msg.ReplyTo, "no matches found")
 		return
 	}
 
@@ -218,19 +218,19 @@ func (module *AliasModule) RandomPrivMsg(srv *Server, msg *Message) {
 
 	body, err := srv.Aliases.Resolve(names[idx])
 	if err != nil {
-		IRCPrivMsg(msg.ReplyTo, "failed to resolve aliases: "+
+		srv.IRCPrivMsg(msg.ReplyTo, "failed to resolve aliases: "+
 			err.Error())
 		return
 	}
 
 	newmsgs, err := srv.NewMessagesFromBody(body)
 	if err != nil {
-		IRCPrivMsg(msg.ReplyTo, "error: failed to expand chose alias '"+
+		srv.IRCPrivMsg(msg.ReplyTo, "error: failed to expand chose alias '"+
 			names[idx]+"': "+err.Error())
 		return
 	}
 
-	IRCPrivAction(msg.ReplyTo, "picks "+names[idx])
+	srv.IRCPrivAction(msg.ReplyTo, "chooses "+names[idx])
 
 	for _, newmsg := range newmsgs {
 		newmsg.ReplyTo = msg.ReplyTo
@@ -241,13 +241,13 @@ func (module *AliasModule) RandomPrivMsg(srv *Server, msg *Message) {
 			log.Printf("failed to convert PRIVMSG")
 			return
 		}
-		InputQueue <- newmsg
+		srv.InputQueue <- newmsg
 	}
 }
 
 // Init registers all the commands for this module.
-func (module *AliasModule) Init() {
-	RegisterCommand(Command{
+func (module *AliasModule) Init(srv *Server) {
+	srv.RegisterCommand(Command{
 		Name:            "alias",
 		PrivMsgFunction: module.AliasPrivMsg,
 		Addressed:       true,
@@ -255,7 +255,7 @@ func (module *AliasModule) Init() {
 		AllowChannel:    true,
 	})
 
-	RegisterCommand(Command{
+	srv.RegisterCommand(Command{
 		Name:            "grep",
 		PrivMsgFunction: module.GrepPrivMsg,
 		Addressed:       true,
@@ -263,7 +263,7 @@ func (module *AliasModule) Init() {
 		AllowChannel:    true,
 	})
 
-	RegisterCommand(Command{
+	srv.RegisterCommand(Command{
 		Name:            "random",
 		PrivMsgFunction: module.RandomPrivMsg,
 		Addressed:       true,
@@ -271,7 +271,7 @@ func (module *AliasModule) Init() {
 		AllowChannel:    true,
 	})
 
-	RegisterCommand(Command{
+	srv.RegisterCommand(Command{
 		Name:            "unalias",
 		PrivMsgFunction: module.UnAliasPrivMsg,
 		Addressed:       true,
@@ -279,7 +279,7 @@ func (module *AliasModule) Init() {
 		AllowChannel:    true,
 	})
 
-	RegisterCommand(Command{
+	srv.RegisterCommand(Command{
 		Name:            "aliases",
 		PrivMsgFunction: module.AliasesPrivMsg,
 		Addressed:       true,

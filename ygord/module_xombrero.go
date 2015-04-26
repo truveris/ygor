@@ -15,7 +15,7 @@ type XombreroModule struct{}
 // PrivMsg is the message handler for 'xombrero' user requests.
 func (module XombreroModule) PrivMsg(srv *Server, msg *Message) {
 	if len(msg.Args) == 0 {
-		IRCPrivMsg(msg.ReplyTo, "usage: xombrero [command [param ...]]")
+		srv.IRCPrivMsg(msg.ReplyTo, "usage: xombrero [command [param ...]]")
 		return
 	}
 
@@ -25,7 +25,7 @@ func (module XombreroModule) PrivMsg(srv *Server, msg *Message) {
 // WebPrivMsg is the message handler for 'web' user requests.
 func (module XombreroModule) WebPrivMsg(srv *Server, msg *Message) {
 	if len(msg.Args) != 1 {
-		IRCPrivMsg(msg.ReplyTo, "usage: web url")
+		srv.IRCPrivMsg(msg.ReplyTo, "usage: web url")
 		return
 	}
 
@@ -40,17 +40,17 @@ func (module XombreroModule) MinionMsg(srv *Server, msg *Message) {
 			log.Printf("xombrero: can't find minion for %s", msg.UserID)
 			return
 		}
-		channels := srv.GetChannelsByMinionName(minion.Name)
+		channels := srv.Config.GetChannelsByMinion(minion.Name)
 		for _, channel := range channels {
 			s := fmt.Sprintf("xombrero@%s: %s", minion.Name, strings.Join(msg.Args, " "))
-			IRCPrivMsg(channel, s)
+			srv.IRCPrivMsg(channel, s)
 		}
 	}
 }
 
 // Init registers all the commands for this module.
-func (module XombreroModule) Init() {
-	RegisterCommand(Command{
+func (module XombreroModule) Init(srv *Server) {
+	srv.RegisterCommand(Command{
 		Name:              "xombrero",
 		PrivMsgFunction:   module.PrivMsg,
 		MinionMsgFunction: module.MinionMsg,
@@ -59,7 +59,7 @@ func (module XombreroModule) Init() {
 		AllowChannel:      true,
 	})
 
-	RegisterCommand(Command{
+	srv.RegisterCommand(Command{
 		Name:            "web",
 		PrivMsgFunction: module.WebPrivMsg,
 		Addressed:       true,

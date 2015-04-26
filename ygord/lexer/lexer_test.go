@@ -32,15 +32,15 @@ func AssertNextSentence(l *Lexer, t *testing.T, a []string) {
 
 func TestLexer(t *testing.T) {
 	s := strings.NewReader(`foo bar; spaces  "and quotes"; "es\"ca\\p e"`)
-	z := NewLexer(s)
+	z := New(s)
 
 	AssertNextSentence(z, t, []string{"foo", "bar"})
 	AssertNextSentence(z, t, []string{"spaces", "and quotes"})
 	AssertNextSentence(z, t, []string{`es"ca\p e`})
 }
 
-func TestLexerSplit(t *testing.T) {
-	ss, err := LexerSplit("foo bar baz")
+func TestSplit(t *testing.T) {
+	ss, err := Split("foo bar baz")
 	if err != nil {
 		t.Error(err)
 	}

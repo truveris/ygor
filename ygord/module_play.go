@@ -15,7 +15,7 @@ func (module *PlayModule) PrivMsg(srv *Server, msg *Message) {
 	var duration, cmd string
 
 	if len(msg.Args) == 0 {
-		IRCPrivMsg(msg.ReplyTo, "usage: play sound [duration]")
+		srv.IRCPrivMsg(msg.ReplyTo, "usage: play sound [duration]")
 		return
 	}
 
@@ -34,8 +34,8 @@ func (module *PlayModule) PrivMsg(srv *Server, msg *Message) {
 }
 
 // Init registers all the commands for this module.
-func (module *PlayModule) Init() {
-	RegisterCommand(Command{
+func (module *PlayModule) Init(srv *Server) {
+	srv.RegisterCommand(Command{
 		Name:            "play",
 		PrivMsgFunction: module.PrivMsg,
 		Addressed:       true,

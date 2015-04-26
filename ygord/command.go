@@ -3,11 +3,6 @@
 
 package main
 
-var (
-	// RegisteredCommands is the in-memory command registry.
-	RegisteredCommands = make(map[string]Command)
-)
-
 // MessageFunction is used as a type of function that receives a Message either
 // from IRC or from a minion.
 type MessageFunction func(*Server, *Message)
@@ -71,19 +66,4 @@ func (cmd Command) MinionMessageMatches(msg *Message) bool {
 	}
 
 	return true
-}
-
-// GetCommand returns a registered command or nil.
-func GetCommand(name string) *Command {
-	if cmd, ok := RegisteredCommands[name]; ok {
-		return &cmd
-	}
-
-	return nil
-}
-
-// RegisterCommand adds a command to the registry.  There could be only one
-// command registered for each name.
-func RegisterCommand(cmd Command) {
-	RegisteredCommands[cmd.Name] = cmd
 }

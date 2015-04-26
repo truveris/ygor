@@ -15,7 +15,7 @@ type TurretModule struct{}
 // PrivMsg is the message handler for user-received 'turret' commands.
 func (module TurretModule) PrivMsg(srv *Server, msg *Message) {
 	if len(msg.Args) == 0 || len(msg.Args) > 2 {
-		IRCPrivMsg(msg.ReplyTo, "usage: turret command [param]")
+		srv.IRCPrivMsg(msg.ReplyTo, "usage: turret command [param]")
 		return
 	}
 
@@ -30,17 +30,17 @@ func (module TurretModule) MinionMsg(srv *Server, msg *Message) {
 			log.Printf("turret: can't find minion for %s", msg.UserID)
 			return
 		}
-		channels := srv.GetChannelsByMinionName(minion.Name)
+		channels := srv.Config.GetChannelsByMinion(minion.Name)
 		for _, channel := range channels {
 			s := fmt.Sprintf("turret@%s: %s", minion.Name, strings.Join(msg.Args, " "))
-			IRCPrivMsg(channel, s)
+			srv.IRCPrivMsg(channel, s)
 		}
 	}
 }
 
 // Init registers all the commands for this module.
-func (module TurretModule) Init() {
-	RegisterCommand(Command{
+func (module TurretModule) Init(srv *Server) {
+	srv.RegisterCommand(Command{
 		Name:              "turret",
 		PrivMsgFunction:   module.PrivMsg,
 		MinionMsgFunction: module.MinionMsg,

@@ -32,7 +32,7 @@ func (module *MinionsModule) PrivMsg(srv *Server, msg *Message) {
 		names = append(names, minion.Name)
 	}
 	sort.Strings(names)
-	IRCPrivMsg(msg.ReplyTo,
+	srv.IRCPrivMsg(msg.ReplyTo,
 		"currently registered: "+strings.Join(names, ", "))
 }
 
@@ -60,8 +60,8 @@ func (module *MinionsModule) MinionMsg(srv *Server, msg *Message) {
 }
 
 // Init registers all the commands for this module.
-func (module *MinionsModule) Init() {
-	RegisterCommand(Command{
+func (module *MinionsModule) Init(srv *Server) {
+	srv.RegisterCommand(Command{
 		Name:              "register",
 		MinionMsgFunction: module.MinionMsg,
 		Addressed:         true,
@@ -69,7 +69,7 @@ func (module *MinionsModule) Init() {
 		AllowChannel:      true,
 	})
 
-	RegisterCommand(Command{
+	srv.RegisterCommand(Command{
 		Name:            "minions",
 		PrivMsgFunction: module.PrivMsg,
 		Addressed:       true,

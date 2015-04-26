@@ -20,12 +20,12 @@ type VolumeModule struct{}
 // PrivMsg is the message handler for user 'volume' requests.
 func (module VolumeModule) PrivMsg(srv *Server, msg *Message) {
 	if len(msg.Args) != 1 {
-		IRCPrivMsg(msg.ReplyTo, "usage: volume percent")
+		srv.IRCPrivMsg(msg.ReplyTo, "usage: volume percent")
 		return
 	}
 
 	if !rePercentage.MatchString(msg.Args[0]) {
-		IRCPrivMsg(msg.ReplyTo, "error: bad input, must be percent")
+		srv.IRCPrivMsg(msg.ReplyTo, "error: bad input, must be percent")
 		return
 	}
 
@@ -36,7 +36,7 @@ func (module VolumeModule) PrivMsg(srv *Server, msg *Message) {
 // increments the volume by 1dB.
 func (module VolumeModule) PrivMsgPlusPlus(srv *Server, msg *Message) {
 	if len(msg.Args) != 0 {
-		IRCPrivMsg(msg.ReplyTo, "usage: volume++")
+		srv.IRCPrivMsg(msg.ReplyTo, "usage: volume++")
 		return
 	}
 	srv.SendToChannelMinions(msg.ReplyTo, "volume 1db+")
@@ -46,7 +46,7 @@ func (module VolumeModule) PrivMsgPlusPlus(srv *Server, msg *Message) {
 // decrements the volume by 1dB.
 func (module VolumeModule) PrivMsgMinusMinus(srv *Server, msg *Message) {
 	if len(msg.Args) != 0 {
-		IRCPrivMsg(msg.ReplyTo, "usage: volume--")
+		srv.IRCPrivMsg(msg.ReplyTo, "usage: volume--")
 		return
 	}
 	srv.SendToChannelMinions(msg.ReplyTo, "volume 1db-")
@@ -61,17 +61,17 @@ func (module VolumeModule) MinionMsg(srv *Server, msg *Message) {
 			log.Printf("volume: can't find minion for %s", msg.UserID)
 			return
 		}
-		channels := srv.GetChannelsByMinionName(minion.Name)
+		channels := srv.Config.GetChannelsByMinion(minion.Name)
 		for _, channel := range channels {
 			s := fmt.Sprintf("volume@%s: %s", minion.Name, strings.Join(msg.Args, " "))
-			IRCPrivMsg(channel, s)
+			srv.IRCPrivMsg(channel, s)
 		}
 	}
 }
 
 // Init registers all the commands for this module.
-func (module VolumeModule) Init() {
-	RegisterCommand(Command{
+func (module VolumeModule) Init(srv *Server) {
+	srv.RegisterCommand(Command{
 		Name:              "volume",
 		PrivMsgFunction:   module.PrivMsg,
 		MinionMsgFunction: module.MinionMsg,
@@ -80,7 +80,7 @@ func (module VolumeModule) Init() {
 		AllowChannel:      true,
 	})
 
-	RegisterCommand(Command{
+	srv.RegisterCommand(Command{
 		Name:            "volume++",
 		PrivMsgFunction: module.PrivMsgPlusPlus,
 		Addressed:       true,
@@ -88,7 +88,7 @@ func (module VolumeModule) Init() {
 		AllowChannel:    true,
 	})
 
-	RegisterCommand(Command{
+	srv.RegisterCommand(Command{
 		Name:            "volume--",
 		PrivMsgFunction: module.PrivMsgMinusMinus,
 		Addressed:       true,

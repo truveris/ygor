@@ -11,7 +11,7 @@ type ImageModule struct {
 // PrivMsg is the message handler for user 'image' requests.
 func (module *ImageModule) PrivMsg(srv *Server, msg *Message) {
 	if len(msg.Args) != 1 {
-		IRCPrivMsg(msg.ReplyTo, "usage: image url")
+		srv.IRCPrivMsg(msg.ReplyTo, "usage: image url")
 		return
 	}
 
@@ -20,8 +20,8 @@ func (module *ImageModule) PrivMsg(srv *Server, msg *Message) {
 }
 
 // Init registers all the commands for this module.
-func (module ImageModule) Init() {
-	RegisterCommand(Command{
+func (module ImageModule) Init(srv *Server) {
+	srv.RegisterCommand(Command{
 		Name:            "image",
 		PrivMsgFunction: module.PrivMsg,
 		Addressed:       true,

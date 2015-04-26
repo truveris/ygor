@@ -15,13 +15,9 @@ import (
 	"github.com/truveris/sqs/sqschan"
 )
 
-var (
-	InputQueue = make(chan *Message)
-)
-
 // StartMinionAdapter is the entry point for this IO adapter. It reads from the
 // main ygord queue and assume all the incoming messages are minion feedbacks.
-func StartMinionAdapter(client *sqs.Client, queueName string) (<-chan error, error) {
+func (srv *Server) StartMinionAdapter(client *sqs.Client, queueName string) (<-chan error, error) {
 	errch := make(chan error, 0)
 
 	ch, sqserrch, err := sqschan.Incoming(client, queueName)
@@ -34,7 +30,7 @@ func StartMinionAdapter(client *sqs.Client, queueName string) (<-chan error, err
 			select {
 			case sqsmsg := <-ch:
 				msg := NewMessageFromMinionSQS(sqsmsg)
-				InputQueue <- msg
+				srv.InputQueue <- msg
 				err := client.DeleteMessage(sqsmsg)
 				if err != nil {
 					errch <- err
@@ -48,9 +44,9 @@ func StartMinionAdapter(client *sqs.Client, queueName string) (<-chan error, err
 	return errch, nil
 }
 
-// MinionMessageHandler is used from main() when receiving data on the InputQueue.
+// MinionMessageHandler is used from main() when receiving data on the MinionsIncoming.
 func (srv *Server) MinionMessageHandler(msg *Message) {
-	for _, cmd := range RegisteredCommands {
+	for _, cmd := range srv.RegisteredCommands {
 		if !cmd.MinionMessageMatches(msg) {
 			continue
 		}

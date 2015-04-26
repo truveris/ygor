@@ -7,14 +7,17 @@ import (
 	"errors"
 	"log"
 
-	"github.com/thoj/go-ircevent"
 	"github.com/truveris/sqs"
 	"github.com/truveris/ygor/ygord/alias"
 )
 
 type Server struct {
-	Aliases *alias.File
-	Minions *MinionsFile
+	Aliases            *alias.File
+	Minions            *MinionsFile
+	InputQueue         chan *Message
+	OutputQueue        chan *OutgoingMessage
+	Modules            []Module
+	RegisteredCommands map[string]Command
 	*Config
 }
 
@@ -34,39 +37,46 @@ func CreateServer(config *Config) *Server {
 		log.Fatal("minions file error: ", err.Error())
 	}
 
+	srv.RegisteredCommands = make(map[string]Command)
+	srv.InputQueue = make(chan *Message, 128)
+	srv.OutputQueue = make(chan *OutgoingMessage, 128)
+
 	return srv
 }
 
-// GetChannelsByMinionName returns a list of channels given a minion name.
-func (srv *Server) GetChannelsByMinionName(name string) []string {
-	var channels []string
+// GetMinionsByChannel returns all the minions configured for that channel.
+func (srv *Server) GetMinionsByChannel(channel string) []*Minion {
+	var minions []*Minion
 
-	for channelName, channelCfg := range srv.Config.Channels {
-		for _, minionName := range channelCfg.Minions {
-			if minionName == name {
-				channels = append(channels, channelName)
-				break
-			}
+	for _, name := range srv.Config.GetMinionsByChannel(channel) {
+		minion, err := srv.Minions.Get(name)
+		if err != nil {
+			log.Printf("ignoring '%s': %s", name, err.Error())
+			continue
 		}
-	}
-
-	return channels
-}
-
-// GetChannelMinions returns all the minions configured for that channel.
-func (srv *Server) GetChannelMinions(channel string) []*Minion {
-	channelCfg, exists := srv.Config.Channels[channel]
-	if !exists {
-		log.Printf("error: %s has no queue(s) configured", channel)
-		return nil
-	}
-
-	minions, err := channelCfg.GetMinions(srv)
-	if err != nil {
-		log.Printf("error: GetChannelMinions: %s", err.Error())
+		minions = append(minions, minion)
 	}
 
 	return minions
+}
+
+// GetQueueURLsByChannel returns an array of queue URLs. These URLs are
+// extracted from the minions attached to this channel.
+func (srv *Server) GetQueueURLsByChannel(channel string) ([]string, error) {
+	var urls []string
+
+	minions := srv.GetMinionsByChannel(channel)
+
+	for _, minion := range minions {
+		if minion.QueueURL == "" {
+			log.Printf("minion '%s' has no QueueURL", minion.Name)
+			continue
+		}
+
+		urls = append(urls, minion.QueueURL)
+	}
+
+	return urls, nil
 }
 
 // StartAdapters starts all the IO adapters (IRC, Stdin/Stdout, Minions, API)
@@ -113,13 +123,7 @@ func (srv *Server) SendToChannelMinions(channel, msg string) {
 		return
 	}
 
-	channelCfg, exists := srv.Config.Channels[channel]
-	if !exists {
-		log.Printf("error: %s has no queue(s) configured", channel)
-		return
-	}
-
-	urls, err := channelCfg.GetQueueURLs(srv)
+	urls, err := srv.GetQueueURLsByChannel(channel)
 	if err != nil {
 		log.Printf("error: unable to load queue URLs, %s", err.Error())
 		return
@@ -152,33 +156,21 @@ func (srv *Server) SendToQueue(queueURL, msg string) error {
 
 // RegisterModule adds a module to our global registry.
 func (srv *Server) RegisterModule(module Module) {
-	module.Init()
-	modules = append(modules, module)
+	module.Init(srv)
+	srv.Modules = append(srv.Modules, module)
 }
 
-func (srv *Server) StartIRCAdapter() error {
-	cfg := srv.Config
-	conn = irc.IRC(cfg.IRCNickname, cfg.IRCNickname)
-	//conn.VerboseCallbackHandler = true
-	//conn.Debug = true
+// RegisterCommand adds a command to the registry.  There could be only one
+// command registered for each name.
+func (srv *Server) RegisterCommand(cmd Command) {
+	srv.RegisteredCommands[cmd.Name] = cmd
+}
 
-	err := conn.Connect(cfg.IRCServer)
-	if err != nil {
-		return err
+// GetCommand returns a registered command or nil.
+func (srv *Server) GetCommand(name string) *Command {
+	if cmd, ok := srv.RegisteredCommands[name]; ok {
+		return &cmd
 	}
-
-	conn.AddCallback("001", func(e *irc.Event) {
-		for _, c := range cfg.GetAutoJoinChannels() {
-			conn.Join(c)
-		}
-	})
-
-	conn.AddCallback("PRIVMSG", func(e *irc.Event) {
-		msgs := srv.NewMessagesFromEvent(e)
-		for _, msg := range msgs {
-			srv.IRCMessageHandler(msg)
-		}
-	})
 
 	return nil
 }

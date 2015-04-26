@@ -35,13 +35,13 @@ func Now() time.Time {
 // responses.
 func (module *PingModule) PrivMsg(srv *Server, msg *Message) {
 	if len(module.PingStartTimes) > 0 {
-		IRCPrivMsg(msg.ReplyTo, "error: previous ping still running")
+		srv.IRCPrivMsg(msg.ReplyTo, "error: previous ping still running")
 		return
 	}
 
 	module.PingReplyTo = msg.ReplyTo
 
-	for _, minion := range srv.GetChannelMinions(msg.ReplyTo) {
+	for _, minion := range srv.GetMinionsByChannel(msg.ReplyTo) {
 		now := Now()
 		module.PingStartTimes[minion.UserID] = now
 		body := fmt.Sprintf("ping %d", now.UnixNano())
@@ -99,22 +99,22 @@ func (module *PingModule) MinionMsg(srv *Server, msg *Message) {
 	}
 
 	reply := fmt.Sprintf("delay with %s: %s", name, duration)
-	IRCPrivMsg(module.PingReplyTo, reply)
+	srv.IRCPrivMsg(module.PingReplyTo, reply)
 }
 
 // Init registers all the commands for this module.
-func (module *PingModule) Init() {
+func (module *PingModule) Init(srv *Server) {
 	module.PingReset()
 
 	// ping/pong dance
-	RegisterCommand(Command{
+	srv.RegisterCommand(Command{
 		Name:            "ping",
 		PrivMsgFunction: module.PrivMsg,
 		Addressed:       true,
 		AllowPrivate:    true,
 		AllowChannel:    true,
 	})
-	RegisterCommand(Command{
+	srv.RegisterCommand(Command{
 		Name:              "pong",
 		MinionMsgFunction: module.MinionMsg,
 		Addressed:         true,

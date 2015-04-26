@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
+	"time"
 )
 
 func TestAliasResolve(t *testing.T) {
@@ -17,12 +18,12 @@ func TestAliasResolve(t *testing.T) {
 		t.Error(err)
 	}
 
-	a, err := OpenAliasFile(f.Name())
+	a, err := Open(f.Name())
 	if err != nil {
 		t.Error(err)
 	}
 
-	a.Add("noodly", "image http://i.imgur.com/uVIqN.jpg")
+	a.Add("noodly", "image http://i.imgur.com/uVIqN.jpg", "fsm", time.Now())
 	a.Save()
 	line, err := a.Resolve("noodly appendage")
 	if err != nil {
@@ -45,13 +46,13 @@ func TestAliasResolveRecursive(t *testing.T) {
 		t.Error(err)
 	}
 
-	a, err := OpenAliasFile(f.Name())
+	a, err := Open(f.Name())
 	if err != nil {
 		t.Error(err)
 	}
 
-	a.Add("image", "web")
-	a.Add("noodly", "image http://i.imgur.com/uVIqN.jpg")
+	a.Add("image", "web", "fsm", time.Now())
+	a.Add("noodly", "image http://i.imgur.com/uVIqN.jpg", "fsm", time.Now())
 	a.Save()
 	line, err := a.Resolve("noodly appendage")
 	if err != nil {

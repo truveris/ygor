@@ -13,8 +13,8 @@ func (module *NopModule) PrivMsg(srv *Server, msg *Message) {
 }
 
 // Init registers all the commands for this module.
-func (module NopModule) Init() {
-	RegisterCommand(Command{
+func (module NopModule) Init(srv *Server) {
+	srv.RegisterCommand(Command{
 		Name:            "nop",
 		PrivMsgFunction: module.PrivMsg,
 		Addressed:       true,

@@ -10,6 +10,9 @@ import (
 // MsgType is used to categorize the message type constants below.
 type MsgType int
 
+// OutMsgType is used to categorize the outgoing message type constants below.
+type OutMsgType int
+
 // Types of messages received from any various source (IRC, minions, etc.).
 // The first types are used for communication between the different components.
 // The Exit and Fatal types are used for flow control and are mostly triggered
@@ -22,7 +25,18 @@ const (
 	MsgTypeMinion     MsgType = iota
 	MsgTypeExit       MsgType = iota
 	MsgTypeFatal      MsgType = iota
+
+	OutMsgTypePrivMsg OutMsgType = iota
+	OutMsgTypeAction  OutMsgType = iota
 )
+
+// OutgoingMessage is a representation of a message passed through ygord, be it IRC,
+// minion, etc.
+type OutgoingMessage struct {
+	Type    OutMsgType
+	Channel string
+	Body    string
+}
 
 // Message is a representation of a message passed through ygord, be it IRC,
 // minion, etc.

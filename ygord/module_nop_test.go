@@ -3,7 +3,17 @@
 
 package main
 
-// Module is the interface used by all the ygor modules.
-type Module interface {
-	Init(*Server)
+import (
+	"testing"
+)
+
+func TestModuleNop(t *testing.T) {
+	srv := &Server{}
+
+	msg := &Message{}
+
+	m := &NopModule{}
+	m.Init(srv)
+
+	m.PrivMsg(srv, msg)
 }

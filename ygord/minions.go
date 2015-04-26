@@ -16,6 +16,10 @@ import (
 	"time"
 )
 
+var (
+	errMinionNotFound = errors.New("minion not found")
+)
+
 // MinionsFile is a wrapper around your minions file, it abstracts the
 // serialization of minions and keeps an in-memory cache to avoid frequent
 // reads.
@@ -100,7 +104,7 @@ func (file *MinionsFile) Get(name string) (*Minion, error) {
 		}
 	}
 
-	return nil, errors.New("minion not found: " + name)
+	return nil, errMinionNotFound
 }
 
 // GetByUserID returns the minion registed with the given UserId.
@@ -118,7 +122,7 @@ func (file *MinionsFile) GetByUserID(userID string) (*Minion, error) {
 		}
 	}
 
-	return nil, errors.New("minion not found")
+	return nil, errMinionNotFound
 }
 
 // Register a minion.

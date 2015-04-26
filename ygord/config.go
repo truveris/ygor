@@ -78,42 +78,31 @@ func (cfg *Config) GetAutoJoinChannels() []string {
 	return channels.Array()
 }
 
-// GetMinions returns an array of minions configured for this ChannelCfg.
-func (channelCfg *ChannelCfg) GetMinions(srv *Server) ([]*Minion, error) {
-	var minions []*Minion
+// GetChannelsByMinionName returns a list of channels given a minion name.
+func (cfg *Config) GetChannelsByMinion(name string) []string {
+	var channels []string
 
-	for _, name := range channelCfg.Minions {
-		minion, err := srv.Minions.Get(name)
-		if err != nil {
-			return nil, err
+	for channelName, channelCfg := range cfg.Channels {
+		for _, minionName := range channelCfg.Minions {
+			if minionName == name {
+				channels = append(channels, channelName)
+				break
+			}
 		}
-
-		minions = append(minions, minion)
 	}
 
-	return minions, nil
+	return channels
 }
 
-// GetQueueURLs returns an array of queue URLs. These URLs are extracted from
-// the minions attached to this channel.
-func (channelCfg *ChannelCfg) GetQueueURLs(srv *Server) ([]string, error) {
-	var urls []string
-
-	minions, err := channelCfg.GetMinions(srv)
-	if err != nil {
-		return urls, err
+// GetChannelMinions returns all the minions configured for that channel.
+func (cfg *Config) GetMinionsByChannel(channel string) []string {
+	channelCfg, exists := cfg.Channels[channel]
+	if !exists {
+		log.Printf("error: %s has no queue(s) configured", channel)
+		return nil
 	}
 
-	for _, minion := range minions {
-		if minion.QueueURL == "" {
-			log.Printf("minion without QueueURL: %s", minion.Name)
-			continue
-		}
-
-		urls = append(urls, minion.QueueURL)
-	}
-
-	return urls, nil
+	return channelCfg.Minions
 }
 
 // ParseConfigFile reads our JSON config file and validates its values, also

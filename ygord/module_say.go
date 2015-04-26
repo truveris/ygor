@@ -24,7 +24,7 @@ func (module *SayModule) PrivMsg(srv *Server, msg *Message) {
 	flagParser := flags.NewParser(&cmd, flags.PassDoubleDash)
 	args, err := flagParser.ParseArgs(msg.Args)
 	if err != nil {
-		IRCPrivMsg(msg.ReplyTo, "usage: say [-v voice] sentence")
+		srv.IRCPrivMsg(msg.ReplyTo, "usage: say [-v voice] sentence")
 		return
 	}
 
@@ -33,8 +33,8 @@ func (module *SayModule) PrivMsg(srv *Server, msg *Message) {
 }
 
 // Init registers all the commands for this module.
-func (module SayModule) Init() {
-	RegisterCommand(Command{
+func (module SayModule) Init(srv *Server) {
+	srv.RegisterCommand(Command{
 		Name:            "say",
 		PrivMsgFunction: module.PrivMsg,
 		Addressed:       true,

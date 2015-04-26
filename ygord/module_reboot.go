@@ -13,12 +13,12 @@ type RebootModule struct{}
 // PrivMsg is the message handler for user requests.
 func (module *RebootModule) PrivMsg(srv *Server, msg *Message) {
 	srv.SendToChannelMinions(msg.ReplyTo, "reboot")
-	IRCPrivMsg(msg.ReplyTo, "attempting to reboot "+msg.ReplyTo+" minions...")
+	srv.IRCPrivMsg(msg.ReplyTo, "attempting to reboot "+msg.ReplyTo+" minions...")
 }
 
 // Init registers all the commands for this module.
-func (module RebootModule) Init() {
-	RegisterCommand(Command{
+func (module RebootModule) Init(srv *Server) {
+	srv.RegisterCommand(Command{
 		Name:            "reboot",
 		PrivMsgFunction: module.PrivMsg,
 		Addressed:       true,
