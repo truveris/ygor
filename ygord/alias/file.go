@@ -1,7 +1,9 @@
 // Copyright 2014-2015, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 //
-// This file contains all the tools to handle the aliases registry.
+// This file contains all the tools to handle the aliases registry.  The
+// reserved file path ":memory:" will cause this implementation to never access
+// the file-system and always start from a blank slate.
 //
 
 package alias
@@ -56,6 +58,10 @@ func Open(path string) (*File, error) {
 // Check if the underlying file has been updated. It also returns false if we
 // can't read the file. XXX should return error instead.
 func (file *File) needsReload() bool {
+	if file.path == ":memory:" {
+		return false
+	}
+
 	si, err := os.Stat(file.path)
 	if err != nil {
 		return false
@@ -116,6 +122,10 @@ func (file *File) Delete(name string) {
 
 // Save all the aliases to disk.
 func (file *File) Save() error {
+	if file.path == ":memory:" {
+		return nil
+	}
+
 	// Maybe an easier way is to use ioutil.WriteFile
 	fp, err := os.OpenFile(file.path, os.O_TRUNC|os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
@@ -138,6 +148,10 @@ func (file *File) Save() error {
 // Reload all the cached aliases from disk.
 func (file *File) reload() error {
 	file.cache = make(map[string]*Alias)
+
+	if file.path == ":memory:" {
+		return nil
+	}
 
 	// It's acceptable for the file not to exist at this point, we just
 	// need to create it. Attempting to create it at this points allows us

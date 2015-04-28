@@ -57,6 +57,10 @@ func OpenMinionsFile(path string) (*MinionsFile, error) {
 // Check if the minion file has been updated. It also returns false if we can't
 // read the file.
 func (file *MinionsFile) needsReload() bool {
+	if file.path == ":memory:" {
+		return false
+	}
+
 	si, err := os.Stat(file.path)
 	if err != nil {
 		return false
@@ -162,6 +166,10 @@ func (file *MinionsFile) Delete(name string) {
 
 // Save all the minions to disk.
 func (file *MinionsFile) Save() error {
+	if file.path == ":memory:" {
+		return nil
+	}
+
 	// Maybe an easier way is to use ioutil.WriteFile
 	fp, err := os.OpenFile(file.path, os.O_TRUNC|os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
@@ -183,6 +191,10 @@ func (file *MinionsFile) Save() error {
 
 func (file *MinionsFile) reload() error {
 	file.cache = make(map[string]*Minion)
+
+	if file.path == ":memory:" {
+		return nil
+	}
 
 	// It's acceptable for the file not to exist at this point, we just
 	// need to create it. Attempting to create it at this points allows us
