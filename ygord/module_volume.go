@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	rePercentage = regexp.MustCompile(`^[-+]?\d+%$`)
+	rePercentage = regexp.MustCompile(`^\d{1,3}%$`)
 )
 
 // VolumeModule is the module handling all the volume related commands.
@@ -25,7 +25,7 @@ func (module VolumeModule) PrivMsg(srv *Server, msg *Message) {
 	}
 
 	if !rePercentage.MatchString(msg.Args[0]) {
-		srv.IRCPrivMsg(msg.ReplyTo, "error: bad input, must be percent")
+		srv.IRCPrivMsg(msg.ReplyTo, "error: bad input, must be absolute rounded percent value (e.g. 42%)")
 		return
 	}
 
