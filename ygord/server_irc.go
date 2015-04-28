@@ -140,7 +140,7 @@ func (srv *Server) IRCPrivMsg(channel, msg string) {
 		if lines[i] == "" {
 			continue
 		}
-		outmsg := &OutgoingMessage{
+		outmsg := &OutputMessage{
 			Type:    OutMsgTypePrivMsg,
 			Channel: channel,
 			Body:    lines[i],
@@ -152,7 +152,7 @@ func (srv *Server) IRCPrivMsg(channel, msg string) {
 // IRCPrivAction sends an action message to a channel.  This function is the
 // equivalent of using the /ME command in a normal IRC client.
 func (srv *Server) IRCPrivAction(channel, msg string) {
-	outmsg := &OutgoingMessage{
+	outmsg := &OutputMessage{
 		Type:    OutMsgTypeAction,
 		Channel: channel,
 		Body:    msg,

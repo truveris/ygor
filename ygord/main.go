@@ -39,6 +39,11 @@ func main() {
 		log.Fatal("failed to start adapters: ", err.Error())
 	}
 
+	client, err := srv.GetSQSClient()
+	if err != nil {
+		log.Fatal("failed to setup SQS: ", err.Error())
+	}
+
 	go waitForTraceRequest()
 
 	log.Printf("ready")
@@ -69,6 +74,11 @@ func main() {
 				conn.Privmsg(msg.Channel, msg.Body)
 			case OutMsgTypeAction:
 				conn.Action(msg.Channel, msg.Body)
+			case OutMsgTypeMinion:
+				err = client.SendMessage(msg.QueueURL, msg.Body)
+				if err != nil {
+					log.Printf("error sending to minion: %s", err.Error())
+				}
 			default:
 				log.Printf("outmsg handler error: un-handled type"+
 					" '%d'", msg.Type)

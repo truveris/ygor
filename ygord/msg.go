@@ -28,14 +28,16 @@ const (
 
 	OutMsgTypePrivMsg OutMsgType = iota
 	OutMsgTypeAction  OutMsgType = iota
+	OutMsgTypeMinion  OutMsgType = iota
 )
 
 // OutgoingMessage is a representation of a message passed through ygord, be it IRC,
 // minion, etc.
-type OutgoingMessage struct {
-	Type    OutMsgType
-	Channel string
-	Body    string
+type OutputMessage struct {
+	Type     OutMsgType
+	Channel  string
+	QueueURL string
+	Body     string
 }
 
 // Message is a representation of a message passed through ygord, be it IRC,

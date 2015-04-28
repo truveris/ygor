@@ -15,7 +15,7 @@ type Server struct {
 	Aliases            *alias.File
 	Minions            *MinionsFile
 	InputQueue         chan *Message
-	OutputQueue        chan *OutgoingMessage
+	OutputQueue        chan *OutputMessage
 	Modules            []Module
 	RegisteredCommands map[string]Command
 	*Config
@@ -39,7 +39,7 @@ func CreateServer(config *Config) *Server {
 
 	srv.RegisteredCommands = make(map[string]Command)
 	srv.InputQueue = make(chan *Message, 128)
-	srv.OutputQueue = make(chan *OutgoingMessage, 128)
+	srv.OutputQueue = make(chan *OutputMessage, 128)
 
 	return srv
 }
@@ -117,12 +117,6 @@ func (srv *Server) GetSQSClient() (*sqs.Client, error) {
 // SendToChannelMinions sends a message to all the minions of the given
 // channel.
 func (srv *Server) SendToChannelMinions(channel, msg string) {
-	client, err := srv.GetSQSClient()
-	if err != nil {
-		log.Printf("error: %s", err.Error())
-		return
-	}
-
 	urls, err := srv.GetQueueURLsByChannel(channel)
 	if err != nil {
 		log.Printf("error: unable to load queue URLs, %s", err.Error())
@@ -131,27 +125,21 @@ func (srv *Server) SendToChannelMinions(channel, msg string) {
 
 	// Send the same exact data to all this channel's minion.
 	for _, url := range urls {
-		err := client.SendMessage(url, sqs.SQSEncode(msg))
-		if err != nil {
-			log.Printf("error sending to minion: %s", err.Error())
-			continue
+		srv.OutputQueue <- &OutputMessage{
+			Type:     OutMsgTypeMinion,
+			QueueURL: url,
+			Body:     sqs.SQSEncode(msg),
 		}
 	}
 }
 
 // SendToQueue sends a message to our friendly minion via its SQS queue.
-func (srv *Server) SendToQueue(queueURL, msg string) error {
-	client, err := srv.GetSQSClient()
-	if err != nil {
-		return err
+func (srv *Server) SendToQueue(queueURL, msg string) {
+	srv.OutputQueue <- &OutputMessage{
+		Type:     OutMsgTypeMinion,
+		QueueURL: queueURL,
+		Body:     sqs.SQSEncode(msg),
 	}
-
-	err = client.SendMessage(queueURL, msg)
-	if err != nil {
-		log.Printf("error sending to minion: %s", err.Error())
-	}
-
-	return nil
 }
 
 // RegisterModule adds a module to our global registry.
@@ -173,4 +161,22 @@ func (srv *Server) GetCommand(name string) *Command {
 	}
 
 	return nil
+}
+
+// FlushOutputQueue removes every single messages from the OutputQueue and
+// returns them in the form of an array.
+func (srv *Server) FlushOutputQueue() []*OutputMessage {
+	var msgs []*OutputMessage
+
+	for {
+		select {
+		case msg := <-srv.OutputQueue:
+			msgs = append(msgs, msg)
+		default:
+			goto end
+		}
+	}
+
+end:
+	return msgs
 }

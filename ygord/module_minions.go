@@ -53,10 +53,7 @@ func (module *MinionsModule) MinionMsg(srv *Server, msg *Message) {
 	}
 
 	srv.Minions.Save()
-	err = module.Server.SendToQueue(queueURL, "register success")
-	if err != nil {
-		log.Printf("register: error: %s", err.Error())
-	}
+	srv.SendToQueue(queueURL, "register success")
 }
 
 // Init registers all the commands for this module.
