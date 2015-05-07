@@ -62,6 +62,23 @@ func TestModuleAliasValueFound(t *testing.T) {
 	AssertStringEquals(t, msgs[0].Body, "key=\"value\" (created by human on 1982-10-20T16:00:00Z)")
 }
 
+func TestModuleAliasValueFoundWithPercent(t *testing.T) {
+	srv := CreateTestServerWithTwoMinions(t)
+	srv.Aliases.Add("60%", "value", "human", now)
+
+	m := &AliasModule{}
+	m.Init(srv)
+	m.AliasPrivMsg(srv, &Message{
+		ReplyTo: "#test",
+		Args:    []string{"60%"},
+	})
+	msgs := srv.FlushOutputQueue()
+
+	AssertIntEquals(t, len(msgs), 1)
+	AssertStringEquals(t, msgs[0].Channel, "#test")
+	AssertStringEquals(t, msgs[0].Body, "60%=\"value\" (created by human on 1982-10-20T16:00:00Z)")
+}
+
 func TestModuleAliasValueFoundNested(t *testing.T) {
 	srv := CreateTestServerWithTwoMinions(t)
 	srv.Aliases.Add("key", "value", "human", now)
@@ -111,6 +128,63 @@ func TestModuleAliasCreate(t *testing.T) {
 	AssertIntEquals(t, len(msgs), 1)
 	AssertStringEquals(t, msgs[0].Channel, "#test")
 	AssertStringEquals(t, msgs[0].Body, "ok (created)")
+}
+
+func TestModuleAliasCreateIncremental(t *testing.T) {
+	srv := CreateTestServerWithTwoMinions(t)
+
+	m := &AliasModule{}
+	m.Init(srv)
+	m.AliasPrivMsg(srv, &Message{
+		ReplyTo: "#test",
+		Args:    []string{"key#", "value1"},
+	})
+	m.AliasPrivMsg(srv, &Message{
+		ReplyTo: "#test",
+		Args:    []string{"key#", "value2"},
+	})
+	msgs := srv.FlushOutputQueue()
+	AssertIntEquals(t, len(msgs), 2)
+	AssertStringEquals(t, msgs[0].Channel, "#test")
+	AssertStringEquals(t, msgs[0].Body, "ok (created as \"key1\")")
+	AssertStringEquals(t, msgs[1].Channel, "#test")
+	AssertStringEquals(t, msgs[1].Body, "ok (created as \"key2\")")
+}
+
+func TestModuleAliasCreateIncrementalDupeValue(t *testing.T) {
+	srv := CreateTestServerWithTwoMinions(t)
+
+	m := &AliasModule{}
+	m.Init(srv)
+	m.AliasPrivMsg(srv, &Message{
+		ReplyTo: "#test",
+		Args:    []string{"key#", "value"},
+	})
+	m.AliasPrivMsg(srv, &Message{
+		ReplyTo: "#test",
+		Args:    []string{"key#", "value"},
+	})
+	msgs := srv.FlushOutputQueue()
+	AssertIntEquals(t, len(msgs), 2)
+	AssertStringEquals(t, msgs[0].Channel, "#test")
+	AssertStringEquals(t, msgs[0].Body, "ok (created as \"key1\")")
+	AssertStringEquals(t, msgs[1].Channel, "#test")
+	AssertStringEquals(t, msgs[1].Body, "error: already exists as \"key1\"")
+}
+
+func TestModuleAliasCreateIncrementalTooManyHashes(t *testing.T) {
+	srv := CreateTestServerWithTwoMinions(t)
+
+	m := &AliasModule{}
+	m.Init(srv)
+	m.AliasPrivMsg(srv, &Message{
+		ReplyTo: "#test",
+		Args:    []string{"key##", "value"},
+	})
+	msgs := srv.FlushOutputQueue()
+	AssertIntEquals(t, len(msgs), 1)
+	AssertStringEquals(t, msgs[0].Channel, "#test")
+	AssertStringEquals(t, msgs[0].Body, "error: too many '#'")
 }
 
 func TestModuleAliases(t *testing.T) {
@@ -171,7 +245,63 @@ func TestModuleAliasesTooMany(t *testing.T) {
 	msgs := srv.FlushOutputQueue()
 	AssertIntEquals(t, len(msgs), 1)
 	AssertStringEquals(t, msgs[0].Channel, "#test")
-	AssertStringEquals(t, msgs[1].Body, "error: too many results, use grep")
+	AssertStringEquals(t, msgs[0].Body, "error: too many results, use grep")
+}
+
+func TestModuleUnaliasUsage(t *testing.T) {
+	srv := CreateTestServerWithTwoMinions(t)
+	srv.Aliases.Add("foo", "foo-value", "human", now)
+
+	m := &AliasModule{}
+	m.Init(srv)
+	m.UnAliasPrivMsg(srv, &Message{
+		ReplyTo: "#test",
+		Args:    []string{},
+	})
+
+	msgs := srv.FlushOutputQueue()
+	AssertIntEquals(t, len(msgs), 1)
+	AssertStringEquals(t, msgs[0].Channel, "#test")
+	AssertStringEquals(t, msgs[0].Body, "usage: unalias name")
+}
+
+func TestModuleUnaliasExisting(t *testing.T) {
+	srv := CreateTestServerWithTwoMinions(t)
+	srv.Aliases.Add("foo", "foo-value", "human", now)
+
+	m := &AliasModule{}
+	m.Init(srv)
+	m.UnAliasPrivMsg(srv, &Message{
+		ReplyTo: "#test",
+		Args:    []string{"foo"},
+	})
+
+	msgs := srv.FlushOutputQueue()
+	AssertIntEquals(t, len(msgs), 1)
+	AssertStringEquals(t, msgs[0].Channel, "#test")
+	AssertStringEquals(t, msgs[0].Body, "ok (deleted)")
+
+	a := srv.Aliases.Get("foo")
+	if a != nil {
+		t.Error("failed to delete alias")
+	}
+}
+
+func TestModuleUnaliasNonExisting(t *testing.T) {
+	srv := CreateTestServerWithTwoMinions(t)
+	srv.Aliases.Add("foo", "foo-value", "human", now)
+
+	m := &AliasModule{}
+	m.Init(srv)
+	m.UnAliasPrivMsg(srv, &Message{
+		ReplyTo: "#test",
+		Args:    []string{"bar"},
+	})
+
+	msgs := srv.FlushOutputQueue()
+	AssertIntEquals(t, len(msgs), 1)
+	AssertStringEquals(t, msgs[0].Channel, "#test")
+	AssertStringEquals(t, msgs[0].Body, "error: unknown alias")
 }
 
 func TestModuleGrepUsage(t *testing.T) {

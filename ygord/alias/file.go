@@ -327,7 +327,7 @@ func (file *File) GetIncrementedName(name, value string) (string, error) {
 		}
 
 		if alias.Value == value {
-			return "", errors.New("already exists as '" + alias.Name + "'")
+			return "", errors.New("already exists as \"" + alias.Name + "\"")
 		}
 	}
 

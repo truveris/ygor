@@ -23,3 +23,14 @@
  - Look for 403 forbidden when caching.
  - aliases should take an argument to filter results
  - differentiate "command not found" and "access denied"-type issues.
+
+# test:
+#  - toggle function
+#  - unknown chatter
+#  - unknown command
+#  - ignore private content
+#  - multiple commands (;)
+#  - unconfigured channel command?
+#  - unable to load minion queue url
+#  - error loading files (minions, aliases)
+#  - recursive in multi-commands, in random

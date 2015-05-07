@@ -23,7 +23,7 @@ func (module *SayModule) PrivMsg(srv *Server, msg *Message) {
 
 	flagParser := flags.NewParser(&cmd, flags.PassDoubleDash)
 	args, err := flagParser.ParseArgs(msg.Args)
-	if err != nil {
+	if err != nil || len(args) == 0 {
 		srv.IRCPrivMsg(msg.ReplyTo, "usage: say [-v voice] sentence")
 		return
 	}
