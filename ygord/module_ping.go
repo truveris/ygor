@@ -24,11 +24,6 @@ type PingModule struct {
 	PingReplyTo string
 }
 
-// Now is a wrapper around Now which always returns the same time in test mode.
-func Now() time.Time {
-	return time.Now()
-}
-
 // PrivMsg is the message handler for 'play' requests.  When the "ping" command
 // is issued, a ping command is issued to all the minion with a unique
 // timestamp.  This timestamp will be used to validated incoming ping
@@ -42,7 +37,7 @@ func (module *PingModule) PrivMsg(srv *Server, msg *Message) {
 	module.PingReplyTo = msg.ReplyTo
 
 	for _, minion := range srv.GetMinionsByChannel(msg.ReplyTo) {
-		now := Now()
+		now := time.Now()
 		module.PingStartTimes[minion.UserID] = now
 		body := fmt.Sprintf("ping %d", now.UnixNano())
 		srv.SendToQueue(minion.QueueURL, body)
@@ -84,7 +79,7 @@ func (module *PingModule) MinionMsg(srv *Server, msg *Message) {
 	delete(module.PingStartTimes, msg.UserID)
 
 	if timestamp != start.UnixNano() {
-		log.Printf("pong: got old ping reponse (%d)", timestamp)
+		log.Printf("pong: got old ping response (%d)", timestamp)
 		return
 	}
 

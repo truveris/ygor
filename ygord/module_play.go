@@ -15,7 +15,7 @@ func (module *PlayModule) PrivMsg(srv *Server, msg *Message) {
 	var duration, cmd string
 
 	if len(msg.Args) == 0 {
-		srv.IRCPrivMsg(msg.ReplyTo, "usage: play sound [duration]")
+		srv.IRCPrivMsg(msg.ReplyTo, "usage: play url [duration]")
 		return
 	}
 

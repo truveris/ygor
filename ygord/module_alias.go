@@ -31,7 +31,7 @@ func (module *AliasModule) AliasPrivMsg(srv *Server, msg *Message) {
 	var outputMsg string
 
 	if len(msg.Args) == 0 {
-		srv.IRCPrivMsg(msg.ReplyTo, "usage: alias name [command [params ...]]")
+		srv.IRCPrivMsg(msg.ReplyTo, "usage: alias name [expr ...]")
 		return
 	}
 
@@ -181,13 +181,13 @@ func (module *AliasModule) GrepPrivMsg(srv *Server, msg *Message) {
 	sort.Strings(results)
 
 	if len(results) == 0 {
-		srv.IRCPrivMsg(msg.ReplyTo, "error: no results")
+		srv.IRCPrivMsg(msg.ReplyTo, "error: no matches found")
 		return
 	}
 
 	found := strings.Join(results, ", ")
 	if len(found) > MaxCharsPerPage {
-		srv.IRCPrivMsg(msg.ReplyTo, "error: too many results, refine your search")
+		srv.IRCPrivMsg(msg.ReplyTo, "error: too many matches, refine your search")
 		return
 	}
 
@@ -210,22 +210,22 @@ func (module *AliasModule) RandomPrivMsg(srv *Server, msg *Message) {
 	}
 
 	if len(names) <= 0 {
-		srv.IRCPrivMsg(msg.ReplyTo, "no matches found")
+		srv.IRCPrivMsg(msg.ReplyTo, "error: no matches found")
 		return
 	}
 
 	idx := rand.Intn(len(names))
 
-	body, err := srv.Aliases.Resolve(names[idx])
+	body, err := srv.Aliases.Resolve(names[idx], 0)
 	if err != nil {
-		srv.IRCPrivMsg(msg.ReplyTo, "failed to resolve aliases: "+
+		srv.IRCPrivMsg(msg.ReplyTo, "error: failed to resolve aliases: "+
 			err.Error())
 		return
 	}
 
 	newmsgs, err := srv.NewMessagesFromBody(body)
 	if err != nil {
-		srv.IRCPrivMsg(msg.ReplyTo, "error: failed to expand chose alias '"+
+		srv.IRCPrivMsg(msg.ReplyTo, "error: failed to expand chosen alias '"+
 			names[idx]+"': "+err.Error())
 		return
 	}
@@ -236,7 +236,6 @@ func (module *AliasModule) RandomPrivMsg(srv *Server, msg *Message) {
 		newmsg.ReplyTo = msg.ReplyTo
 		newmsg.Type = msg.Type
 		newmsg.UserID = msg.UserID
-		newmsg.ReplyTo = msg.ReplyTo
 		if newmsg == nil {
 			log.Printf("failed to convert PRIVMSG")
 			return

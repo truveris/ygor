@@ -22,7 +22,7 @@ import (
 
 var (
 	conn        *irc.Connection
-	reAddressed = regexp.MustCompile(`^(\w+)[:,.]*\s*(.*)`)
+	reAddressed = regexp.MustCompile(`^\s*(\w+)[:,.]*\s*(.*)`)
 )
 
 // NewMessagesFromBody creates a new ygor message from a plain string.
@@ -36,7 +36,7 @@ func (srv *Server) NewMessagesFromBody(body string) ([]*Message, error) {
 
 	// TODO: make that recursive.
 	for i := 0; i < 3; i++ {
-		sentences, err = srv.Aliases.ExpandSentences(sentences)
+		sentences, err = srv.Aliases.ExpandSentences(sentences, 0)
 		if err != nil {
 			return nil, err
 		}
@@ -81,7 +81,7 @@ func (srv *Server) NewMessagesFromEvent(e *irc.Event) []*Message {
 		return nil
 	}
 
-	body := tokens[2]
+	body := strings.TrimSpace(tokens[2])
 	target := e.Arguments[0]
 
 	// Sent directly to the bot, fuck that.  Everything is public.

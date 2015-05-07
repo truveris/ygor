@@ -180,3 +180,21 @@ func (srv *Server) FlushOutputQueue() []*OutputMessage {
 end:
 	return msgs
 }
+
+// FlushInputQueue removes every single messages from the InputQueue and
+// returns them in the form of an array.
+func (srv *Server) FlushInputQueue() []*Message {
+	var msgs []*Message
+
+	for {
+		select {
+		case msg := <-srv.InputQueue:
+			msgs = append(msgs, msg)
+		default:
+			goto end
+		}
+	}
+
+end:
+	return msgs
+}
