@@ -51,6 +51,12 @@ type Message struct {
 	// In the case of an IRC message, this is a nickname or a channel.
 	ReplyTo string
 	Args    []string
+
+	// Recursion tracks the recursion level in case commands create/call
+	// other commands and produce more messages.  A message create out of
+	// the IRC handler will have 0 recursion but modules generating more
+	// messages from it should increment it.
+	Recursion int
 }
 
 // NewMessage allocates a new message without type.

@@ -223,7 +223,7 @@ func (module *AliasModule) RandomPrivMsg(srv *Server, msg *Message) {
 		return
 	}
 
-	newmsgs, err := srv.NewMessagesFromBody(body)
+	newmsgs, err := srv.NewMessagesFromBody(body, msg.Recursion+1)
 	if err != nil {
 		srv.IRCPrivMsg(msg.ReplyTo, "error: failed to expand chosen alias '"+
 			names[idx]+"': "+err.Error())

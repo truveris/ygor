@@ -25,8 +25,12 @@ var (
 	reAddressed = regexp.MustCompile(`^\s*(\w+)[:,.]*\s*(.*)`)
 )
 
+const (
+	MaxRecursion = 4
+)
+
 // NewMessagesFromBody creates a new ygor message from a plain string.
-func (srv *Server) NewMessagesFromBody(body string) ([]*Message, error) {
+func (srv *Server) NewMessagesFromBody(body string, recursion int) ([]*Message, error) {
 	var msgs []*Message
 
 	sentences, err := lexer.Split(body)
@@ -34,9 +38,8 @@ func (srv *Server) NewMessagesFromBody(body string) ([]*Message, error) {
 		return nil, err
 	}
 
-	// TODO: make that recursive.
 	for i := 0; i < 3; i++ {
-		sentences, err = srv.Aliases.ExpandSentences(sentences, 0)
+		sentences, err = srv.Aliases.ExpandSentences(sentences, recursion)
 		if err != nil {
 			return nil, err
 		}
@@ -49,6 +52,7 @@ func (srv *Server) NewMessagesFromBody(body string) ([]*Message, error) {
 
 		msg := NewMessage()
 
+		msg.Recursion = recursion
 		msg.Body = strings.Join(words, " ")
 		msg.Command = words[0]
 
@@ -90,7 +94,7 @@ func (srv *Server) NewMessagesFromEvent(e *irc.Event) []*Message {
 		return nil
 	}
 
-	msgs, err := srv.NewMessagesFromBody(body)
+	msgs, err := srv.NewMessagesFromBody(body, 0)
 	if err != nil {
 		srv.IRCPrivMsg(target, "lexer/expand error: "+err.Error())
 		return nil

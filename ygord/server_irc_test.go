@@ -4,6 +4,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/thoj/go-ircevent"
 	"testing"
 	"time"
@@ -106,7 +107,10 @@ func TestServerIRCSeparateStatementsInNestedAlias(t *testing.T) {
 		Arguments: []string{"#test", "whygore: coffee"},
 	})
 
-	AssertIntEquals(t, len(msgs), 4)
+	if len(msgs) != 4 {
+		t.Error(fmt.Sprintf("wrong number of messages %d != 4", len(msgs)))
+		// return
+	}
 	AssertStringEquals(t, msgs[0].Body, "play freshpots.mp3")
 	AssertStringEquals(t, msgs[1].Body, "nop")
 	AssertStringEquals(t, msgs[2].Body, "image freshpots.gif")
@@ -132,3 +136,24 @@ func TestServerIRCMaxRecursionAlias(t *testing.T) {
 	AssertStringEquals(t, omsgs[0].Channel, "#test")
 	AssertStringEquals(t, omsgs[0].Body, "lexer/expand error: max recursion reached")
 }
+
+// func TestServerIRCMaxRecursionRandom(t *testing.T) {
+// 	now := time.Date(1982, 10, 20, 16, 0, 0, 0, time.UTC)
+// 	srv := CreateTestServerWithTwoMinions(t)
+// 	srv.Aliases.Add("coffee", "bean", "human", now)
+// 	srv.Aliases.Add("bean", "random coffee", "human", now)
+//
+// 	msgs := srv.NewMessagesFromEvent(&irc.Event{
+// 		Code:      "PRIVMSG",
+// 		Nick:      "foobar",
+// 		Arguments: []string{"#test", "whygore: coffee"},
+// 	})
+//
+// 	if len(msgs) != 1 {
+// 		t.Error(fmt.Sprintf("wrong number of messages %d != 1", len(msgs)))
+// 		return
+// 	}
+//
+// 	AssertStringEquals(t, msgs[0].Body, "random coffee")
+// 	AssertIntEquals(t, msgs[0].Recursion, 1)
+// }
