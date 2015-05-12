@@ -39,7 +39,7 @@ func (module VolumeModule) PrivMsgPlusPlus(srv *Server, msg *Message) {
 		srv.IRCPrivMsg(msg.ReplyTo, "usage: volume++")
 		return
 	}
-	srv.SendToChannelMinions(msg.ReplyTo, "volume 1db+")
+	srv.SendToChannelMinions(msg.ReplyTo, "volume 1dB+")
 }
 
 // PrivMsgMinusMinus is the message handler for user 'volume--' requests, it
@@ -49,7 +49,7 @@ func (module VolumeModule) PrivMsgMinusMinus(srv *Server, msg *Message) {
 		srv.IRCPrivMsg(msg.ReplyTo, "usage: volume--")
 		return
 	}
-	srv.SendToChannelMinions(msg.ReplyTo, "volume 1db-")
+	srv.SendToChannelMinions(msg.ReplyTo, "volume 1dB-")
 }
 
 // MinionMsg is the message handler for all the minion responses for 'volume'
