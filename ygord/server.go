@@ -4,7 +4,9 @@
 package main
 
 import (
+	"crypto/rand"
 	"errors"
+	"io"
 	"log"
 
 	"github.com/truveris/sqs"
@@ -14,10 +16,12 @@ import (
 type Server struct {
 	Aliases            *alias.File
 	Minions            *MinionsFile
+	ClientRegistry     map[string]*Client
 	InputQueue         chan *Message
 	OutputQueue        chan *OutputMessage
 	Modules            []Module
 	RegisteredCommands map[string]Command
+	Salt               []byte
 	*Config
 }
 
@@ -40,6 +44,14 @@ func CreateServer(config *Config) *Server {
 	srv.RegisteredCommands = make(map[string]Command)
 	srv.InputQueue = make(chan *Message, 128)
 	srv.OutputQueue = make(chan *OutputMessage, 128)
+
+	srv.ClientRegistry = make(map[string]*Client)
+
+	srv.Salt = make([]byte, 32)
+	_, err = io.ReadFull(rand.Reader, srv.Salt)
+	if err != nil {
+		log.Fatal("failed to generate startup salt")
+	}
 
 	return srv
 }
@@ -129,6 +141,12 @@ func (srv *Server) SendToChannelMinions(channel, msg string) {
 			Type:     OutMsgTypeMinion,
 			QueueURL: url,
 			Body:     sqs.SQSEncode(msg),
+		}
+	}
+
+	for _, client := range srv.GetClientsByChannel(channel) {
+		if client.IsAlive() {
+			client.Queue <- msg
 		}
 	}
 }

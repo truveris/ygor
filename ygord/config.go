@@ -55,6 +55,9 @@ type Config struct {
 	// the current directory by default.
 	AliasFilePath string
 
+	// Where to find the web files (static folder).
+	WebRoot string
+
 	// Where to find the minions file.
 	MinionsFilePath string
 
@@ -150,6 +153,13 @@ func ParseConfigFile(cmd *CmdLine) (*Config, error) {
 
 	if cfg.MinionsFilePath == "" {
 		cfg.MinionsFilePath = "minions.cfg"
+	}
+
+	// If a web server is started, make sure we configure a web root.
+	if cfg.HTTPServerAddress != "" {
+		if cfg.WebRoot == "" {
+			return cfg, errors.New("'WebRoot' is not defined")
+		}
 	}
 
 	return cfg, nil

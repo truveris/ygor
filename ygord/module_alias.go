@@ -240,7 +240,8 @@ func (module *AliasModule) RandomPrivMsg(srv *Server, msg *Message) {
 			log.Printf("failed to convert PRIVMSG")
 			return
 		}
-		srv.InputQueue <- newmsg
+		srv.IRCMessageHandler(newmsg)
+		// srv.InputQueue <- newmsg
 	}
 }
 

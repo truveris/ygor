@@ -10,150 +10,12 @@ package main
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
-	"regexp"
 	"strings"
 )
-
-type AliasesTXTHandler struct {
-	*Server
-}
-
-func (handler *AliasesTXTHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	_, err := auth(r)
-	if err != nil {
-		log.Printf("Authentication failed: %s", err.Error())
-		errorHandler(w, "Authentication failed")
-		return
-	}
-
-	aliases, err := handler.Server.Aliases.All()
-	if err != nil {
-		http.Error(w, "error: "+err.Error(), 500)
-		return
-	}
-
-	w.Header().Set("Content-Type", "text/plain")
-	for _, alias := range aliases {
-		fmt.Fprintf(w, "%s\t%s\n", alias.Name, alias.Value)
-	}
-}
-
-type AliasesHTMLHandler struct {
-	*Server
-}
-
-func (handler *AliasesHTMLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	user, err := auth(r)
-	if err != nil {
-		log.Printf("Authentication failed: %s", err.Error())
-		errorHandler(w, "Authentication failed")
-		return
-	}
-
-	aliases, err := handler.Server.Aliases.All()
-	if err != nil {
-		http.Error(w, "error: "+err.Error(), 500)
-		return
-	}
-
-	fmt.Fprintf(w, `
-	<html>
-		<head>
-			<title>ygor - aliases</title>
-			<style type="text/css">
-				body { font-family: monospace; }
-				th { text-align: left; }
-				th, td { padding: 2px 8px; }
-			</style>
-		</head>
-		<body>
-			<h1>%s@ygor/aliases</h1>
-			<table>
-				<thead>
-					<tr>
-						<th>Name</th>
-						<th>Value</th>
-					</tr>
-				</thead>
-				<tbody>
-	`, user)
-
-	re := regexp.MustCompile("(https?://(?:(?:[:&=+$,a-zA-Z0-9_-]+@)?[a-zA-Z0-9.-]+(?::[0-9])?)(?:/[,:!+=~%/.a-zA-Z0-9_()-]*)?\\??(?:[,:!+=&%@.a-zA-Z0-9_()-]*))")
-
-	for _, alias := range aliases {
-
-		value := re.ReplaceAll([]byte(alias.Value), []byte("<a href='$1'>$1</a>"))
-
-		fmt.Fprintf(w, `
-		<tr>
-			<td>%s</td>
-			<td>%s</td>
-		</tr>`, alias.Name, value)
-	}
-
-	fmt.Fprintf(w, `
-		</body>
-	</html>
-	`)
-}
-
-type MinionsHTMLHandler struct {
-	*Server
-}
-
-func (handler *MinionsHTMLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	user, err := auth(r)
-	if err != nil {
-		log.Printf("Authentication failed: %s", err.Error())
-		errorHandler(w, "Authentication failed")
-		return
-	}
-
-	minions, err := handler.Server.Minions.All()
-	if err != nil {
-		http.Error(w, "error: "+err.Error(), 500)
-		return
-	}
-
-	fmt.Fprintf(w, `
-	<html>
-		<head>
-			<title>ygor - minions</title>
-			<style type="text/css">
-				body { font-family: monospace; }
-				th { text-align: left; }
-				th, td { padding: 2px 8px; }
-			</style>
-		</head>
-		<body>
-			<h1>%s@ygor/minions</h1>
-			<table>
-				<thead>
-					<tr>
-						<th>Name</th>
-						<th>Last registration</th>
-					</tr>
-				</thead>
-				<tbody>
-	`, user)
-
-	for _, minion := range minions {
-		fmt.Fprintf(w, `
-		<tr>
-			<td>%s</td>
-			<td>%s</td>
-		</tr>`, minion.Name, minion.LastSeen)
-	}
-
-	fmt.Fprintf(w, `
-		</body>
-	</html>
-	`)
-}
 
 // Given a Basic Authorization header value, return the user and password.
 func parseBasicAuth(value string) (string, string, error) {
@@ -194,55 +56,42 @@ func auth(r *http.Request) (string, error) {
 	return user, nil
 }
 
-func errorHandler(w http.ResponseWriter, msg string) {
-	fmt.Fprintf(w, `
-	<html>
-	<head><title>ygor: Error</title></head>
-	<body>
-		<h1>Error: %s</h1>
-	</body>
-	</html>
-	`, msg)
-}
-
-func homeHandler(w http.ResponseWriter, r *http.Request) {
-	user, err := auth(r)
+func errorHandler(w http.ResponseWriter, msg string, err error) {
 	if err != nil {
-		log.Printf("Authentication failed: %s", err.Error())
-		errorHandler(w, "Authentication failed")
-		return
+		log.Printf("%s: %s", msg, err.Error())
+	} else {
+		log.Printf("%s", msg)
 	}
 
-	fmt.Fprintf(w, `
-	<html>
-	<head>
-		<title>ygor</title>
-		<style type="text/css">
-			body { font-family: monospace; }
-			th { text-align: left; }
-			th, td { padding: 2px 8px; }
-		</style>
-	</head>
-	<body>
-		<h1>%s@ygor</h1>
-		<ul>
-			<li><a href="/aliases">aliases</a>
-			<li><a href="/minions">minions</a>
-		</ul>
-	</body>
-	</html>
-	`, user)
+	w.Header().Set("Content-Type", "text/html")
+
+	http.Error(w, msg, 500)
+}
+
+func JSONHandler(w http.ResponseWriter, obj interface{}) {
+	encoder := json.NewEncoder(w)
+	err := encoder.Encode(obj)
+	if err != nil {
+		errorHandler(w, "failed to encode response JSON", err)
+		return
+	}
 }
 
 // HTTPServer starts an HTTP server at the given address.  This is started as a
 // go routine by StartHTTPAdapter.
 func HTTPServer(srv *Server, address string) {
 	log.Printf("starting http server on %s", address)
-	http.HandleFunc("/", homeHandler)
-	http.Handle("/aliases.txt", &AliasesTXTHandler{srv})
-	http.Handle("/aliases", &AliasesHTMLHandler{srv})
-	http.Handle("/minions", &MinionsHTMLHandler{srv})
-	http.ListenAndServe(address, nil)
+
+	http.Handle("/", http.FileServer(http.Dir(srv.Config.WebRoot)))
+	http.Handle("/alias/list", &AliasListHandler{srv})
+	http.Handle("/channel/list", &ChannelListHandler{srv})
+	http.Handle("/channel/register", &ChannelRegisterHandler{srv})
+	http.Handle("/channel/poll", &ChannelPollHandler{srv})
+
+	err := http.ListenAndServe(address, nil)
+	if err != nil {
+		log.Fatal("unable to listen for http server", err)
+	}
 }
 
 // StartHTTPAdapter starts an HTTP server routine if an address is configured.

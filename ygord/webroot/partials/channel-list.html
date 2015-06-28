@@ -1,0 +1,15 @@
+<div class="row">
+    <div class="nine columns">
+        <h4>ygor &middot; channel list</h4>
+    </div>
+    <div class="three columns">
+        <label for="search-query">Search</label>
+        <input class="u-full-width" placeholder="dev" id="search-query" type="text" ng-model="query">
+    </div>
+</div>
+
+<div>
+    <span ng-repeat="channel in channels | filter:query | orderBy:orderProp">
+        <a class="button" href="#/channel/{{channel.Id}}">{{channel.Name}}</a>
+    </span>
+</div>

@@ -1,0 +1,39 @@
+<div class="row">
+    <div class="three columns">
+        <h4>ygor &middot; alias list</h4>
+    </div>
+    <div class="three columns">&nbsp;</div>
+    <div class="three columns">
+        <label for="search-query">Search</label>
+        <input class="u-full-width" placeholder="cat" id="search-query" type="text" ng-model="query">
+    </div>
+    <div class="three columns">
+        <label for="order-prop">Sort by</label>
+        <select class="u-full-width" id="order-prop" ng-model="orderProp">
+            <option value="Name">Name</option>
+            <option value="Author">Author</option>
+            <option value="CreationTime">CreationTime</option>
+        </select>
+    </div>
+</div>
+
+<div>
+    <table class="u-full-width">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Value</th>
+                <th>Author</th>
+                <th>CreationTime</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr ng-repeat="alias in aliases | filter:query | orderBy:orderProp">
+                <td>{{alias.Name}}</td>
+                <td ng-bind-html="alias.Value | linky"></td>
+                <td>{{alias.Author}}</td>
+                <td>{{alias.CreationTime}}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
