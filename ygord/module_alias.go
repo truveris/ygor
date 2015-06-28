@@ -241,7 +241,6 @@ func (module *AliasModule) RandomPrivMsg(srv *Server, msg *Message) {
 			return
 		}
 		srv.IRCMessageHandler(newmsg)
-		// srv.InputQueue <- newmsg
 	}
 }
 

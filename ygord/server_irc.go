@@ -112,7 +112,6 @@ func (srv *Server) NewMessagesFromEvent(e *irc.Event) []*Message {
 // IRCMessageHandler loops through the command registry to find a matching
 // command and executes it.
 func (srv *Server) IRCMessageHandler(msg *Message) {
-	log.Printf("IRCMessageHandler %s", msg)
 	for _, cmd := range srv.RegisteredCommands {
 		if !cmd.IRCMessageMatches(srv, msg) {
 			continue
