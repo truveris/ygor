@@ -147,6 +147,8 @@ func (srv *Server) SendToChannelMinions(channel, msg string) {
 	for _, client := range srv.GetClientsByChannel(channel) {
 		if client.IsAlive() {
 			client.Queue <- msg
+		} else {
+			srv.PurgeClient(client)
 		}
 	}
 }

@@ -21,7 +21,7 @@ ygorMinionControllers.controller("ChannelController", [
     "$scope", "$http", "$routeParams",
     function($scope, $http, $routeParams) {
         $scope.channelID = $routeParams.channelID;
-        $scope.queueID = null;
+        $scope.clientID = null;
         $scope.playlist = [];
         $scope.player = new Audio();
         $scope.playing = false;
@@ -44,9 +44,14 @@ ygorMinionControllers.controller("ChannelController", [
 
         $scope.playNext = function() {
             if ($scope.playlist.length > 0) {
+                var item = $scope.playlist.shift()
+                console.log("playNext", item);
                 $scope.playing = true;
-                $scope.player.src = $scope.playlist.shift();
+                $scope.player.src = item.URL;
                 $scope.player.play();
+                if (item.Duration !== null) {
+                    setTimeout(function() { $scope.skip(); }, duration);
+                }
             } else {
                 $scope.playing = false;
             }
@@ -85,7 +90,7 @@ ygorMinionControllers.controller("ChannelController", [
                 command.name = tokens[0];
                 tokens.shift();
             }
-            command.args = tokens.join(" ");
+            command.args = tokens
 
             return command;
         }
@@ -107,12 +112,18 @@ ygorMinionControllers.controller("ChannelController", [
             }
 
             if (command.name == "xombrero open") {
-                $scope.content.html($("<iframe>").attr("src", command.args));
+                var url = command.args[0].replace(/http:/, "https:");
+                $scope.content.html($("<iframe>").attr("src", url));
                 return;
             }
 
             if (command.name == "play") {
-                $scope.playlist.push(command.args);
+                var url = command.args[0].replace(/http:/, "https:");
+                var duration = null;
+                if (command.args.length > 1) {
+                    duration = parseFloat(command.args[1]);
+                }
+                $scope.playlist.push({"URL": url, "Duration": duration});
                 if (!$scope.playing) {
                     $scope.playNext()
                 }
@@ -124,10 +135,10 @@ ygorMinionControllers.controller("ChannelController", [
          * feeds the internal playlist used by the command() function.
          */
         $scope.pollQueue = function() {
-            if (!$scope.queueID)
+            if (!$scope.clientID)
                 return;
 
-            $http.post("/channel/poll", {"QueueID": $scope.queueID})
+            $http.post("/channel/poll", {"ClientID": $scope.clientID})
                 .success(function(data) {
                     switch (data.Status) {
                         case "empty":
@@ -141,7 +152,7 @@ ygorMinionControllers.controller("ChannelController", [
                             };
                             $scope.pollQueue();
                             break;
-                        case "queue-not-found":
+                        case "unknown-client":
                         default:
                             $scope.playlist = [];
                             $scope.showModal("disconnected");
@@ -154,7 +165,7 @@ ygorMinionControllers.controller("ChannelController", [
         }
 
         $scope.$on('$destroy', function() {
-            $scope.queueID = null;
+            $scope.clientID = null;
             $scope.player = null;
             $scope.content = null;
         });
@@ -164,7 +175,7 @@ ygorMinionControllers.controller("ChannelController", [
 
             $http.post("/channel/register", {"ChannelID": $scope.channelID})
                 .success(function(data) {
-                    $scope.queueID = data.QueueID;
+                    $scope.clientID = data.ClientID;
                     $scope.showModal("waiting");
                     $scope.pollQueue();
                 })

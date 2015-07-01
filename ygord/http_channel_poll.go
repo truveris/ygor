@@ -14,7 +14,7 @@ type ChannelPollHandler struct {
 }
 
 type ChannelPollRequest struct {
-	QueueID string
+	ClientID string
 }
 
 type ChannelPollResponse struct {
@@ -37,9 +37,9 @@ func (handler *ChannelPollHandler) ServeHTTP(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	client := handler.Server.GetClientFromQueueID(input.QueueID)
+	client := handler.Server.GetClientFromID(input.ClientID)
 	if client == nil {
-		JSONHandler(w, ChannelPollResponse{Status: "not-found"})
+		JSONHandler(w, ChannelPollResponse{Status: "unknown-client"})
 		return
 	}
 

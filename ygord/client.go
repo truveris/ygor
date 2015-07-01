@@ -22,7 +22,7 @@ const (
 type Client struct {
 	Username string
 	Channel  string
-	QueueID  string
+	ID       string
 	Queue    chan string
 	LastSeen time.Time
 }
@@ -44,28 +44,28 @@ func (c *Client) KeepAlive() {
 	c.LastSeen = time.Now()
 }
 
-// RegisterClient generates a new QueueID for this client, using the server
-// salt and the current time baked into a SHA512 in an attempt to make this
-// identified hard to predict.
+// RegisterClient generates a new ID for this client, using the server salt and
+// the current time baked into a SHA512 in an attempt to make this identified
+// hard to predict.
 func (srv *Server) RegisterClient(username, channel string) string {
 	hash := sha512.New()
 	hash.Write([]byte(fmt.Sprintf("%s%s%d", username, channel, time.Now().UnixNano())))
 	hash.Write(srv.Salt)
 
-	queueID := fmt.Sprintf("%x", hash.Sum(nil))
+	ID := fmt.Sprintf("%x", hash.Sum(nil))
 
-	srv.ClientRegistry[queueID] = &Client{
+	srv.ClientRegistry[ID] = &Client{
 		Username: username,
 		Channel:  channel,
-		QueueID:  queueID,
+		ID:       ID,
 		Queue:    make(chan string, MaxQueueLength),
 		LastSeen: time.Now(),
 	}
-	return queueID
+	return ID
 }
 
-func (srv *Server) GetClientFromQueueID(queueID string) *Client {
-	client, ok := srv.ClientRegistry[queueID]
+func (srv *Server) GetClientFromID(ID string) *Client {
+	client, ok := srv.ClientRegistry[ID]
 	if !ok {
 		return nil
 	}
@@ -83,4 +83,7 @@ func (srv *Server) GetClientsByChannel(channel string) []*Client {
 	}
 
 	return clients
+}
+
+func (srv *Server) PurgeClient(client *Client) {
 }

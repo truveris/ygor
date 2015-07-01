@@ -18,7 +18,7 @@ type ChannelRegisterRequest struct {
 }
 
 type ChannelRegisterResponse struct {
-	QueueID string
+	ClientID string
 }
 
 func (handler *ChannelRegisterHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -36,7 +36,7 @@ func (handler *ChannelRegisterHandler) ServeHTTP(w http.ResponseWriter, r *http.
 		return
 	}
 
-	queueID := handler.Server.RegisterClient(username, "#"+input.ChannelID)
+	clientID := handler.Server.RegisterClient(username, "#"+input.ChannelID)
 
 	w.Header().Set("Content-Type", "application/json")
 
@@ -44,5 +44,5 @@ func (handler *ChannelRegisterHandler) ServeHTTP(w http.ResponseWriter, r *http.
 	case <-time.After(time.Second * 2):
 	}
 
-	JSONHandler(w, ChannelRegisterResponse{QueueID: queueID})
+	JSONHandler(w, ChannelRegisterResponse{ClientID: clientID})
 }
