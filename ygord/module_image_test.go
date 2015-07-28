@@ -36,7 +36,7 @@ func TestModuleImage_Normal(t *testing.T) {
 	msgs := srv.FlushOutputQueue()
 	AssertIntEquals(t, len(msgs), 2)
 	AssertStringEquals(t, msgs[0].QueueURL, "http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1")
-	AssertStringEquals(t, msgs[0].Body, "xombrero open http://truveris.github.io/fullscreen-image/?http://example.com/image.jpg")
+	AssertStringEquals(t, msgs[0].Body, "xombrero open https://truveris.github.io/fullscreen-image/?http://example.com/image.jpg")
 	AssertStringEquals(t, msgs[1].QueueURL, "http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2")
-	AssertStringEquals(t, msgs[1].Body, "xombrero open http://truveris.github.io/fullscreen-image/?http://example.com/image.jpg")
+	AssertStringEquals(t, msgs[1].Body, "xombrero open https://truveris.github.io/fullscreen-image/?http://example.com/image.jpg")
 }

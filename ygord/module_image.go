@@ -16,7 +16,7 @@ func (module *ImageModule) PrivMsg(srv *Server, msg *Message) {
 	}
 
 	srv.SendToChannelMinions(msg.ReplyTo,
-		"xombrero open http://truveris.github.io/fullscreen-image/?"+msg.Args[0])
+		"xombrero open https://truveris.github.io/fullscreen-image/?"+msg.Args[0])
 }
 
 // Init registers all the commands for this module.
