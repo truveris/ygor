@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"path"
 	"strings"
 	"time"
 
@@ -126,63 +125,40 @@ func omxplayer(filepath string) *exec.Cmd {
 func player(tune Noise) *exec.Cmd {
 	var filepath string
 
-	if pathIsHTTP(tune.Path) {
-
-		// Check if we have a local copy.
-		filepath = "tunes/" + cachedFilename(tune.Path)
-		file, err := os.Open(filepath)
-		if err != nil {
-			// No cache available, check content size.
-			size, err := getRemoteSize(tune.Path)
-			if err != nil {
-				log.Printf("play: unable to read HTTP length: %s",
-					err.Error())
-				return nil
-			}
-			log.Printf("play: http content size is %d", size)
-
-			// Too big for local copy, let's stream.
-			if size > maxCacheableSize {
-				log.Printf("play: content is too large for caching")
-				filepath = tune.Path
-			} else {
-				log.Printf("play: attempting to cache file...")
-				err = downloadFile(tune.Path, filepath)
-				if err != nil {
-					Send("play caching error")
-					log.Printf("play: download error:"+
-						" %s, reverting to streaming", err.Error())
-					filepath = tune.Path
-				}
-			}
-		}
-		file.Close()
-	} else {
-		// This path dance should avoid abuses.
-		folder, filename := path.Split(tune.Path)
-		if folder == "" {
-			Send("play error path should contain a folder")
-			return nil
-		}
-		filepath = path.Join(path.Base(folder), filename)
-		if _, err := os.Stat(filepath); err != nil {
-			Send("play error file not found: " + filepath)
-			return nil
-		}
-	}
-
-	log.Printf("play: %s", filepath)
-
-	// FIXME find a way to implement duration...
+	// Videos are stored locally until we have a youtube mirroring service.
 	if strings.HasPrefix(filepath, "video") {
 		return omxplayer(filepath)
 	}
 
-	if tune.Duration != 0 {
-		mplayerPlayAndWaitWithDuration(filepath, tune.Duration)
+	// Everything outside of videos should be accessible via a URL and is
+	// cached locally prior to being played.  This is mostly because
+	// mplayer is not able to play from https.
+	if !pathIsHTTP(tune.Path) {
+		Send("play error invalid URL")
 		return nil
 	}
 
-	mplayerPlayAndWait(filepath)
+	// Check if we have a local copy, if not make one.
+	filepath = "tunes/" + cachedFilename(tune.Path)
+	file, err := os.Open(filepath)
+	if err != nil {
+		log.Printf("play: downloading file to local cache")
+		err = downloadFile(tune.Path, filepath)
+		if err != nil {
+			Send("play caching error")
+			log.Printf("play: download error:"+
+				" %s, reverting to streaming", err.Error())
+			filepath = tune.Path
+		}
+	}
+	file.Close()
+
+	log.Printf("play: path=%s duration=%d", filepath, tune.Duration)
+	if tune.Duration != 0 {
+		mplayerPlayAndWaitWithDuration(filepath, tune.Duration)
+	} else {
+		mplayerPlayAndWait(filepath)
+	}
+
 	return nil
 }
