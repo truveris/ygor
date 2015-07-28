@@ -25,10 +25,6 @@ var (
 	reAddressed = regexp.MustCompile(`^\s*(\w+)[:,.]*\s*(.*)`)
 )
 
-const (
-	MaxRecursion = 4
-)
-
 // NewMessagesFromBody creates a new ygor message from a plain string.
 func (srv *Server) NewMessagesFromBody(body string, recursion int) ([]*Message, error) {
 	var msgs []*Message

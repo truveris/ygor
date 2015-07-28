@@ -28,7 +28,7 @@ var (
 const (
 	// MaxRecursionLevel defines the number or run allowed while resolving
 	// an alias.
-	MaxRecursion = 8
+	MaxRecursion = 16
 
 	// MaxAliasIncrements defines how far we should check for increments
 	// within the same namespace.  This is really just here to avoid abuse
