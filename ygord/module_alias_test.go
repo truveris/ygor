@@ -391,14 +391,13 @@ func TestModuleRandom(t *testing.T) {
 	})
 
 	omsgs := srv.FlushOutputQueue()
-	AssertIntEquals(t, len(omsgs), 1)
+	AssertIntEquals(t, len(omsgs), 2)
 	AssertStringEquals(t, omsgs[0].Channel, "#test")
 	AssertStringEquals(t, omsgs[0].Body, "chooses foo")
 
-	imsgs := srv.FlushInputQueue()
-	AssertIntEquals(t, len(imsgs), 1)
-	AssertStringEquals(t, imsgs[0].ReplyTo, "#test")
-	AssertStringEquals(t, imsgs[0].Body, "play foo.mp3")
+	// play is not found because unregistered.
+	AssertStringEquals(t, omsgs[1].Channel, "#test")
+	AssertStringEquals(t, omsgs[1].Body, "command not found: play")
 }
 
 func TestModuleRandomNotFound(t *testing.T) {

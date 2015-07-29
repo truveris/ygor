@@ -63,6 +63,10 @@ type Config struct {
 
 	// If defined, start a web server to list the aliases (e.g. :8989)
 	HTTPServerAddress string
+
+	// If defined, it enables the "say" command and converts sentences into
+	// streamable sound bites via a minion-accessible sayd.
+	SaydURL string
 }
 
 // GetAutoJoinChannels returns a list of all the auto-join channels (all unique

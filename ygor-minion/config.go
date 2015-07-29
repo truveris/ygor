@@ -41,10 +41,6 @@ type cfgDef struct {
 	// Points to the filepath of the xxxterm/xombrero socket.
 	XombreroSocket string
 
-	// If defined, all the say commands are rendered through this service
-	// instead of using the tools available.
-	SaydURL string
-
 	// This optional command for amixer is mostly provided for the test
 	// suite to override.
 	AMixerCommand string

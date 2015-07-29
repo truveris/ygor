@@ -210,8 +210,6 @@ func main() {
 		switch command {
 		case "play", "play-tune":
 			Play(data)
-		case "say":
-			Say(data)
 		case "xombrero":
 			Xombrero(data)
 		case "shutup":

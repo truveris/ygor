@@ -18,17 +18,10 @@ var (
 )
 
 // Noise defines a sound emitted by our minion. It could be a sound clip, a
-// video or a spoken sentence.
+// video.
 type Noise struct {
 	Path     string
 	Duration time.Duration
-	Voice    string
-	Sentence string
-}
-
-// SayArgs is the definition of the command-line parameters for the say command.
-type SayArgs struct {
-	Voice string `short:"v" description:"Voice for say" default:"bruce"`
 }
 
 func playTune(tune Noise) {
@@ -52,14 +45,10 @@ func playTune(tune Noise) {
 	RunningProcess = nil
 }
 
-// Iterate over the noise channel and pass the content to "say" or "play".
+// Iterate over the noise channel and pass the content to "play".
 func playNoise() {
 	for noise := range playlist {
-		if noise.Sentence != "" {
-			say(noise.Voice, noise.Sentence)
-		} else {
-			playTune(noise)
-		}
+		playTune(noise)
 	}
 }
 

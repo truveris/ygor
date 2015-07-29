@@ -4,6 +4,7 @@
 package main
 
 import (
+	"net/url"
 	"strings"
 
 	"github.com/jessevdk/go-flags"
@@ -28,7 +29,12 @@ func (module *SayModule) PrivMsg(srv *Server, msg *Message) {
 		return
 	}
 
-	body := "say -v " + cmd.Voice + " " + strings.Join(args, " ")
+	if srv.Config.SaydURL == "" {
+		srv.IRCPrivMsg(msg.ReplyTo, "error: SaydURL is not configured")
+		return
+	}
+
+	body := "play " + srv.Config.SaydURL + cmd.Voice + "?" + url.QueryEscape(strings.Join(args, " "))
 	srv.SendToChannelMinions(msg.ReplyTo, body)
 }
 
