@@ -45,7 +45,6 @@ ygorMinionControllers.controller("ChannelController", [
         $scope.playNext = function() {
             if ($scope.playlist.length > 0) {
                 var item = $scope.playlist.shift()
-                console.log("playNext", item);
                 $scope.playing = true;
                 $scope.player.src = item.URL;
                 $scope.player.play();
@@ -60,6 +59,10 @@ ygorMinionControllers.controller("ChannelController", [
         $scope.player.onended = function() {
             $scope.playNext();
         };
+
+        $scope.volume = function(percent) {
+            $scope.player.volume = parseInt(percent) / 100.0;
+        }
 
         $scope.stop = function() {
             $scope.player.pause();
@@ -108,6 +111,11 @@ ygorMinionControllers.controller("ChannelController", [
 
             if (command.name == "shutup") {
                 $scope.stop();
+                return;
+            }
+
+            if (command.name == "volume") {
+                $scope.volume(command.args[0]);
                 return;
             }
 
