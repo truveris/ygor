@@ -70,7 +70,7 @@ pullChan:
 		case msg := <-client.Queue:
 			response.Status = "command"
 			response.Commands = append(response.Commands, msg)
-		case <-time.After(time.Second * 5):
+		case <-time.After(time.Second * 20):
 			response.Status = "empty"
 		}
 	}
