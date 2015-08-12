@@ -48,7 +48,7 @@ ygorMinionControllers.controller("ChannelController", [
                 $scope.player.src = item.URL;
                 $scope.player.play();
                 if (item.Duration !== null) {
-                    setTimeout(function() { $scope.skip(); }, duration);
+                    setTimeout(function() { $scope.skip(); }, item.Duration);
                 }
             } else {
                 $scope.playing = false;
@@ -64,6 +64,14 @@ ygorMinionControllers.controller("ChannelController", [
         $scope.player.onerror = function() {
             $scope.playNext();
         };
+
+        $scope.increaseVolume = function() {
+            $scope.player.volume = $scope.player.volume + 0.05;
+        }
+
+        $scope.decreaseVolume = function() {
+            $scope.player.volume = $scope.player.volume - 0.05;
+        }
 
         $scope.volume = function(percent) {
             $scope.player.volume = parseInt(percent) / 100.0;
@@ -120,7 +128,14 @@ ygorMinionControllers.controller("ChannelController", [
             }
 
             if (command.name == "volume") {
-                $scope.volume(command.args[0]);
+                var level = command.args[0];
+                if (level == "1dB+") {
+                    $scope.increaseVolume();
+                } else if (level == "1dB-") {
+                    $scope.decreaseVolume();
+                } else {
+                    $scope.volume(level);
+                }
                 return;
             }
 
