@@ -27,7 +27,6 @@ ygorMinionControllers.controller("ChannelController", [
         $scope.playing = false;
         $scope.content = $("#ygor-content");
 
-
         $(".button-reconnect").click(function() {
             $scope.register();
         });
@@ -56,7 +55,13 @@ ygorMinionControllers.controller("ChannelController", [
             }
         }
 
+        /* The player ended, move on to the next tune. */
         $scope.player.onended = function() {
+            $scope.playNext();
+        };
+
+        /* An error occurred (404, 500, etc..), move on. */
+        $scope.player.onerror = function() {
             $scope.playNext();
         };
 
@@ -120,13 +125,15 @@ ygorMinionControllers.controller("ChannelController", [
             }
 
             if (command.name == "xombrero open") {
-                var url = command.args[0].replace(/http:/, "https:");
+                // var url = command.args[0].replace(/http:/, "https:");
+                var url = command.args[0];
                 $scope.content.html($("<iframe>").attr("src", url));
                 return;
             }
 
             if (command.name == "play") {
-                var url = command.args[0].replace(/http:/, "https:");
+                // var url = command.args[0].replace(/http:/, "https:");
+                var url = command.args[0];
                 var duration = null;
                 if (command.args.length > 1) {
                     duration = parseFloat(command.args[1]);
