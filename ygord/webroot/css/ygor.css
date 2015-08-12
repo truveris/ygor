@@ -1,4 +1,7 @@
 /* Overlay style */
+html {
+	font-size: 100%;
+}
 .overlay {
 	position: fixed;
 	width: 100%;
