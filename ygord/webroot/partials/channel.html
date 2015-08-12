@@ -5,16 +5,21 @@
         <div class="row" style="margin-top: 25%">
             <div class="three columns">&nbsp;</div>
             <div class="one-half column">
+                <!-- registration failed -->
                 <div class="modal-options" id="modal-failed-register" style="display: none">
                     <h1>Oops...</h1>
-                    <p>We failed to connect to the mothership.</p>
+                    <p>We failed to connect to the mothership. Trying to reconnect in <span>10</span>...</p>
                     <a class="button button-primary button-reconnect">try harder</a>
                 </div>
+
+                <!-- disconnected while polling -->
                 <div class="modal-options" id="modal-disconnected" style="display: none">
                     <h1>Oops...</h1>
-                    <p>We got disconnected from the server.</p>
-                    <a class="button button-primary button-reconnect">reconnect</a>
+                    <p>We got disconnected from the server.  Trying to reconnect in <span>10</span>...</p>
+                    <a class="button button-primary button-reconnect">reconnect now</a>
                 </div>
+
+                <!-- polling in progress -->
                 <div class="modal-options" id="modal-waiting" style="displayt: none">
                     <h1>Waiting for content</h1>
                     <p>
@@ -23,6 +28,8 @@
                         <img src="img/white-coffee.gif" />.
                     </p>
                 </div>
+
+                <!-- registering -->
                 <div class="modal-options" id="modal-connecting">
                     <h1>Connecting...</h1>
                     <p>Please wait while I reconnect you to the mothership...</p>

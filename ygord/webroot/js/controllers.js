@@ -160,6 +160,21 @@ ygorMinionControllers.controller("ChannelController", [
             }
         }
 
+        $scope.startReconnectCounter = function() {
+            $scope.reconnectCounter = 10;
+            $scope.reconnectInterval = setInterval(function() {
+                $scope.reconnectCounter--;
+                $(".modal-options span").text($scope.reconnectCounter);
+                if ($scope.reconnectCounter <= 0) {
+                    $scope.register();
+                }
+            }, 1000);
+        }
+
+        $scope.stopReconnectCounter = function() {
+            clearInterval($scope.reconnectInterval);
+        }
+
         /*
          * pollQueue runs for ever until it encounters a disconnection, it
          * feeds the internal playlist used by the command() function.
@@ -191,6 +206,7 @@ ygorMinionControllers.controller("ChannelController", [
                 })
                 .error(function() {
                     $scope.showModal("disconnected");
+                    $scope.startReconnectCounter();
                 });
         }
 
@@ -201,6 +217,7 @@ ygorMinionControllers.controller("ChannelController", [
         });
 
         $scope.register = function() {
+            $scope.stopReconnectCounter();
             $scope.showModal("connecting");
 
             $http.post("/channel/register", {"ChannelID": $scope.channelID})
@@ -211,6 +228,7 @@ ygorMinionControllers.controller("ChannelController", [
                 })
                 .error(function() {
                     $scope.showModal("failed-register");
+                    $scope.startReconnectCounter();
                 });
         }
 
