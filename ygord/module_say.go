@@ -34,7 +34,7 @@ func (module *SayModule) PrivMsg(srv *Server, msg *Message) {
 		return
 	}
 
-	body := "play " + srv.Config.SaydURL + cmd.Voice + "?" + url.QueryEscape(strings.Join(args, " "))
+	body := "play " + srv.Config.SaydURL + cmd.Voice + ".mp3?" + url.QueryEscape(strings.Join(args, " "))
 	srv.SendToChannelMinions(msg.ReplyTo, body)
 }
 
