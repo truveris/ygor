@@ -151,7 +151,7 @@ ygorMinionControllers.controller("ChannelController", [
                 var url = command.args[0];
                 var duration = null;
                 if (command.args.length > 1) {
-                    duration = parseFloat(command.args[1]);
+                    duration = parseFloat(command.args[1]) * 1000.0;
                 }
                 $scope.playlist.push({"URL": url, "Duration": duration});
                 if (!$scope.playing) {
