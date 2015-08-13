@@ -127,6 +127,11 @@ ygorMinionControllers.controller("ChannelController", [
                 return;
             }
 
+            if (command.name == "reboot") {
+                document.location.reload();
+                return;
+            }
+
             if (command.name == "volume") {
                 var level = command.args[0];
                 if (level == "1dB+") {
