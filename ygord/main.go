@@ -22,6 +22,7 @@ func main() {
 	srv.RegisterModule(&CommandsModule{})
 	srv.RegisterModule(&ImageModule{})
 	srv.RegisterModule(&VideoModule{})
+	srv.RegisterModule(&MediaModule{})
 	srv.RegisterModule(&RebootModule{})
 	srv.RegisterModule(&MinionsModule{})
 	srv.RegisterModule(&NopModule{})
