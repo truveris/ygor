@@ -42,6 +42,7 @@ func main() {
 	RegisterModule(&AliasModule{})
 	RegisterModule(&CommandsModule{})
 	RegisterModule(&ImageModule{})
+	RegisterModule(&VideoModule{})
 	RegisterModule(&RebootModule{})
 	RegisterModule(&MinionsModule{})
 	RegisterModule(&NopModule{})
