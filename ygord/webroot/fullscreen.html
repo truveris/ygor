@@ -19,7 +19,7 @@
                 object-fit: contain;
                 height: 100%;
                 width: 100%;
-                z-index: -100;
+                x-index: -100;
             }
         </style>
         <script type="text/javascript">
@@ -87,7 +87,7 @@
 
             function extractFileExtension(url) {
                 var extension;
-                var regExp = /.*\.([a-zA-Z]+)$/;
+                var regExp = /.*\.([a-zA-Z0-9]+)$/;
                 var match = url.match(regExp);
                 if (match) {
                     return match[1];
@@ -121,7 +121,7 @@
             }
 
             function adjustVideoVolume() {
-                document.querySelect("#videoPlayer").volume = volume / 100.0;
+                document.querySelector("#videoPlayer").volume = volume / 100.0;
             }
 
             // YouTube stuff
@@ -137,7 +137,7 @@
                 iframe.setAttribute("id", "player");
                 iframe.setAttribute("height", "100%");
                 iframe.setAttribute("width", "100%");
-                iframe.setAttribute("src", "https://www.youtube.com/embed/" + video_id + "?playlist=" + video_id +"&autoplay=1&controls=0&loop=1s&showinfo=0&enablejsapi=1&origin=http://truveris.com");
+                iframe.setAttribute("src", "https://www.youtube.com/embed/" + video_id + "?playlist=" + video_id +"&autoplay=1&controls=0&loop=1s&showinfo=0&enablejsapi=1&origin=https://truveris.com");
                 body.appendChild(iframe);
             }
 
