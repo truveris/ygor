@@ -117,6 +117,7 @@
                 video.setAttribute("src", url);
                 window.addEventListener("volumeChange", adjustVideoVolume);
                 body.appendChild(video);
+                adjustVideoVolume(volume);
                 return;
             }
 
@@ -155,7 +156,7 @@
                 * YouTube player has loaded, so set the player's volume level 
                 * to the global volume level
                 */
-                player.setVolume(volume);
+                adjustYouTubeVolume(volume);
                 // now that the player is loaded, its volume can be adjusted
                 window.addEventListener("volumeChange", adjustYouTubeVolume);
             }
