@@ -14,17 +14,16 @@
                 margin: 0;
             }
 
-            #media {
+            .media {
                 position: fixed;
                 object-fit: contain;
                 height: 100%;
                 width: 100%;
-                z-index: -100;
             }
         </style>
         <script type="text/javascript">
             // valid file extensions
-            image_file_exts = [
+            var image_file_exts = [
                 "jpg",
                 "jpeg",
                 "jpe",
@@ -37,24 +36,27 @@
                 "dib",
                 "gif",
             ];
-            video_file_exts = [
+            var video_file_exts = [
                 "gifv",
                 "webm",
                 "mp4",
             ];
 
             // notable domains to check for
-            imgur_domains = [
+            var imgur_domains = [
                 "i.imgur.com",
                 "www.imgur.com",
                 "imgur.com",
             ];
-            youtube_domains = [
+            var youtube_domains = [
                 "www.youtube.com",
                 "www.youtu.be",
                 "youtube.com",
-                "youtu.be"
+                "youtu.be",
             ];
+
+            var volume = 0;
+            var volumeChangeEvent = new Event("volumeChange");
 
             function extractDomain(url) {
                 var domain;
@@ -71,16 +73,10 @@
                 return domain;
             }
 
-            function spawnYouTubePlayer(url) {
-                video_id = extractYouTubeVideoID(url);
-            }
-
             function extractYouTubeVideoID(url) {
                 var video_id;
                 var regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
                 var match = url.match(regExp);
-                console.log(match);
-                console.log(match[2]);
                 if (match && match[2].length == 11) {
                     return match[2];
                 } else {
@@ -92,8 +88,6 @@
                 var extension;
                 var regExp = /.*\.([a-zA-Z]+)$/;
                 var match = url.match(regExp);
-                console.log(match);
-                console.log(match[1]);
                 if (match) {
                     return match[1];
                 } else {
@@ -104,36 +98,79 @@
             function spawnImgElement(url) {
                 var body = document.getElementsByTagName("body")[0]
                 var img = document.createElement("IMG");
-                img.setAttribute("id", "media");
+                img.setAttribute("class", "media");
                 img.setAttribute("src", url);
                 body.appendChild(img);
                 return;
             }
 
+            // video stuff
             function spawnVideoElement(url) {
                 var body = document.getElementsByTagName("body")[0]
                 var video = document.createElement("VIDEO");
-                video.setAttribute("id", "media");
+                video.setAttribute("class", "media");
+                video.setAttribute("id", "videoPlayer");
                 video.setAttribute("loop", "loop");
                 video.setAttribute("preload", "auto");
                 video.setAttribute("autoplay", "autoplay");
                 video.setAttribute("src", url);
+                window.addEventListener("volumeChange", adjustVideoVolume);
                 body.appendChild(video);
                 return;
             }
 
+            function adjustVideoVolume() {
+                document.querySelect("#videoPlayer").volume = volume / 100.0;
+            }
+
+            // YouTube stuff
             function spawnYouTubePlayer(url) {
-                var body = document.getElementsByTagName("body")[0]
-                video_id = extractYouTubeVideoID(url);
+                var video_id = extractYouTubeVideoID(url);
+                var body = document.getElementsByTagName("body")[0];
+                var tag = document.createElement('script');
+                tag.src = "https://www.youtube.com/iframe_api";
+                var firstScriptTag = document.getElementsByTagName('script')[0];
+                firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
                 var iframe = document.createElement("IFRAME");
-                iframe.setAttribute("id", "media");
+                iframe.setAttribute("class", "media");
+                iframe.setAttribute("id", "player");
                 iframe.setAttribute("height", "100%");
                 iframe.setAttribute("width", "100%");
-                iframe.setAttribute("src", "http://www.youtube.com/embed/" + video_id + "?playlist=" + video_id +"&autoplay=1&controls=0&autohide=1&loop=1&showinfo=0");
+                iframe.setAttribute("src", "http://www.youtube.com/embed/" + video_id + "?playlist=" + video_id +"&autoplay=1&controls=0&loop=1s&showinfo=0&enablejsapi=1&origin=http://truveris.com");
                 body.appendChild(iframe);
             }
 
+            var player;
+            function onYouTubeIframeAPIReady() {
+                player = new YT.Player('player', {
+                    events: {
+                        'onReady': onPlayerReady,
+                    }
+                });
+            }
+
+            function onPlayerReady(event) {
+                /*
+                * YouTube player has loaded, so set the player's volume level 
+                * to the global volume level
+                */
+                player.setVolume(volume);
+                // now that the player is loaded, its volume can be adjusted
+                window.addEventListener("volumeChange", adjustYouTubeVolume);
+            }
+
+            function adjustYouTubeVolume() {
+                player.setVolume(volume);
+            }
+
+            function setVolume(newVolume) {
+                volume = newVolume;
+                window.dispatchEvent(volumeChangeEvent);
+            }
+
             window.onload=function(){
+                // set the volume variable to parent window's volume variable
+                volume = parent.volume * 100;
                 // grab the media's URL
                 var query = window.location.search;
                 if (query == null){

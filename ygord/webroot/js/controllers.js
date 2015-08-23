@@ -1,20 +1,20 @@
 var ygorMinionControllers = angular.module('ygorMinionControllers', []);
 
 ygorMinionControllers.controller("ChannelListController", ["$scope", "$http",
-	function($scope, $http) {
-		$http.get('/channel/list').success(function(data) {
-			$scope.channels = data.Channels;
-		});
-	}
+    function($scope, $http) {
+        $http.get('/channel/list').success(function(data) {
+            $scope.channels = data.Channels;
+        });
+    }
 ]);
 
 ygorMinionControllers.controller("AliasListController", ["$scope", "$http",
-	function($scope, $http) {
-		$http.get('/alias/list').success(function(data) {
-			$scope.aliases = data.Aliases;
-		});
+    function($scope, $http) {
+        $http.get('/alias/list').success(function(data) {
+            $scope.aliases = data.Aliases;
+        });
         $scope.orderProp = "Name";
-	}
+    }
 ]);
 
 ygorMinionControllers.controller("ChannelController", [
@@ -26,6 +26,9 @@ ygorMinionControllers.controller("ChannelController", [
         $scope.player = new Audio();
         $scope.playing = false;
         $scope.content = $("#ygor-content");
+        var increment = 0.05;
+        // set global volume variable for easy access by embedded iframes
+        window.volume = $scope.player.volume;
 
         $(".button-reconnect").click(function() {
             $scope.register();
@@ -66,11 +69,11 @@ ygorMinionControllers.controller("ChannelController", [
         };
 
         $scope.increaseVolume = function() {
-            $scope.player.volume = $scope.player.volume + 0.05;
+            $scope.player.volume = Math.min(1, ($scope.player.volume + increment));
         }
 
         $scope.decreaseVolume = function() {
-            $scope.player.volume = $scope.player.volume - 0.05;
+            $scope.player.volume = Math.max(0, ($scope.player.volume - increment));
         }
 
         $scope.volume = function(percent) {
@@ -140,6 +143,19 @@ ygorMinionControllers.controller("ChannelController", [
                     $scope.decreaseVolume();
                 } else {
                     $scope.volume(level);
+                }
+                // set global volume variable for easy access by embedded iframes
+                window.volume = $scope.player.volume;
+                /*
+                * if there is an iframe present in #ygor-content that links to 
+                * /fullscreen.html send a setVolume command to it, so the
+                * a/v players set the right volume
+                */
+                if (document.querySelector("#ygor-content iframe")) {
+                    i = document.querySelector("#ygor-content iframe");
+                    if (i.getAttribute("src").slice(0,16) == "/fullscreen.html") {
+                        i.contentWindow.setVolume($scope.player.volume * 100);
+                    }
                 }
                 return;
             }
