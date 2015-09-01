@@ -54,7 +54,7 @@ HTMLVideoElement.prototype.spawn = function(mediaObj) {
         this.volume = volumeLevel / 100.0;
     };
     this.timeUpdated = function() {
-        if (this.currentTime > this.endTime && this.duration != "Inf"){
+        if (this.currentTime >= this.endTime && this.duration != "Inf"){
             if (this.mediaObj.loop){
                 this.currentTime = this.startTime;
                 this.play();
@@ -453,6 +453,7 @@ function onError(event) {
             break;
     }
     submessage = submessage || "";
+    // remove all traces of the player
     var divId = event.target.getIframe().getAttribute("id");
     playerArr.remove(event.target);
     videoArr.remove(event.target);
@@ -482,13 +483,14 @@ function playerEnded(srcTrack) {
 function playerErrored(srcTrack, submessage) {
     submessage = submessage || "";
     sendMessage(srcTrack, "ERRORED", submessage);
+    playerEnded(srcTrack);
     return;
 }
 
-function sendMessage(srcTrack, message, submessage) {
+function sendMessage(srcTrack, state, submessage) {
     message = {
         source: srcTrack,
-        playerState: message,
+        playerState: state,
         submessage: submessage,
     }
     parent.postMessage(JSON.stringify(message), "*");
