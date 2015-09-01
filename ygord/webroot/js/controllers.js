@@ -1,31 +1,187 @@
 var ygorMinionControllers = angular.module('ygorMinionControllers', []);
 
 ygorMinionControllers.controller("ChannelListController", ["$scope", "$http",
-	function($scope, $http) {
-		$http.get('/channel/list').success(function(data) {
-			$scope.channels = data.Channels;
-		});
-	}
+    function($scope, $http) {
+        $http.get('/channel/list').success(function(data) {
+            $scope.channels = data.Channels;
+        });
+    }
 ]);
 
 ygorMinionControllers.controller("AliasListController", ["$scope", "$http",
-	function($scope, $http) {
-		$http.get('/alias/list').success(function(data) {
-			$scope.aliases = data.Aliases;
-		});
+    function($scope, $http) {
+        $http.get('/alias/list').success(function(data) {
+            $scope.aliases = data.Aliases;
+        });
         $scope.orderProp = "Name";
-	}
+    }
 ]);
 
 ygorMinionControllers.controller("ChannelController", [
     "$scope", "$http", "$routeParams",
     function($scope, $http, $routeParams) {
+        $(window).on("message", function(e) {
+            $scope.handleChildMessage(e.originalEvent);
+        });
         $scope.channelID = $routeParams.channelID;
         $scope.clientID = null;
-        $scope.playlist = [];
-        $scope.player = new Audio();
-        $scope.playing = false;
+        $scope.musicTrack = $("#ygor-content #music-track");
+        $scope.bgTrack = $("#ygor-content #bg-track");
+        $scope.queueTrack = $("#ygor-content #queue-track");
+        $scope.playTrack = $("#ygor-content #play-track");
+        $scope.musicTrack.playing = false;
+        $scope.queueTrack.playing = false;
+        $scope.musicTrack.playlist = [];
+        $scope.queueTrack.playlist = [];
         $scope.content = $("#ygor-content");
+        $scope.musicTrack.attr("hidden", "hidden");
+        $scope.queueTrack.attr("hidden", "hidden");
+        $scope.playTrack.attr("hidden", "hidden");
+        var increment = 0.05;
+        // set global volume variable for easy access by embedded iframes
+        window.volume = 1.0;
+
+        // musicTrack functions
+        $scope.musicTrack.hide = function() {
+            $scope.musicTrack.attr("hidden", "hidden");
+        }
+
+        $scope.musicTrack.show = function() {
+            $scope.musicTrack.removeAttr("hidden");
+        }
+
+        $scope.musicTrack.post = function(message) {
+            $scope.musicTrack[0].contentWindow.postMessage(JSON.stringify(message), "*");
+        }
+
+        $scope.musicTrack.setVolume = function(level) {
+            $scope.musicTrack[0].contentWindow.setVolume(level);
+        }
+
+        $scope.musicTrack.shutup = function() {
+            $scope.musicTrack[0].contentWindow.shutup();
+        }
+
+        $scope.musicTrack.skip = function() {
+            $scope.musicTrack.shutup();
+        }
+
+        $scope.musicTrack.stop = function() {
+            $scope.musicTrack.playlist = [];
+            $scope.musicTrack.shutup();
+        }
+
+        // bgTrack functions
+        $scope.bgTrack.post = function(message) {
+            $scope.bgTrack[0].contentWindow.postMessage(JSON.stringify(message), "*");
+        }
+
+        $scope.bgTrack.shutup = function() {
+            $scope.bgTrack[0].contentWindow.shutup();
+        }
+
+        $scope.bgTrack.skip = function() {
+            $scope.bgTrack.shutup();
+        }
+
+        $scope.bgTrack.stop = function() {
+            $scope.bgTrack.shutup();
+        }
+
+        // queueTrack functions
+        $scope.queueTrack.hide = function() {
+            $scope.queueTrack.attr("hidden", "hidden");
+        }
+
+        $scope.queueTrack.show = function() {
+            $scope.queueTrack.removeAttr("hidden");
+        }
+
+        $scope.queueTrack.post = function(message) {
+            $scope.queueTrack[0].contentWindow.postMessage(JSON.stringify(message), "*");
+        }
+
+        $scope.queueTrack.setVolume = function(level) {
+            $scope.queueTrack[0].contentWindow.setVolume(level);
+        }
+
+        $scope.queueTrack.shutup = function() {
+            $scope.queueTrack[0].contentWindow.shutup();
+        }
+
+        $scope.queueTrack.skip = function() {
+            $scope.queueTrack.shutup();
+        }
+
+        $scope.queueTrack.stop = function() {
+            $scope.queueTrack.playlist = [];
+            $scope.queueTrack.shutup();
+        }
+
+        // playTrack functions
+        $scope.playTrack.hide = function() {
+            $scope.playTrack.attr("hidden", "hidden");
+        }
+
+        $scope.playTrack.show = function() {
+            $scope.playTrack.removeAttr("hidden");
+        }
+
+        $scope.playTrack.post = function(message) {
+            $scope.playTrack[0].contentWindow.postMessage(JSON.stringify(message), "*");
+        }
+
+        $scope.playTrack.setVolume = function(level) {
+            $scope.playTrack[0].contentWindow.setVolume(level);
+        }
+
+        $scope.playTrack.shutup = function() {
+            $scope.playTrack[0].contentWindow.shutup();
+        }
+
+        $scope.playTrack.skip = function() {
+            $scope.playTrack.shutup();
+        }
+
+        $scope.playTrack.stop = function() {
+            $scope.playTrack.shutup();
+        }
+
+        // scope functions
+        $scope.setVolume = function(level) {
+            // set global volume variable for easy access by embedded iframes
+            window.volume = level;
+            //adjust track volumes
+            $scope.queueTrack.setVolume(level);
+            $scope.musicTrack.setVolume(level);
+            $scope.playTrack.setVolume(level);
+        }
+
+        $scope.stop = function() {
+            $scope.queueTrack.stop();
+            $scope.musicTrack.stop();
+            $scope.playTrack.stop();
+        }
+
+        $scope.skip = function() {
+            $scope.queueTrack.skip();
+            $scope.musicTrack.skip();
+        }
+
+        $scope.showError = function(srcTrack, submessage) {
+            submessage = submessage || "";
+            var popUp = document.createElement("div");
+            popUp.setAttribute("class", "errorPopUp");
+            var title = document.createElement("p");
+            title.setAttribute("class", "errorTitle");
+            title.innerHTML = srcTrack + " error";
+            popUp.appendChild(title);
+            var subtitle = document.createElement("p");
+            subtitle.setAttribute("class", "errorSubtitle");
+            subtitle.innerHTML = submessage;
+            popUp.appendChild(subtitle);
+            
+        }
 
         $(".button-reconnect").click(function() {
             $scope.register();
@@ -41,51 +197,85 @@ ygorMinionControllers.controller("ChannelController", [
             $("#modal").hide();
         }
 
-        $scope.playNext = function() {
-            if ($scope.playlist.length > 0) {
-                var item = $scope.playlist.shift()
-                $scope.playing = true;
-                $scope.player.src = item.URL;
-                $scope.player.play();
-                if (item.Duration !== null) {
-                    setTimeout(function() { $scope.skip(); }, item.Duration);
-                }
+        $scope.musicTrack.playNext = function() {
+            if ($scope.musicTrack.playlist.length > 0) {
+                var mediaObj = $scope.musicTrack.playlist.shift()
+                $scope.musicTrack.playing = true;
+                $scope.musicTrack.post(mediaObj);
             } else {
-                $scope.playing = false;
+                $scope.musicTrack.playing = false;
             }
         }
 
-        /* The player ended, move on to the next tune. */
-        $scope.player.onended = function() {
-            $scope.playNext();
-        };
-
-        /* An error occurred (404, 500, etc..), move on. */
-        $scope.player.onerror = function() {
-            $scope.playNext();
-        };
-
-        $scope.increaseVolume = function() {
-            $scope.player.volume = $scope.player.volume + 0.05;
+        $scope.queueTrack.playNext = function() {
+            if ($scope.queueTrack.playlist.length > 0) {
+                var mediaObj = $scope.queueTrack.playlist.shift()
+                $scope.queueTrack.playing = true;
+                $scope.queueTrack.post(mediaObj);
+            } else {
+                $scope.queueTrack.playing = false;
+            }
         }
 
-        $scope.decreaseVolume = function() {
-            $scope.player.volume = $scope.player.volume - 0.05;
-        }
-
-        $scope.volume = function(percent) {
-            $scope.player.volume = parseInt(percent) / 100.0;
-        }
-
-        $scope.stop = function() {
-            $scope.player.pause();
-            $scope.playlist = [];
-            $scope.playing = false;
-        }
-
-        $scope.skip = function() {
-            $scope.player.pause();
-            $scope.playNext();
+        $scope.handleChildMessage = function(event) {
+            if (event.origin !== "http://localhost:8181" &&
+                event.origin !== "https://truveris.com"){
+                return;
+            }
+            message = JSON.parse(event.data);
+            console.log(message)
+            switch (message.source){
+                case "queueTrack":
+                    switch (message.playerState) {
+                        case "PLAYING":
+                            $scope.queueTrack.show();
+                            break;
+                        case "ENDED":
+                            $scope.queueTrack.hide();
+                            $scope.queueTrack.playing = false;
+                            $scope.queueTrack.playNext();
+                            break;
+                        case "ERRORED":
+                            $scope.queueTrack.hide();
+                            $scope.queueTrack.shutup();
+                            $scope.queueTrack.playing = false;
+                            $scope.queueTrack.playNext();
+                            break;
+                    }
+                    break;
+                case "musicTrack":
+                    switch (message.playerState) {
+                        case "ENDED":
+                            $scope.musicTrack.playing = false;
+                            $scope.musicTrack.playNext();
+                            break;
+                        case "ERRORED":
+                            $scope.musicTrack.hide();
+                            $scope.musicTrack.shutup();
+                            $scope.musicTrack.playing = false;
+                            $scope.musicTrack.playNext();
+                            break;
+                    }
+                    break;
+                case "playTrack":
+                    switch (message.playerState) {
+                        case "PLAYING":
+                            $scope.playTrack.show()
+                            break;
+                        case "ENDED":
+                            $scope.playTrack.hide()
+                            break;
+                        case "ERRORED":
+                            break;
+                    }
+                    break;
+                case "bgTrack":
+                    switch (message.playerState) {
+                        case "ERRORED":
+                            break;
+                    }
+                    break;
+            }
         }
 
         /*
@@ -134,13 +324,16 @@ ygorMinionControllers.controller("ChannelController", [
 
             if (command.name == "volume") {
                 var level = command.args[0];
+                // volume level must be between 1.0 and 0.0
                 if (level == "1dB+") {
-                    $scope.increaseVolume();
+                    level = Math.min(1.0, volume + increment);
                 } else if (level == "1dB-") {
-                    $scope.decreaseVolume();
+                    level = Math.max(0.0, volume - increment);
                 } else {
-                    $scope.volume(level);
+                    level = parseInt(level) / 100.0;
+                    level = Math.max(0.0, Math.min(1.0, level));
                 }
+                $scope.setVolume(level);
                 return;
             }
 
@@ -151,17 +344,35 @@ ygorMinionControllers.controller("ChannelController", [
                 return;
             }
 
+            if (command.name == "queue") {
+                mediaObj = JSON.parse(command.args[0]);
+                $scope.queueTrack.playlist.push(mediaObj);
+                if (!$scope.queueTrack.playing) {
+                    $scope.queueTrack.playNext()
+                }
+                return;
+            }
+
+            if (command.name == "music") {
+                mediaObj = JSON.parse(command.args[0]);
+                $scope.musicTrack.playlist.push(mediaObj);
+                if (!$scope.musicTrack.playing) {
+                    $scope.musicTrack.playNext()
+                }
+                return;
+            }
+
+            if (command.name == "bg") {
+                mediaObj = JSON.parse(command.args[0]);
+                $scope.bgTrack.post(mediaObj);
+                return;
+            }
+
             if (command.name == "play") {
-                // var url = command.args[0].replace(/http:/, "https:");
-                var url = command.args[0];
-                var duration = null;
-                if (command.args.length > 1) {
-                    duration = parseFloat(command.args[1]) * 1000.0;
-                }
-                $scope.playlist.push({"URL": url, "Duration": duration});
-                if (!$scope.playing) {
-                    $scope.playNext()
-                }
+                console.log(command.args[0])
+                mediaObj = JSON.parse(command.args[0]);
+                $scope.playTrack.post(mediaObj);
+                return;
             }
         }
 
@@ -204,7 +415,7 @@ ygorMinionControllers.controller("ChannelController", [
                             break;
                         case "unknown-client":
                         default:
-                            $scope.playlist = [];
+                            $scope.queueTrack.playlist = [];
                             $scope.showModal("disconnected");
                             break;
                     }
@@ -217,7 +428,7 @@ ygorMinionControllers.controller("ChannelController", [
 
         $scope.$on('$destroy', function() {
             $scope.clientID = null;
-            $scope.player = null;
+            //$scope.player = null;
             $scope.content = null;
         });
 
