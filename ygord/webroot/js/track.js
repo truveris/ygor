@@ -252,6 +252,8 @@ function onYouTubeIframeAPIReady() {
             var end = this.mediaObj.end;
             if (start.length > 0) {
                 params.startSeconds = parseFloat(start);
+            } else {
+                params.startSeconds = 0;
             }
             if (end.length > 0) {
                 params.endSeconds = parseFloat(end);
@@ -390,6 +392,11 @@ function onPlayerStateChange(event) {
             // isn't playing
             event.target.hide();
             if (event.target.mediaObj.loop) {
+                var start = 0;
+                if (event.target.mediaObj.start.length > 0) {
+                    start = parseFloat(event.target.mediaObj.start);
+                }
+                event.target.seekTo(start);
                 event.target.playVideo();
             } else {
                 var divId = event.target.getIframe().getAttribute("id");
