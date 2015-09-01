@@ -374,6 +374,7 @@ ygorMinionControllers.controller("ChannelController", [
 
             if (command.name == "bg") {
                 mediaObj = JSON.parse(command.args[0]);
+                $scope.bgTrack.shutup();
                 $scope.bgTrack.post(mediaObj);
                 return;
             }
