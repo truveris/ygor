@@ -425,7 +425,7 @@ function onPlayerStateChange(event) {
                 event.target.destroy();
                 //remove remaining div
                 var containerDiv = document.getElementById(divId);
-                if (containerDiv == document.body){
+                if (containerDiv.parentNode == document.body){
                     document.body.removeChild(containerDiv);
                 }
             }
