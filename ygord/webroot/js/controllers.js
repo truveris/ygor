@@ -180,7 +180,14 @@ ygorMinionControllers.controller("ChannelController", [
             subtitle.setAttribute("class", "errorSubtitle");
             subtitle.innerHTML = submessage;
             popUp.appendChild(subtitle);
-            
+            document.getElementById("pop-up-container").appendChild(popUp);
+            popUp.style.opacity = 1;
+            // Make sure the initial state is applied.
+            window.getComputedStyle(popUp).opacity;
+            popUp.style.opacity = 0;
+            setTimeout(function() {
+                popUp.parentNode.removeChild(popUp);
+            }, 1000);
         }
 
         $(".button-reconnect").click(function() {
@@ -199,7 +206,7 @@ ygorMinionControllers.controller("ChannelController", [
 
         $scope.musicTrack.playNext = function() {
             if ($scope.musicTrack.playlist.length > 0) {
-                var mediaObj = $scope.musicTrack.playlist.shift()
+                var mediaObj = $scope.musicTrack.playlist.shift();
                 $scope.musicTrack.playing = true;
                 $scope.musicTrack.post(mediaObj);
             } else {
@@ -209,7 +216,7 @@ ygorMinionControllers.controller("ChannelController", [
 
         $scope.queueTrack.playNext = function() {
             if ($scope.queueTrack.playlist.length > 0) {
-                var mediaObj = $scope.queueTrack.playlist.shift()
+                var mediaObj = $scope.queueTrack.playlist.shift();
                 $scope.queueTrack.playing = true;
                 $scope.queueTrack.post(mediaObj);
             } else {
@@ -222,11 +229,10 @@ ygorMinionControllers.controller("ChannelController", [
                 event.origin !== "https://truveris.com"){
                 return;
             }
-            message = JSON.parse(event.data);
-            console.log(message)
-            switch (message.source){
+            msg = JSON.parse(event.data);
+            switch (msg.source){
                 case "queueTrack":
-                    switch (message.playerState) {
+                    switch (msg.playerState) {
                         case "PLAYING":
                             $scope.queueTrack.show();
                             break;
@@ -236,6 +242,7 @@ ygorMinionControllers.controller("ChannelController", [
                             $scope.queueTrack.playNext();
                             break;
                         case "ERRORED":
+                            $scope.showError(msg.source, msg.submessage);
                             $scope.queueTrack.hide();
                             $scope.queueTrack.shutup();
                             $scope.queueTrack.playing = false;
@@ -244,12 +251,13 @@ ygorMinionControllers.controller("ChannelController", [
                     }
                     break;
                 case "musicTrack":
-                    switch (message.playerState) {
+                    switch (msg.playerState) {
                         case "ENDED":
                             $scope.musicTrack.playing = false;
                             $scope.musicTrack.playNext();
                             break;
                         case "ERRORED":
+                            $scope.showError(msg.source, msg.submessage);
                             $scope.musicTrack.hide();
                             $scope.musicTrack.shutup();
                             $scope.musicTrack.playing = false;
@@ -258,20 +266,22 @@ ygorMinionControllers.controller("ChannelController", [
                     }
                     break;
                 case "playTrack":
-                    switch (message.playerState) {
+                    switch (msg.playerState) {
                         case "PLAYING":
-                            $scope.playTrack.show()
+                            $scope.playTrack.show();
                             break;
                         case "ENDED":
-                            $scope.playTrack.hide()
+                            $scope.playTrack.hide();
                             break;
                         case "ERRORED":
+                            $scope.showError(msg.source, msg.submessage);
                             break;
                     }
                     break;
                 case "bgTrack":
-                    switch (message.playerState) {
+                    switch (msg.playerState) {
                         case "ERRORED":
+                            $scope.showError(msg.source, msg.submessage);
                             break;
                     }
                     break;
@@ -369,7 +379,6 @@ ygorMinionControllers.controller("ChannelController", [
             }
 
             if (command.name == "play") {
-                console.log(command.args[0])
                 mediaObj = JSON.parse(command.args[0]);
                 $scope.playTrack.post(mediaObj);
                 return;
