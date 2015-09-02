@@ -531,8 +531,8 @@ function setVolume(newVolume) {
 
 function shutup() {
     // kills all the players
-    for (elem of document.body.children) {
-        document.body.removeChild(elem);
+    while (document.body.children.length > 0) {
+        document.body.removeChild(document.body.children[0]);
     }
     // it's safer to clear the arrays after body is bodied
     playerArr = [];
