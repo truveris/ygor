@@ -45,7 +45,7 @@ HTMLVideoElement.prototype.spawn = function(mediaObj) {
             case 4:
                 submessage = "media_err_src_not_supported";
         }
-        playerErrored(this.mediaObj.track);
+        playerErrored(this.mediaObj.track, submessage);
         playerArr.remove(this);
         videoArr.remove(this);
         this.destroy();
@@ -137,7 +137,7 @@ HTMLAudioElement.prototype.spawn = function(mediaObj) {
             case 4:
                 submessage = "media_err_src_not_supported";
         }
-        playerErrored(this.mediaObj.track);
+        playerErrored(this.mediaObj.track, submessage);
         playerArr.remove(this);
         this.destroy();
     };
