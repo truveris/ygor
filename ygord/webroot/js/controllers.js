@@ -171,13 +171,13 @@ ygorMinionControllers.controller("ChannelController", [
         $scope.showError = function(srcTrack, submessage) {
             submessage = submessage || "";
             var popUp = document.createElement("div");
-            popUp.setAttribute("class", "errorPopUp");
+            popUp.setAttribute("class", "error-pop-up");
             var title = document.createElement("p");
-            title.setAttribute("class", "errorTitle");
+            title.setAttribute("class", "error-title");
             title.innerHTML = srcTrack + " error";
             popUp.appendChild(title);
             var subtitle = document.createElement("p");
-            subtitle.setAttribute("class", "errorSubtitle");
+            subtitle.setAttribute("class", "error-subtitle");
             subtitle.innerHTML = submessage;
             popUp.appendChild(subtitle);
             document.getElementById("pop-up-container").appendChild(popUp);
@@ -187,7 +187,7 @@ ygorMinionControllers.controller("ChannelController", [
             popUp.style.opacity = 0;
             setTimeout(function() {
                 popUp.parentNode.removeChild(popUp);
-            }, 1000);
+            }, 4000);
         }
 
         $(".button-reconnect").click(function() {
