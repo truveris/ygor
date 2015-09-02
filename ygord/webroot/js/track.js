@@ -36,18 +36,26 @@ HTMLVideoElement.prototype.spawn = function(mediaObj) {
     this.hasErrored = function() {
         submessage = "";
         switch (this.error.code) {
-            case 1:
-                submessage = "media_err_aborted";
-            case 2:
-                submessage = "media_err_network";
-            case 3:
-                submessage = "media_err_decode";
-            case 4:
-                submessage = "media_err_src_not_supported";
+            case this.error.MEDIA_ERR_ABORTED:
+                submessage = "video file playback has been aborted";
+                break;
+            case this.error.MEDIA_ERR_NETWORK:
+                submessage = "video file download halted due to network error";
+                break;
+            case this.error.MEDIA_ERR_DECODE:
+                submessage = "video file could not be decoded";
+                break;
+            case this.error.MEDIA_ERR_SRC_NOT_SUPPORTED:
+                if (this.networkState == HTMLMediaElement.NETWORK_NO_SOURCE) {
+                    submessage = "video file could not be found";
+                } else {
+                    submessage = "video file format is not supported";
+                }
+                break;
         }
-        playerErrored(this.mediaObj.track, submessage);
         playerArr.remove(this);
         videoArr.remove(this);
+        playerErrored(this.mediaObj.track, submessage);
         this.destroy();
     };
     this.setVolume = function(volumeLevel) {
@@ -128,17 +136,25 @@ HTMLAudioElement.prototype.spawn = function(mediaObj) {
     this.hasErrored = function() {
         submessage = "";
         switch (this.error.code) {
-            case 1:
-                submessage = "media_err_aborted";
-            case 2:
-                submessage = "media_err_network";
-            case 3:
-                submessage = "media_err_decode";
-            case 4:
-                submessage = "media_err_src_not_supported";
+            case this.error.MEDIA_ERR_ABORTED:
+                submessage = "audio file playback has been aborted";
+                break;
+            case this.error.MEDIA_ERR_NETWORK:
+                submessage = "audio file download halted due to network error";
+                break;
+            case this.error.MEDIA_ERR_DECODE:
+                submessage = "audio file could not be decoded";
+                break;
+            case this.error.MEDIA_ERR_SRC_NOT_SUPPORTED:
+                if (this.networkState == HTMLMediaElement.NETWORK_NO_SOURCE) {
+                    submessage = "audio file could not be found";
+                } else {
+                    submessage = "audio file format is not supported";
+                }
+                break;
         }
-        playerErrored(this.mediaObj.track, submessage);
         playerArr.remove(this);
+        playerErrored(this.mediaObj.track, submessage);
         this.destroy();
     };
     this.setVolume = function(volumeLevel) {
@@ -444,19 +460,19 @@ function onError(event) {
     submessage = "";
     switch(event.data){
         case 2:
-            submessage =  "invalid video parameter"
+            submessage =  "invalid youtube video parameter"
             break;
         case 5:
-            submessage =  "video doesn't work with HTML5"
+            submessage =  "youtube video doesn't work with html5"
             break;
         case 100:
-            submessage =  "no such video"
+            submessage =  "no such youtube video"
             break;
         case 101:
-            submessage =  "can't embed this video"
+            submessage =  "can't embed this youtube video"
             break;
         case 150:
-            submessage =  "can't embed this video"
+            submessage =  "can't embed this youtube video"
             break;
     }
     submessage = submessage || "";
