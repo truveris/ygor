@@ -18,7 +18,7 @@ type QueueModule struct {
 func (module *QueueModule) PrivMsg(srv *Server, msg *Message) {
     // validate command usage
     if len(msg.Args) < 1 || len(msg.Args) > 3 {
-        srv.IRCPrivMsg(msg.ReplyTo, "usage: queue url [s=start] [e=end]")
+        srv.IRCPrivMsg(msg.ReplyTo, "usage: q[ueue] url [s=start] [e=end]")
         return
     }
     sBound := ""
@@ -26,7 +26,7 @@ func (module *QueueModule) PrivMsg(srv *Server, msg *Message) {
     if len(msg.Args) > 1 {
         firstBound := strings.Split(msg.Args[1], "=")
         if len(firstBound) != 2 {
-            srv.IRCPrivMsg(msg.ReplyTo, "usage: queue url [s=start] [e=end]")
+            srv.IRCPrivMsg(msg.ReplyTo, "usage: q[ueue] url [s=start] [e=end]")
             return
         }
         switch {
@@ -35,13 +35,13 @@ func (module *QueueModule) PrivMsg(srv *Server, msg *Message) {
         case firstBound[0] == "e":
             eBound = firstBound[1]
         default:
-            srv.IRCPrivMsg(msg.ReplyTo, "usage: queue url [s=start] [e=end]")
+            srv.IRCPrivMsg(msg.ReplyTo, "usage: q[ueue] url [s=start] [e=end]")
             return
         }
         if len(msg.Args) == 3 {
             secondBound := strings.Split(msg.Args[2], "=")
             if len(secondBound) != 2 {
-                srv.IRCPrivMsg(msg.ReplyTo, "usage: queue url [s=start] [e=end]")
+                srv.IRCPrivMsg(msg.ReplyTo, "usage: q[ueue] url [s=start] [e=end]")
                 return
             }
             switch {
@@ -50,7 +50,7 @@ func (module *QueueModule) PrivMsg(srv *Server, msg *Message) {
             case secondBound[0] == "e":
                 eBound = secondBound[1]
             default:
-                srv.IRCPrivMsg(msg.ReplyTo, "usage: queue url [s=start] [e=end]")
+                srv.IRCPrivMsg(msg.ReplyTo, "usage: q[ueue] url [s=start] [e=end]")
                 return
             }
         }
@@ -238,6 +238,15 @@ func (module *QueueModule) PrivMsg(srv *Server, msg *Message) {
 func (module QueueModule) Init(srv *Server) {
     srv.RegisterCommand(Command{
         Name:            "queue",
+        PrivMsgFunction: module.PrivMsg,
+        Addressed:       true,
+        AllowPrivate:    false,
+        AllowChannel:    true,
+    })
+
+    // shorthand for 'queue' command
+    srv.RegisterCommand(Command{
+        Name:            "q",
         PrivMsgFunction: module.PrivMsg,
         Addressed:       true,
         AllowPrivate:    false,
