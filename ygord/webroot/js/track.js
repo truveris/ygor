@@ -25,7 +25,8 @@ HTMLVideoElement.prototype.spawn = function(mediaObj) {
         playerStarted(this.mediaObj.track);
     };
     this.hasEnded = function() {
-        if (!this.mediaObj.loop){
+        if (!this.mediaObj.loop && !this.didEnd){
+            this.didEnd = true;
             this.hide();
             playerArr.remove(this);
             videoArr.remove(this);
@@ -105,6 +106,7 @@ HTMLVideoElement.prototype.spawn = function(mediaObj) {
     playerArr.push(this);
     this.startTime = 0.0;
     this.endTime = false;
+    this.didEnd = false;
     this.setVolume(volume);
     this.setAttribute("class", "media");
     this.setAttribute("preload", "auto");
@@ -127,7 +129,8 @@ HTMLAudioElement.prototype.spawn = function(mediaObj) {
         //playerStarted(this.mediaObj.track);
     };
     this.hasEnded = function() {
-        if (!this.mediaObj.loop){
+        if (!this.mediaObj.loop && !this.didEnd){
+            this.didEnd = true;
             playerArr.remove(this);
             playerEnded(this.mediaObj.track);
             this.destroy();
@@ -204,6 +207,7 @@ HTMLAudioElement.prototype.spawn = function(mediaObj) {
     playerArr.push(this);
     this.startTime = 0.0;
     this.endTime = false;
+    this.didEnd = false;
     this.setVolume(volume);
     this.setAttribute("class", "media");
     this.setAttribute("preload", "auto");
