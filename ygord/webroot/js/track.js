@@ -161,7 +161,7 @@ HTMLAudioElement.prototype.spawn = function(mediaObj) {
         this.volume = volumeLevel / 100.0;
     };
     this.timeUpdated = function() {
-        if (this.currentTime > this.endTime && this.duration != "Inf"){
+        if (this.currentTime >= this.endTime && this.duration != "Inf"){
             if (this.mediaObj.loop){
                 this.currentTime = this.startTime;
                 this.play();
@@ -204,7 +204,6 @@ HTMLAudioElement.prototype.spawn = function(mediaObj) {
     playerArr.push(this);
     this.startTime = 0.0;
     this.endTime = false;
-    this.shouldLoop = this.mediaObj.loop;
     this.setVolume(volume);
     this.setAttribute("class", "media");
     this.setAttribute("preload", "auto");
