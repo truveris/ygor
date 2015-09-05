@@ -38,8 +38,11 @@ ygorMinionControllers.controller("ChannelController", [
         $scope.queueTrack.attr("hidden", "hidden");
         $scope.playTrack.attr("hidden", "hidden");
         var increment = 5;
-        // set global volume variable for easy access by embedded iframes
+        // set global volume variables for easy access by embedded iframes
         window.volume = 100;
+        window.mvolume = 100;
+        window.qvolume = 100;
+        window.pvolume = 100;
 
         // musicTrack functions
         $scope.musicTrack.hide = function() {
@@ -56,6 +59,11 @@ ygorMinionControllers.controller("ChannelController", [
 
         $scope.musicTrack.setVolume = function(level) {
             $scope.musicTrack[0].contentWindow.setVolume(level);
+        }
+
+        $scope.musicTrack.setTrackVolume = function(level) {
+            window.mvolume = level;
+            $scope.musicTrack[0].contentWindow.setTrackVolume(level * 0.01);
         }
 
         $scope.musicTrack.shutup = function() {
@@ -105,6 +113,11 @@ ygorMinionControllers.controller("ChannelController", [
             $scope.queueTrack[0].contentWindow.setVolume(level);
         }
 
+        $scope.queueTrack.setTrackVolume = function(level) {
+            window.qvolume = level;
+            $scope.queueTrack[0].contentWindow.setTrackVolume(level * 0.01);
+        }
+
         $scope.queueTrack.shutup = function() {
             $scope.queueTrack[0].contentWindow.shutup();
         }
@@ -133,6 +146,11 @@ ygorMinionControllers.controller("ChannelController", [
 
         $scope.playTrack.setVolume = function(level) {
             $scope.playTrack[0].contentWindow.setVolume(level);
+        }
+
+        $scope.playTrack.setTrackVolume = function(level) {
+            window.pvolume = level;
+            $scope.playTrack[0].contentWindow.setTrackVolume(level * 0.01);
         }
 
         $scope.playTrack.shutup = function() {
@@ -258,10 +276,10 @@ ygorMinionControllers.controller("ChannelController", [
                             break;
                         case "ERRORED":
                             $scope.showError(msg.source, msg.submessage);
-                            $scope.musicTrack.hide();
-                            $scope.musicTrack.shutup();
-                            $scope.musicTrack.playing = false;
-                            $scope.musicTrack.playNext();
+                            // $scope.musicTrack.hide();
+                            // $scope.musicTrack.shutup();
+                            // $scope.musicTrack.playing = false;
+                            // $scope.musicTrack.playNext();
                             break;
                     }
                     break;
@@ -334,7 +352,7 @@ ygorMinionControllers.controller("ChannelController", [
 
             if (command.name == "volume") {
                 var level = command.args[0];
-                // volume level must be between 1.0 and 0.0
+                // volume level must be between 100 and 0.0
                 if (level == "1dB+") {
                     level = Math.min(100, volume + increment);
                 } else if (level == "1dB-") {
@@ -344,6 +362,54 @@ ygorMinionControllers.controller("ChannelController", [
                     level = Math.max(0.0, Math.min(100, level));
                 }
                 $scope.setVolume(level);
+                return;
+            }
+
+            // handles track volume adjustments for musicTrack
+            if (command.name == "mvolume") {
+                var level = command.args[0];
+                // volume level must be between 100 and 0.0
+                if (level == "1dB+") {
+                    level = Math.min(100, mvolume + increment);
+                } else if (level == "1dB-") {
+                    level = Math.max(0, mvolume - increment);
+                } else {
+                    level = parseInt(level);
+                    level = Math.max(0.0, Math.min(100, level));
+                }
+                $scope.musicTrack.setTrackVolume(level);
+                return;
+            }
+
+            // handles track volume adjustments for queueTrack
+            if (command.name == "qvolume") {
+                var level = command.args[0];
+                // volume level must be between 100 and 0.0
+                if (level == "1dB+") {
+                    level = Math.min(100, qvolume + increment);
+                } else if (level == "1dB-") {
+                    level = Math.max(0, qvolume - increment);
+                } else {
+                    level = parseInt(level);
+                    level = Math.max(0.0, Math.min(100, level));
+                }
+                $scope.queueTrack.setTrackVolume(level);
+                return;
+            }
+
+            // handles track volume adjustments for playTrack
+            if (command.name == "pvolume") {
+                var level = command.args[0];
+                // volume level must be between 100 and 0.0
+                if (level == "1dB+") {
+                    level = Math.min(100, pvolume + increment);
+                } else if (level == "1dB-") {
+                    level = Math.max(0, pvolume - increment);
+                } else {
+                    level = parseInt(level);
+                    level = Math.max(0.0, Math.min(100, level));
+                }
+                $scope.playTrack.setTrackVolume(level);
                 return;
             }
 

@@ -1,5 +1,6 @@
 // prepare global variables
-var volume = 0;
+var volume = 0; // master volume (0 by default)
+var trackVolume = 1.0; // percentage of master volume to use in this track
 var miniPlaylistArr = [];
 var videoArr = []; // used to track visible elements in a track
 Array.prototype.remove = function(item) {
@@ -40,7 +41,7 @@ function MiniPlaylist(mediaMessage) {
 
      Spawns the next item in the playlist, or plays an already existing item if
      it's looping.
-     
+
     */
     this.playNext = function() {
         if (this.mediaObjArr.length > 0) {
@@ -230,7 +231,7 @@ HTMLVideoElement.prototype.spawn = function(miniPlaylist, mediaObj) {
     this.startTime = 0.0;
     this.endTime = false;
     this.didEnd = false;
-    this.setVolume(volume);
+    this.setVolume(volume * trackVolume);
     this.setAttribute("class", "media");
     this.setAttribute("preload", "auto");
     this.setAttribute("autoplay", "autoplay");
@@ -330,7 +331,7 @@ HTMLAudioElement.prototype.spawn = function(miniPlaylist, mediaObj) {
     this.startTime = 0.0;
     this.endTime = false;
     this.didEnd = false;
-    this.setVolume(volume);
+    this.setVolume(volume * trackVolume);
     this.setAttribute("class", "media");
     this.setAttribute("preload", "auto");
     this.setAttribute("autoplay", "autoplay");
@@ -405,7 +406,7 @@ function onYouTubeIframeAPIReady() {
     // adjust YT.Player prototype for easier management
     YT.Player.prototype.isReady = false;
     YT.Player.prototype.setReady = function() {
-        this.setVolume(volume);
+        this.setVolume(volume * trackVolume);
         if (this.mediaObj.muted) {
             this.mute();
         }
@@ -628,10 +629,15 @@ function sendMessage(srcTrack, state, submessage) {
 }
 
 function setVolume(newVolume) {
-    volume = newVolume;
+    volume = newVolume || volume;
     for (mp of miniPlaylistArr) {
-        mp.setVolume(volume);
+        mp.setVolume(volume * trackVolume);
     }
+}
+
+function setTrackVolume(newVolume) {
+    trackVolume = newVolume;
+    setVolume();
 }
 
 function shutup() {

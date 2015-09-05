@@ -33,6 +33,9 @@ func main() {
 	srv.RegisterModule(&SkipModule{})
 	srv.RegisterModule(&TurretModule{})
 	srv.RegisterModule(&VolumeModule{})
+	srv.RegisterModule(&MVolumeModule{})
+	srv.RegisterModule(&QVolumeModule{})
+	srv.RegisterModule(&PVolumeModule{})
 	srv.RegisterModule(&XombreroModule{})
 
 	log.Printf("starting i/o adapters")
