@@ -37,9 +37,9 @@ ygorMinionControllers.controller("ChannelController", [
         $scope.musicTrack.attr("hidden", "hidden");
         $scope.queueTrack.attr("hidden", "hidden");
         $scope.playTrack.attr("hidden", "hidden");
-        var increment = 0.05;
+        var increment = 5;
         // set global volume variable for easy access by embedded iframes
-        window.volume = 1.0;
+        window.volume = 100;
 
         // musicTrack functions
         $scope.musicTrack.hide = function() {
@@ -243,10 +243,10 @@ ygorMinionControllers.controller("ChannelController", [
                             break;
                         case "ERRORED":
                             $scope.showError(msg.source, msg.submessage);
-                            $scope.queueTrack.hide();
-                            $scope.queueTrack.shutup();
-                            $scope.queueTrack.playing = false;
-                            $scope.queueTrack.playNext();
+                            // $scope.queueTrack.hide();
+                            // $scope.queueTrack.shutup();
+                            // $scope.queueTrack.playing = false;
+                            // $scope.queueTrack.playNext();
                             break;
                     }
                     break;
@@ -336,12 +336,12 @@ ygorMinionControllers.controller("ChannelController", [
                 var level = command.args[0];
                 // volume level must be between 1.0 and 0.0
                 if (level == "1dB+") {
-                    level = Math.min(1.0, volume + increment);
+                    level = Math.min(100, volume + increment);
                 } else if (level == "1dB-") {
-                    level = Math.max(0.0, volume - increment);
+                    level = Math.max(0, volume - increment);
                 } else {
-                    level = parseInt(level) / 100.0;
-                    level = Math.max(0.0, Math.min(1.0, level));
+                    level = parseInt(level);
+                    level = Math.max(0.0, Math.min(100, level));
                 }
                 $scope.setVolume(level);
                 return;

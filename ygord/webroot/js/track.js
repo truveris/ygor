@@ -1,37 +1,157 @@
 // prepare global variables
 var volume = 0;
-var playerArr = [];
-var videoArr = [];
-var youtubeQueue = []; //holds YT mediaObjs until IFrameAPI is ready
-var ytAPIIsReady = false;
+var miniPlaylistArr = [];
+var videoArr = []; // used to track visible elements in a track
 Array.prototype.remove = function(item) {
     itemIndex = this.indexOf(item);
     if (itemIndex > -1) {
+        item = this[itemIndex];
         this.splice(itemIndex, 1);
+        return item;
     }
+    return;
+}
+
+// mini-playlist
+function MiniPlaylist(mediaMessage) {
+    miniPlaylistArr.push(this);
+    // create div for this to put players in
+    this.container = document.createElement("div");
+    var divId = Math.floor((Math.random() * 100000) + 1).toString();
+    this.container.setAttribute("id", divId);
+    document.body.appendChild(this.container);
+    this.track = mediaMessage.track;
+    this.mediaObjArr = mediaMessage.mediaObjs;
+    this.players = [];
+    this.playerIndex = -1;
+    this.loop = mediaMessage.loop || false;
+
+    this.addPlayer = function(player) {
+        this.players.push(player);
+    };
+
+    this.removePlayer = function(player) {
+        this.players.remove(player);
+        player.destroy();
+    };
+
+    /*
+     playNext()
+
+     Spawns the next item in the playlist, or plays an already existing item if
+     it's looping.
+     
+    */
+    this.playNext = function() {
+        if (this.mediaObjArr.length > 0) {
+            // there's still players to create
+            mediaObj = this.mediaObjArr.shift();
+            var player;
+            switch (mediaObj.mediaType){
+                case "youtube":
+                    player = spawnYouTubePlayer(this, mediaObj);
+                    break;
+                case "video":
+                    player = spawnPlayer(this, mediaObj);
+                    break;
+                case "audio":
+                    player = spawnPlayer(this, mediaObj);
+                    break;
+                case "img":
+                    player = spawnPlayer(this, mediaObj);
+                    break;
+                case "web":
+                    player = spawnWeb(this, mediaObj);
+                    break;
+            }
+            if (player) {
+                // if the last used player isn't going to be played again,
+                // destroy it
+                if (!this.loop && this.players.length > 0) {
+                    this.removePlayer(this.players[this.players.length - 1]);
+                }
+                this.players.push(player);
+            } else {
+                var errMsg =  "unknown player type: " + mediaObj.mediaType;
+                reportError(this.track, errMsg);
+                this.playNext();
+                return;
+            }
+        } else if (this.loop && this.players.length > 0) {
+            // take the first player, and put it at the end of the array
+            var playerToPlay = this.players.remove(this.players[0])
+            this.addPlayer(playerToPlay);
+            playerToPlay.play();
+        } else {
+            this.cleanup();
+            return;
+        }
+
+        if (this.loop && this.players.length == 1 && this.mediaObjArr.length == 0){
+            // if this playlist loops, and this is the only player there will
+            // be, it should manage its own looping for the sake of efficiency
+            this.players[0].soloLoop = true;
+            return;
+        }
+    };
+
+    this.hide = function() {
+        this.container.setAttribute("hidden", "hidden");
+    };
+
+    this.show = function() {
+        this.container.removeAttribute("hidden");
+    };
+
+    this.cleanup = function() {
+        for (player of this.players) {
+            this.removePlayer(player);
+        }
+        this.players = [];
+        miniPlaylistArr.remove(this);
+        playersEnded(this.track);
+        this.destroy();
+    };
+
+    this.destroy = function() {
+        this.container.parentNode.removeChild(this.container);
+    };
+
+    this.setVolume = function(volumeLevel) {
+        for (player of this.players) {
+            if (player.setVolume) {
+                player.setVolume(volumeLevel);
+            }
+        }
+    };
 }
 
 // modify prototypes to add and unify functionality
-HTMLVideoElement.prototype.spawn = function(mediaObj) {
+HTMLVideoElement.prototype.spawn = function(miniPlaylist, mediaObj) {
+    this.miniPlaylist = miniPlaylist;
+    this.mediaObj = mediaObj;
     this.hide = function() {
+        videoArr.remove(this);
         this.setAttribute("hidden", "hidden");
     };
     this.show = function() {
+        if (videoArr.indexOf(this) < 0) {
+            // if it's not in the videoArr already, put it there.
+            videoArr.push(this);
+        }
+        playerStarted(this.miniPlaylist.track);
         this.removeAttribute("hidden");
     };
     this.hasStarted = function() {
-        videoArr.push(this);
         this.show();
-        playerStarted(this.mediaObj.track);
     };
     this.hasEnded = function() {
-        if (!this.mediaObj.loop && !this.didEnd){
+        if (this.didEnd == false){
             this.didEnd = true;
-            this.hide();
-            playerArr.remove(this);
-            videoArr.remove(this);
-            playerEnded(this.mediaObj.track);
-            this.destroy();
+            if (!this.soloLoop){
+                this.hide();
+                this.miniPlaylist.playNext();
+            }
         }
     };
     this.hasErrored = function() {
@@ -54,26 +174,27 @@ HTMLVideoElement.prototype.spawn = function(mediaObj) {
                 }
                 break;
         }
-        playerArr.remove(this);
-        videoArr.remove(this);
-        playerErrored(this.mediaObj.track, submessage);
-        this.destroy();
+        this.miniPlaylist.removePlayer(this);
+        this.miniPlaylist.playNext();
+        reportError(this.miniPlaylist.track, submessage);
     };
     this.setVolume = function(volumeLevel) {
         this.volume = volumeLevel / 100.0;
     };
     this.timeUpdated = function() {
         if (this.currentTime >= this.endTime && this.duration != "Inf"){
-            if (this.mediaObj.loop){
+            if (this.soloLoop){
+                // when this is the only player in the playlist and the
+                // playlist should loop, this should loop on it's own.
                 this.currentTime = this.startTime;
                 this.play();
             } else {
                 this.pause();
+                this.currentTime = this.startTime;
             }
         }
     }
-    this.loadMediaObj = function(mediaObj) {
-        this.mediaObj = mediaObj || this.mediaObj;
+    this.loadMediaObj = function() {
         var s = this.mediaObj.start;
         var e = this.mediaObj.end;
         if (s.length > 0) {
@@ -90,20 +211,22 @@ HTMLVideoElement.prototype.spawn = function(mediaObj) {
         this.load();
     };
     this.destroy = function() {
-        if (this.parentNode == document.body) {
-            document.body.removeChild(this);
-        }
+        videoArr.remove(this);
+        this.parentNode.removeChild(this);
     };
     this.ondurationchange = function() {
         this.endTime = this.endTime || this.duration;
         this.hasStarted();
     };
+    this.onplay = function() {
+        this.show();
+        this.didEnd = false;
+    };
     this.ontimeupdate = function() {this.timeUpdated();};
     this.onerror = function() {this.hasErrored();};
     this.onended =  function() {this.hasEnded();};
     this.onpause = function() {this.hasEnded();};
-    this.mediaObj = mediaObj;
-    playerArr.push(this);
+    this.soloLoop = false;
     this.startTime = 0.0;
     this.endTime = false;
     this.didEnd = false;
@@ -111,12 +234,14 @@ HTMLVideoElement.prototype.spawn = function(mediaObj) {
     this.setAttribute("class", "media");
     this.setAttribute("preload", "auto");
     this.setAttribute("autoplay", "autoplay");
-    this.loadMediaObj(this.mediaObj);
-    document.body.appendChild(this);
+    this.loadMediaObj();
+    this.miniPlaylist.container.appendChild(this);
     return;
 }
 
-HTMLAudioElement.prototype.spawn = function(mediaObj) {
+HTMLAudioElement.prototype.spawn = function(miniPlaylist, mediaObj) {
+    this.miniPlaylist = miniPlaylist;
+    this.mediaObj = mediaObj;
     this.hide = function() {
         this.setAttribute("hidden", "hidden");
     };
@@ -126,14 +251,15 @@ HTMLAudioElement.prototype.spawn = function(mediaObj) {
     };
     this.hasStarted = function() {
         // audio doesn't need to tell parent that it's playing
-        //playerStarted(this.mediaObj.track);
+        //playerStarted(this.miniPlaylist.track);
     };
     this.hasEnded = function() {
-        if (!this.mediaObj.loop && !this.didEnd){
+        if (this.didEnd == false){
             this.didEnd = true;
-            playerArr.remove(this);
-            playerEnded(this.mediaObj.track);
-            this.destroy();
+            if (!this.soloLoop){
+                this.hide();
+                this.miniPlaylist.playNext();
+            }
         }
     };
     this.hasErrored = function() {
@@ -156,16 +282,16 @@ HTMLAudioElement.prototype.spawn = function(mediaObj) {
                 }
                 break;
         }
-        playerArr.remove(this);
-        playerErrored(this.mediaObj.track, submessage);
-        this.destroy();
+        this.miniPlaylist.removePlayer(this);
+        this.miniPlaylist.playNext();
+        reportError(this.miniPlaylist.track, submessage);
     };
     this.setVolume = function(volumeLevel) {
         this.volume = volumeLevel / 100.0;
     };
     this.timeUpdated = function() {
         if (this.currentTime >= this.endTime && this.duration != "Inf"){
-            if (this.mediaObj.loop){
+            if (this.soloLoop){
                 this.currentTime = this.startTime;
                 this.play();
             } else {
@@ -173,8 +299,7 @@ HTMLAudioElement.prototype.spawn = function(mediaObj) {
             }
         }
     }
-    this.loadMediaObj = function(mediaObj) {
-        this.mediaObj = mediaObj || this.mediaObj;
+    this.loadMediaObj = function() {
         var s = this.mediaObj.start;
         var e = this.mediaObj.end;
         if (s.length > 0) {
@@ -191,9 +316,7 @@ HTMLAudioElement.prototype.spawn = function(mediaObj) {
         this.load();
     };
     this.destroy = function() {
-        if (this.parentNode == document.body) {
-            document.body.removeChild(this);
-        }
+        this.parentNode.removeChild(this);
     };
     this.ondurationchange = function() {
         this.endTime = this.endTime || this.duration;
@@ -203,8 +326,7 @@ HTMLAudioElement.prototype.spawn = function(mediaObj) {
     this.onerror = function() {this.hasErrored();};
     this.onended =  function() {this.hasEnded();};
     this.onpause = function() {this.hasEnded();};
-    this.mediaObj = mediaObj;
-    playerArr.push(this);
+    this.soloLoop = false;
     this.startTime = 0.0;
     this.endTime = false;
     this.didEnd = false;
@@ -212,27 +334,70 @@ HTMLAudioElement.prototype.spawn = function(mediaObj) {
     this.setAttribute("class", "media");
     this.setAttribute("preload", "auto");
     this.setAttribute("autoplay", "autoplay");
-    this.loadMediaObj(mediaObj);
-    document.body.appendChild(this);
+    this.loadMediaObj();
+    this.miniPlaylist.container.appendChild(this);
     return;
 }
 
-HTMLImageElement.prototype.spawn = function(mediaObj) {
+HTMLImageElement.prototype.spawn = function(miniPlaylist, mediaObj) {
+    this.miniPlaylist = miniPlaylist;
+    this.mediaObj = mediaObj;
     this.hide = function() {
+        videoArr.remove(this);
         this.setAttribute("hidden", "hidden");
     };
     this.show = function() {
+        if (videoArr.indexOf(this) < 0) {
+            // if it's not in the videoArr already, put it there.
+            videoArr.push(this);
+        }
+        playerStarted(this.miniPlaylist.track);
         this.removeAttribute("hidden");
+    };
+    this.loadMediaObj = function() {
+        this.src = this.mediaObj.src;
+    };
+    this.destroy = function() {
+        this.parentNode.removeChild(this);
+    };
+    this.setVolume = function(volumeLevel) {
+        // should do nothing
         return;
     };
-    this.loadMediaObj = function(mediaObj) {
-        this.src = mediaObj.src;
-    };
-    this.destroy = function() {document.body.removeChild(this);};
-    playerArr.push(this);
     this.setAttribute("class", "media");
-    this.loadMediaObj(mediaObj);
-    document.body.appendChild(this);
+    this.loadMediaObj();
+    this.miniPlaylist.container.appendChild(this);
+    return;
+}
+
+HTMLIFrameElement.prototype.spawn = function(miniPlaylist, mediaObj) {
+    this.miniPlaylist = miniPlaylist;
+    this.mediaObj = mediaObj;
+    this.hide = function() {
+        videoArr.remove(this);
+        this.setAttribute("hidden", "hidden");
+    };
+    this.show = function() {
+        if (videoArr.indexOf(this) < 0) {
+            // if it's not in the videoArr already, put it there.
+            videoArr.push(this);
+        }
+        playerStarted(this.miniPlaylist.track);
+        this.removeAttribute("hidden");
+    };
+    this.loadMediaObj = function() {
+        this.src = this.mediaObj.src;
+    };
+    this.destroy = function() {
+        this.parentNode.removeChild(this);
+    };
+    this.setVolume = function(volumeLevel) {
+        // should do nothing
+        return;
+    };
+    this.setAttribute("class", "media");
+    this.loadMediaObj();
+    this.miniPlaylist.container.appendChild(this);
     return;
 }
 
@@ -245,10 +410,12 @@ function onYouTubeIframeAPIReady() {
             this.mute();
         }
         this.isReady = true;
-        // player may have been given a mediaObj before teh player was ready,
+        // player may have been given a mediaObj before the player was ready,
         // so it should now load the desired video with the specified
         // parameters
-        this.loadMediaObj();
+        if (this.mediaObj) {
+            this.loadMediaObj();
+        }
     };
     // player should hold the mediaObj used to create it, so it can be
     // referenced later
@@ -258,11 +425,17 @@ function onYouTubeIframeAPIReady() {
             this.pauseVideo();
         }
     };
-    YT.Player.prototype.loadMediaObj = function(mediaObj) {
-        // if function is being passed a mediaObj, it should override
-        // this.mediaObj
-        this.mediaObj = mediaObj || this.mediaObj;
-        if (this.isReady && this.mediaObj) {
+    YT.Player.prototype.play = function() {
+        if (this.isReady) {
+            this.playVideo();
+        }
+    };
+    YT.Player.prototype.destroy = function() {
+        var iframe = this.getIframe();
+        iframe.parentNode.removeChild(iframe);
+    };
+    YT.Player.prototype.loadMediaObj = function() {
+        if (this.isReady) {
             // if the player is ready AND it has a mediaObj, 
             params = {
                 "videoId": this.mediaObj.src,
@@ -281,17 +454,19 @@ function onYouTubeIframeAPIReady() {
         }
     };
     YT.Player.prototype.hide = function() {
+        videoArr.remove(this);
         this.getIframe().setAttribute("hidden", "hidden");
-    }
+    };
     YT.Player.prototype.show = function() {
+        if (videoArr.indexOf(this) < 0) {
+            // if it's not in the videoArr already, put it there.
+            videoArr.push(this);
+        }
+        playerStarted(this.miniPlaylist.track);
         this.getIframe().removeAttribute("hidden");
-    }
-    // once the YouTube Iframe API is ready and the YT.Player prototype has
-    // been modified, it will then be safe to start spawning YouTube players
-    ytAPIIsReady = true;
-    for (ytObj of youtubeQueue) {
-        spawnYouTubePlayer(ytObj);
-    }
+    };
+    YT.Player.prototype.divId = null;
+    YT.Player.prototype.soloLoop = false;
 }
 
 function receiveMessage(event) {
@@ -301,58 +476,26 @@ function receiveMessage(event) {
     }
     var message = JSON.parse(event.data);
     if (message.status == "media") { 
-        var mediaObj = message;
-        switch (mediaObj.mediaType){
-            case "youtube":
-                queueYouTubeSpawn(mediaObj);
-                break;
-            case "video":
-                spawnPlayer(mediaObj);
-                break;
-            case "audio":
-                spawnPlayer(mediaObj);
-                break;
-            case "img":
-                spawnPlayer(mediaObj);
-                break;
-            case "web":
-                spawnWeb(mediaObj);
-                break;
-        }
+        var mp = new MiniPlaylist(message);
+        mp.playNext();
     }
 }
 
 // spawns <video>, <audio>, or <img>
-function spawnPlayer(mediaObj) {
+function spawnPlayer(miniPlaylist, mediaObj) {
     var player = document.createElement(mediaObj.mediaType);
-    player.spawn(mediaObj);
-    return;
+    player.spawn(miniPlaylist, mediaObj);
+    return player;
 }
 
 // spawns iframe to show webpage
-function spawnWeb(mediaObj) {
+function spawnWeb(miniPlaylist, mediaObj) {
     var web = document.createElement("iframe");
-    web.setAttribute("class", "media");
-    web.setAttribute("src", mediaObj.src);
-    document.body.appendChild(web);
-    return;
+    web.spawn(miniPlaylist, mediaObj);
+    return web;
 }
 
-function queueYouTubeSpawn(mediaObj) {
-    // push a new YT mediaObj into the queue, and if the YouTube Iframe API is
-    // ready, spawn the players using the mediaObjs in the youtubeQueue array
-    youtubeQueue.push(mediaObj);
-    if (ytAPIIsReady) {
-        for (ytObj of youtubeQueue) {
-            spawnYouTubePlayer(ytObj);
-        }
-    }
-}
-
-function spawnYouTubePlayer(mediaObj) {
-    // remove the mediaObj from the youtubeQueue array first, so it can't be
-    // spawned again
-    youtubeQueue.remove(mediaObj);
+function spawnYouTubePlayer(miniPlaylist, mediaObj) {
     // create a <div> for the YouTube player to replace
     var playerDiv = document.createElement("div");
     // use a unique ID so multiple players can be spawned and referenced
@@ -362,7 +505,7 @@ function spawnYouTubePlayer(mediaObj) {
     // hide it at first so it doesn't block anything before it starts actually
     // playing
     playerDiv.setAttribute("hidden", "hidden");
-    document.body.appendChild(playerDiv);
+    miniPlaylist.container.appendChild(playerDiv);
     playerParams = {
         height: "100%",
         width: "100%",
@@ -381,14 +524,13 @@ function spawnYouTubePlayer(mediaObj) {
             "onError": onError,
         },
     }
-    if (mediaObj.loop == false) {
-        // the 'autoplay' parameter messes with looping
-        playerParams["playerVars"]["autoplay"] = 1;
-    }
     var ytPlayer = new YT.Player(divId, playerParams);
-    playerArr.push(ytPlayer);
-    ytPlayer.loadMediaObj(mediaObj);
-    return;
+    ytPlayer.divId = divId;
+    ytPlayer.miniPlaylist = miniPlaylist;
+    ytPlayer.mediaObj = mediaObj;
+    ytPlayer.loadMediaObj();
+
+    return ytPlayer;
 }
 
 function onPlayerStateChange(event) {
@@ -396,57 +538,28 @@ function onPlayerStateChange(event) {
         case YT.PlayerState.UNSTARTED:
             // hide the player so the thumbnail isn't seen while the video
             // isn't playing
+
             event.target.setPlaybackQuality("highres");
             event.target.hide();
             event.target.playVideo();
             break;
         case YT.PlayerState.PLAYING:
-            videoArr.push(event.target);
             // reveal the player now that the thumbnail won't be shown
             event.target.show();
-            playerStarted(event.target.mediaObj.track);
             break;
         case YT.PlayerState.ENDED:
             // hide the player so the thumbnail isn't seen while the video
             // isn't playing
             event.target.hide();
-            if (event.target.mediaObj.loop) {
-                var start = 0;
-                if (event.target.mediaObj.start.length > 0) {
-                    start = parseFloat(event.target.mediaObj.start);
-                }
-                event.target.seekTo(start);
-                event.target.playVideo();
-            } else {
-                var divId = event.target.getIframe().getAttribute("id");
-                playerArr.remove(event.target);
-                videoArr.remove(event.target);
-                playerEnded(event.target.mediaObj.track);
-                event.target.destroy();
-                //remove remaining div
-                var containerDiv = document.getElementById(divId);
-                if (containerDiv == document.body){
-                    document.body.removeChild(containerDiv);
-                }
+            var start = 0;
+            if (event.target.mediaObj.start.length > 0) {
+                start = parseFloat(event.target.mediaObj.start);
             }
-            break;
-        case YT.PlayerState.PAUSED:
-            // hide the player so the thumbnail isn't seen while the video
-            // isn't playing
-            event.target.hide();
-            if (event.target.mediaObj.loop) {
+            event.target.seekTo(start);
+            if (event.target.soloLoop) {
                 event.target.playVideo();
             } else {
-                var divId = event.target.getIframe().getAttribute("id");
-                playerArr.remove(event.target);
-                videoArr.remove(event.target);
-                playerEnded(event.target.mediaObj.track);
-                event.target.destroy();
-                //remove remaining div
-                var containerDiv = document.getElementById(divId);
-                if (containerDiv.parentNode == document.body){
-                    document.body.removeChild(containerDiv);
-                }
+                event.target.miniPlaylist.playNext();
             }
             break;
     }
@@ -459,7 +572,7 @@ function onPlayerReady(event) {
 }
 
 function onError(event) {
-    var srcTrack = event.target.mediaObj.track;
+    var srcTrack = event.target.miniPlaylist.track;
     submessage = "";
     switch(event.data){
         case 2:
@@ -480,17 +593,9 @@ function onError(event) {
     }
     submessage = submessage || "";
     // remove all traces of the player
-    var divId = event.target.getIframe().getAttribute("id");
-    playerArr.remove(event.target);
-    videoArr.remove(event.target);
-    playerEnded(event.target.mediaObj.track);
-    event.target.destroy();
-    //remove remaining div
-    var containerDiv = document.getElementById(divId);
-    if (containerDiv == document.body){
-        document.body.removeChild(containerDiv);
-    }
-    playerErrored(srcTrack, submessage);
+    this.miniPlaylist.playNext();
+    reportError(this.miniPlaylist.track, submessage);
+    this.miniPlaylist.removePlayer(this);
     return;
 }
 
@@ -499,17 +604,16 @@ function playerStarted(srcTrack) {
     return;
 }
 
-function playerEnded(srcTrack) {
+function playersEnded(srcTrack) {
     if (videoArr.length == 0) {
         sendMessage(srcTrack, "ENDED");
     }
     return;
 }
 
-function playerErrored(srcTrack, submessage) {
+function reportError(srcTrack, submessage) {
     submessage = submessage || "";
     sendMessage(srcTrack, "ERRORED", submessage);
-    playerEnded(srcTrack);
     return;
 }
 
@@ -525,20 +629,17 @@ function sendMessage(srcTrack, state, submessage) {
 
 function setVolume(newVolume) {
     volume = newVolume;
-    for (player of playerArr) {
-        if (player.setVolume){
-            player.setVolume(volume);
-        }
+    for (mp of miniPlaylistArr) {
+        mp.setVolume(volume);
     }
 }
 
 function shutup() {
     // kills all the players
-    while (document.body.children.length > 0) {
-        document.body.removeChild(document.body.children[0]);
+    for (mp of miniPlaylistArr) {
+        mp.cleanup();
     }
     // it's safer to clear the arrays after body is bodied
-    playerArr = [];
     videoArr = [];
     youtubeQueue = [];
 }
@@ -547,7 +648,7 @@ window.onload=function(){
     // handle messages from parent and children
     window.addEventListener("message", receiveMessage, false);
     // set the volume variable to parent window's volume variable
-    volume = parent.volume * 100;
+    volume = parent.volume;
     // Load the IFrame Player API code asynchronously
     var tag = document.createElement('script');
     tag.src = "https://www.youtube.com/iframe_api";

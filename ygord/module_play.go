@@ -3,10 +3,6 @@
 
 package main
 
-import(
-    "strings"
-)
-
 // PlayModule controls the 'play' command.
 type PlayModule struct {
     *Server
@@ -14,60 +10,62 @@ type PlayModule struct {
 
 // PrivMsg is the message handler for user 'play' requests.
 func (module *PlayModule) PrivMsg(srv *Server, msg *Message) {
-    usage := "usage: play url [s=start] [e=end]"
+    usage := "usage: play url [s=start] [e=end][, url [s=start] [e=end]]..."
     track := "playTrack"
     muted := "false"
     loop := "false"
 
     // validate command usage
-    if len(msg.Args) < 1 || len(msg.Args) > 3 {
-        srv.IRCPrivMsg(msg.ReplyTo, usage)
-        return
-    }
-
-    // grab starting and ending time frame bounds if either is passed
-    sBound, eBound, err := getBounds(msg.Args)
+    mediaList, err := parseArgList(msg.Args)
     if err != nil {
         srv.IRCPrivMsg(msg.ReplyTo, usage)
         return
     }
 
-    // validate the passed value is a legitimate URI
-    uri, err := parseURL(msg.Args[0])
-    if err != nil {
-        srv.IRCPrivMsg(msg.ReplyTo, err.Error())
-        return
-    }
+    mediaObjs := []*MediaObj{}
 
-    // if it's an imgur link, change any .giv/.gifv extension to a .webm
-    if isImgur(uri) {
-        uri, err = formatImgurURL(uri)
+    for _, mediaItem := range mediaList {
+        mObj := new (MediaObj)
+        err := mObj.SetSrc(mediaItem["url"])
         if err != nil {
-            srv.IRCPrivMsg(msg.ReplyTo, "error: couldn't format imgur URL")
+            srv.IRCPrivMsg(msg.ReplyTo, err.Error())
             return
         }
+
+        // check the media type
+        if mObj.GetMediaType() == "img" || mObj.GetMediaType() == "web" {
+            errMsg := "error: URL must be audio file, video file, YouTube " +
+                "video, or imgur .gif/gifv. (" + mObj.GetURL() + ")"
+            srv.IRCPrivMsg(msg.ReplyTo, errMsg)
+            return
+        }
+
+        mObj.Start = mediaItem["start"]
+        mObj.End = mediaItem["end"]
+        mObj.Muted = muted
+        // construct the mediaObj for this mediaItem that will go into the
+        // array in the media command JSON
+        mediaObjs = append(mediaObjs, mObj)
     }
 
-    mediaType := getMediaType(uri)
-    srcValue := uri.String()
-    switch mediaType {
-    case "youtube":
-        srcValue = reYTVideoId.FindAllStringSubmatch(uri.String(), -1)[0][2]
-        break
-    case "image", "web":
-        errMsg := "error: URL must be of either an " +
-            "audio file (" + strings.Join(audioFileExts, ", ") + "), " +
-            "video file (" + strings.Join(videoFileExts, ", ") + "), " +
-            "YouTube video, or imgur .gif/gifv."
-        srv.IRCPrivMsg(msg.ReplyTo, errMsg)
-        return
+    // serialize the JSON that will be passed to the minions
+    json := "{" +
+                "\"status\":\"media\"," +
+                "\"track\":\"" + track + "\"," +
+                "\"loop\":" + loop + "," +
+                "\"mediaObjs\":["
+    for i, mObj := range mediaObjs {
+        json += mObj.Serialize()
+        if i < (len(mediaObjs) - 1){
+            json += ","
+        }
     }
+    json +=     "]" +
+            "}"
 
     // send command to minions
-    json := serializeMediaObj(track, mediaType, srcValue, sBound, eBound,
-                              muted, loop)
     srv.SendToChannelMinions(msg.ReplyTo,
-        "play "+json)
+        "play " + json)
 }
 
 // Init registers all the commands for this module.
