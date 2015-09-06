@@ -31,6 +31,8 @@ func main() {
 	srv.RegisterModule(&SayModule{})
 	srv.RegisterModule(&ShutUpModule{})
 	srv.RegisterModule(&SkipModule{})
+	srv.RegisterModule(&MSkipModule{})
+	srv.RegisterModule(&QSkipModule{})
 	srv.RegisterModule(&TurretModule{})
 	srv.RegisterModule(&VolumeModule{})
 	srv.RegisterModule(&MVolumeModule{})

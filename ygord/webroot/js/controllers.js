@@ -67,16 +67,16 @@ ygorMinionControllers.controller("ChannelController", [
         }
 
         $scope.musicTrack.shutup = function() {
-            $scope.musicTrack[0].contentWindow.shutup();
+            $scope.musicTrack.stop();
         }
 
         $scope.musicTrack.skip = function() {
-            $scope.musicTrack.shutup();
+            $scope.musicTrack[0].contentWindow.skip();
         }
 
         $scope.musicTrack.stop = function() {
             $scope.musicTrack.playlist = [];
-            $scope.musicTrack.shutup();
+            $scope.musicTrack[0].contentWindow.shutup();
         }
 
         // bgTrack functions
@@ -89,7 +89,7 @@ ygorMinionControllers.controller("ChannelController", [
         }
 
         $scope.bgTrack.skip = function() {
-            $scope.bgTrack.shutup();
+            $scope.bgTrack[0].contentWindow.skip();
         }
 
         $scope.bgTrack.stop = function() {
@@ -119,16 +119,16 @@ ygorMinionControllers.controller("ChannelController", [
         }
 
         $scope.queueTrack.shutup = function() {
-            $scope.queueTrack[0].contentWindow.shutup();
+            $scope.queueTrack.stop();
         }
 
         $scope.queueTrack.skip = function() {
-            $scope.queueTrack.shutup();
+            $scope.queueTrack[0].contentWindow.skip();
         }
 
         $scope.queueTrack.stop = function() {
             $scope.queueTrack.playlist = [];
-            $scope.queueTrack.shutup();
+            $scope.queueTrack[0].contentWindow.shutup();
         }
 
         // playTrack functions
@@ -158,7 +158,7 @@ ygorMinionControllers.controller("ChannelController", [
         }
 
         $scope.playTrack.skip = function() {
-            $scope.playTrack.shutup();
+            $scope.playTrack[0].contentWindow.skip();
         }
 
         $scope.playTrack.stop = function() {
@@ -224,8 +224,8 @@ ygorMinionControllers.controller("ChannelController", [
 
         $scope.musicTrack.playNext = function() {
             if ($scope.musicTrack.playlist.length > 0) {
-                var mediaObj = $scope.musicTrack.playlist.shift();
                 $scope.musicTrack.playing = true;
+                var mediaObj = $scope.musicTrack.playlist.shift();
                 $scope.musicTrack.post(mediaObj);
             } else {
                 $scope.musicTrack.playing = false;
@@ -234,8 +234,8 @@ ygorMinionControllers.controller("ChannelController", [
 
         $scope.queueTrack.playNext = function() {
             if ($scope.queueTrack.playlist.length > 0) {
-                var mediaObj = $scope.queueTrack.playlist.shift();
                 $scope.queueTrack.playing = true;
+                var mediaObj = $scope.queueTrack.playlist.shift();
                 $scope.queueTrack.post(mediaObj);
             } else {
                 $scope.queueTrack.playing = false;
@@ -337,6 +337,18 @@ ygorMinionControllers.controller("ChannelController", [
         $scope.handleCommand = function(command) {
             if (command.name == "skip") {
                 $scope.skip();
+                return;
+            }
+
+            // skip command for musicTrack
+            if (command.name == "mskip") {
+                $scope.musicTrack.skip();
+                return;
+            }
+
+            // skip command for queueTrack
+            if (command.name == "qskip") {
+                $scope.queueTrack.skip();
                 return;
             }
 

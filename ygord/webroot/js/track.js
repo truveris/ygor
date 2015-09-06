@@ -105,8 +105,8 @@ function MiniPlaylist(mediaMessage) {
     };
 
     this.cleanup = function() {
-        for (player of this.players) {
-            this.removePlayer(player);
+        while (this.players.length > 0){
+            this.removePlayer(this.players[0]);
         }
         this.players = [];
         miniPlaylistArr.remove(this);
@@ -115,7 +115,9 @@ function MiniPlaylist(mediaMessage) {
     };
 
     this.destroy = function() {
-        this.container.parentNode.removeChild(this.container);
+        if (this.container.parentNode) {
+            this.container.parentNode.removeChild(this.container);
+        }
     };
 
     this.setVolume = function(volumeLevel) {
@@ -125,6 +127,14 @@ function MiniPlaylist(mediaMessage) {
             }
         }
     };
+
+    this.skip = function() {
+        currentPlayer = this.players[this.players.length - 1];
+        if (currentPlayer.seekToEnd) {
+            currentPlayer.seekToEnd();
+        }
+        //this.playNext();
+    }
 }
 
 // modify prototypes to add and unify functionality
@@ -211,6 +221,9 @@ HTMLVideoElement.prototype.spawn = function(miniPlaylist, mediaObj) {
         }
         this.load();
     };
+    this.seekToEnd = function() {
+        this.currentTime = this.endTime;
+    };
     this.destroy = function() {
         videoArr.remove(this);
         this.parentNode.removeChild(this);
@@ -293,13 +306,19 @@ HTMLAudioElement.prototype.spawn = function(miniPlaylist, mediaObj) {
     this.timeUpdated = function() {
         if (this.currentTime >= this.endTime && this.duration != "Inf"){
             if (this.soloLoop){
+                // when this is the only player in the playlist and the
+                // playlist should loop, this should loop on it's own.
                 this.currentTime = this.startTime;
                 this.play();
             } else {
                 this.pause();
+                this.currentTime = this.startTime;
             }
         }
     }
+    this.seekToEnd = function() {
+        this.currentTime = this.endTime;
+    };
     this.loadMediaObj = function() {
         var s = this.mediaObj.start;
         var e = this.mediaObj.end;
@@ -323,10 +342,12 @@ HTMLAudioElement.prototype.spawn = function(miniPlaylist, mediaObj) {
         this.endTime = this.endTime || this.duration;
         this.hasStarted();
     };
+    this.onplay = function() {
+        this.didEnd = false;
+    };
     this.ontimeupdate = function() {this.timeUpdated();};
     this.onerror = function() {this.hasErrored();};
     this.onended =  function() {this.hasEnded();};
-    this.onpause = function() {this.hasEnded();};
     this.soloLoop = false;
     this.startTime = 0.0;
     this.endTime = false;
@@ -365,6 +386,11 @@ HTMLImageElement.prototype.spawn = function(miniPlaylist, mediaObj) {
         // should do nothing
         return;
     };
+    this.seekToEnd = function(volumeLevel) {
+        this.miniPlaylist.playNext();
+        this.hide();
+        return;
+    };
     this.setAttribute("class", "media");
     this.loadMediaObj();
     this.miniPlaylist.container.appendChild(this);
@@ -396,6 +422,11 @@ HTMLIFrameElement.prototype.spawn = function(miniPlaylist, mediaObj) {
         // should do nothing
         return;
     };
+    this.seekToEnd = function(volumeLevel) {
+        this.miniPlaylist.playNext();
+        this.hide();
+        return;
+    };
     this.setAttribute("class", "media");
     this.loadMediaObj();
     this.miniPlaylist.container.appendChild(this);
@@ -405,6 +436,8 @@ HTMLIFrameElement.prototype.spawn = function(miniPlaylist, mediaObj) {
 function onYouTubeIframeAPIReady() {
     // adjust YT.Player prototype for easier management
     YT.Player.prototype.isReady = false;
+    YT.Player.prototype.startTime = 0.0;
+    YT.Player.prototype.endTime = false;
     YT.Player.prototype.setReady = function() {
         this.setVolume(volume * trackVolume);
         if (this.mediaObj.muted) {
@@ -431,6 +464,13 @@ function onYouTubeIframeAPIReady() {
             this.playVideo();
         }
     };
+    YT.Player.prototype.seekToStart = function() {
+        this.seekTo(this.startTime);
+    };
+    YT.Player.prototype.seekToEnd = function() {
+        this.endTime = this.endTime || this.getDuration();
+        this.seekTo(this.endTime);
+    };
     YT.Player.prototype.destroy = function() {
         var iframe = this.getIframe();
         iframe.parentNode.removeChild(iframe);
@@ -445,11 +485,13 @@ function onYouTubeIframeAPIReady() {
             var end = this.mediaObj.end;
             if (start.length > 0) {
                 params.startSeconds = parseFloat(start);
+                this.startTime = start;
             } else {
                 params.startSeconds = 0;
             }
             if (end.length > 0) {
                 params.endSeconds = parseFloat(end);
+                this.endTime = end;
             }
             this.loadVideoById(params);
         }
@@ -552,11 +594,7 @@ function onPlayerStateChange(event) {
             // hide the player so the thumbnail isn't seen while the video
             // isn't playing
             event.target.hide();
-            var start = 0;
-            if (event.target.mediaObj.start.length > 0) {
-                start = parseFloat(event.target.mediaObj.start);
-            }
-            event.target.seekTo(start);
+            event.target.seekToStart();
             if (event.target.soloLoop) {
                 event.target.playVideo();
             } else {
@@ -642,12 +680,15 @@ function setTrackVolume(newVolume) {
 
 function shutup() {
     // kills all the players
-    for (mp of miniPlaylistArr) {
-        mp.cleanup();
+    while (miniPlaylistArr.length > 0){
+        miniPlaylistArr[0].cleanup();
     }
     // it's safer to clear the arrays after body is bodied
     videoArr = [];
-    youtubeQueue = [];
+}
+
+function skip() {
+    miniPlaylistArr[0].skip();
 }
 
 window.onload=function(){
