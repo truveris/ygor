@@ -34,8 +34,30 @@ func (module *SayModule) PrivMsg(srv *Server, msg *Message) {
 		return
 	}
 
-	body := "play " + srv.Config.SaydURL + cmd.Voice + ".mp3?" + url.QueryEscape(strings.Join(args, " "))
-	srv.SendToChannelMinions(msg.ReplyTo, body)
+	src := srv.Config.SaydURL + cmd.Voice + ".mp3?" + url.QueryEscape(strings.Join(args, " "))
+	mObj := new (MediaObj)
+    err = mObj.SetSrc(src)
+    if err != nil {
+        srv.IRCPrivMsg(msg.ReplyTo, err.Error())
+        return
+    }
+
+    mObj.Start = ""
+    mObj.End = ""
+    mObj.Muted = "false"
+
+    json := "{" +
+                "\"status\":\"media\"," +
+                "\"track\":\"playTrack\"," +
+                "\"loop\":false," +
+                "\"mediaObjs\":[" +
+                    mObj.Serialize() +
+                "]" +
+            "}"
+
+    // send command to minions
+    srv.SendToChannelMinions(msg.ReplyTo,
+        "play " + json)
 }
 
 // Init registers all the commands for this module.
