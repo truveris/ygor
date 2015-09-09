@@ -10,7 +10,7 @@ type MusicModule struct {
 
 // PrivMsg is the message handler for user 'music' requests.
 func (module *MusicModule) PrivMsg(srv *Server, msg *Message) {
-	usage := "usage: music url [s=start] [e=end]"
+	usage := "usage: music url [-s start] [-e end][, url [-s start] [-e end]]..."
 	track := "musicTrack"
 	muted := false
 	loop := false

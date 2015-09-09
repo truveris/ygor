@@ -24,7 +24,8 @@ func parseArgList(argArr []string) ([]map[string]string, error) {
 		// arguments.
 		mediaArgs := strings.Split(media, " ")
 		// Validate that it has an appropriate number of arguments.
-		if len(mediaArgs) < 1 || len(mediaArgs) > 3 {
+		numOfArgs := len(mediaArgs)
+		if numOfArgs != 1 && numOfArgs != 3 && numOfArgs != 5 {
 			err := errors.New("invalid number of arguments")
 			return mediaList, err
 		}
@@ -58,34 +59,22 @@ func parseArgList(argArr []string) ([]map[string]string, error) {
 func getBounds(args []string) (string, string, error) {
 	sBound := ""
 	eBound := ""
-	if len(args) > 1 {
-		firstBound := strings.Split(args[1], "=")
-		if len(firstBound) != 2 {
+	if len(args) == 3 || len(args) == 5 {
+		// Grab and validate the first option.
+		if args[1] == "-s" {
+			sBound = args[2]
+		} else if args[1] == "-e" {
+			eBound = args[2]
+		} else {
 			return "", "", errors.New("invalid argument")
 		}
-		switch firstBound[0] {
-		case "s":
-			sBound = firstBound[1]
-			break
-		case "e":
-			eBound = firstBound[1]
-			break
-		default:
-			return "", "", errors.New("invalid argument")
-		}
-		if len(args) == 3 {
-			secondBound := strings.Split(args[2], "=")
-			if len(secondBound) != 2 {
-				return "", "", errors.New("invalid argument")
-			}
-			switch secondBound[0] {
-			case "s":
-				sBound = secondBound[1]
-				break
-			case "e":
-				eBound = secondBound[1]
-				break
-			default:
+		if len(args) == 5 {
+			// Grab and validate the second option.
+			if args[3] == "-s" && args[1] == "-e" {
+				sBound = args[4]
+			} else if args[3] == "-e" && args[1] == "-s" {
+				eBound = args[4]
+			} else {
 				return "", "", errors.New("invalid argument")
 			}
 		}

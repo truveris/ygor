@@ -10,7 +10,7 @@ type BgModule struct {
 
 // PrivMsg is the message handler for user 'bg' requests.
 func (module *BgModule) PrivMsg(srv *Server, msg *Message) {
-	usage := "usage: bg url [s=start] [e=end][, url [s=start] [e=end]]..."
+	usage := "usage: bg url [-s start] [-e end][, url [-s start] [-e end]]..."
 	track := "bgTrack"
 	muted := true
 	loop  := true

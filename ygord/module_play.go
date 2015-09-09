@@ -10,7 +10,7 @@ type PlayModule struct {
 
 // PrivMsg is the message handler for user 'play' requests.
 func (module *PlayModule) PrivMsg(srv *Server, msg *Message) {
-	usage := "usage: play url [s=start] [e=end][, url [s=start] [e=end]]..."
+	usage := "usage: play url [-s start] [-e end][, url [-s start] [-e end]]..."
 	track := "playTrack"
 	muted := false
 	loop := false

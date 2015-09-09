@@ -10,7 +10,7 @@ type QueueModule struct {
 
 // PrivMsg is the message handler for user 'queue' requests.
 func (module *QueueModule) PrivMsg(srv *Server, msg *Message) {
-	usage := "usage: q[ueue] url [s=start] [e=end][, url [s=start] [e=end]]..."
+	usage := "usage: q[ueue] url [-s start] [-e end][, url [-s start] [-e end]]..."
 	track := "queueTrack"
 	muted := false
 	loop := false
