@@ -201,6 +201,7 @@ HTMLVideoElement.prototype.spawn = function(miniPlaylist, mediaObj) {
                 this.play();
             } else {
                 this.pause();
+                this.hasEnded();
                 this.currentTime = this.startTime;
             }
         }
@@ -312,6 +313,7 @@ HTMLAudioElement.prototype.spawn = function(miniPlaylist, mediaObj) {
                 this.play();
             } else {
                 this.pause();
+                this.hasEnded();
                 this.currentTime = this.startTime;
             }
         }
