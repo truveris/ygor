@@ -37,6 +37,7 @@ ygorMinionControllers.controller("ChannelController", [
         $scope.musicTrack.attr("hidden", "hidden");
         $scope.queueTrack.attr("hidden", "hidden");
         $scope.playTrack.attr("hidden", "hidden");
+        $scope.popUpContainer = $("#pop-up-container");
         var increment = 5;
         // set global volume variables for easy access by embedded iframes
         window.volume = 100;
@@ -188,24 +189,19 @@ ygorMinionControllers.controller("ChannelController", [
 
         $scope.showError = function(srcTrack, submessage) {
             submessage = submessage || "";
-            var popUp = document.createElement("div");
-            popUp.setAttribute("class", "error-pop-up");
-            var title = document.createElement("p");
-            title.setAttribute("class", "error-title");
-            title.innerHTML = srcTrack + " error";
-            popUp.appendChild(title);
-            var subtitle = document.createElement("p");
-            subtitle.setAttribute("class", "error-subtitle");
-            subtitle.innerHTML = submessage;
-            popUp.appendChild(subtitle);
-            document.getElementById("pop-up-container").appendChild(popUp);
-            popUp.style.opacity = 1;
-            // Make sure the initial state is applied.
-            window.getComputedStyle(popUp).opacity;
-            popUp.style.opacity = 0;
-            setTimeout(function() {
-                popUp.parentNode.removeChild(popUp);
-            }, 4000);
+            var $popUpDiv = $("<div>", {class: "error-pop-up"});
+            var $titleP = $("<p>", {class: "error-title"});
+            $titleP.html(srcTrack + " error");
+            $popUpDiv.append($titleP)
+            var $subtitleP = $("<p>", {class: "error-subtitle"});
+            $subtitleP.html(submessage);
+            $popUpDiv.append($subtitleP);
+            $scope.popUpContainer.append($popUpDiv);
+            // fade it out, then remove it.
+            $popUpDiv.delay(2000).fadeOut({
+                duration: 500,
+                complete: function(){$(this).remove();},
+            });
         }
 
         $(".button-reconnect").click(function() {
