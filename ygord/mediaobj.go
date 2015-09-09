@@ -322,3 +322,14 @@ func (mObj *MediaObj) Serialize() string {
 		"}"
 	return json
 }
+
+// MediaObjList provides a simple way to hold multiple MediaObjs as well as
+// references to their intended track, and whether or not the list should loop.
+//
+// It also allows an easy way to serialize the JSON for the whole list, which
+// is what should be passed to the connected minions.
+type MediaObjList struct {
+	track     string
+	loop      bool
+	mediaObjs []*MediaObj
+}
