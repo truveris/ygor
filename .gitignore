@@ -7,3 +7,4 @@ data
 *.json
 *.conf
 *.cfg
+*.DS_Store
