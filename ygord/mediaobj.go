@@ -8,6 +8,8 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+	"encoding/json"
+	"log"
 )
 
 var (
@@ -329,7 +331,27 @@ func (mObj *MediaObj) Serialize() string {
 // It also allows an easy way to serialize the JSON for the whole list, which
 // is what should be passed to the connected minions.
 type MediaObjList struct {
-	track     string
-	loop      bool
-	mediaObjs []*MediaObj
+	Track     string      `json:"track"`
+	Loop      bool        `json:"loop"`
+	mediaObjs []*MediaObj `json:"mediaObjs"`
+}
+
+// Append appends a pointer to a MediaObj to the end of the 'mediaObjs'
+// array.
+func (mObjList *MediaObjList) Append(mObj *MediaObj) {
+	mObjList.mediaObjs = append(mObjList.mediaObjs, mObj)
+}
+
+// Serialize generates and returns the JSON string out of the MediaObjs in the
+// 'mediaObj' array. This JSON string is what should be sent to the connected
+// minions.
+func (mObjList *MediaObjList) Serialize(){
+	serializedJSON,_ := json.Marshal(struct{
+		*MediaObjList
+		Status        string `json:"status"`
+	}{
+		MediaObjList: mObjList,
+		Status:       "media",
+	})
+	return string(serializedJSON)
 }
