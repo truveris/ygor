@@ -15,15 +15,19 @@ func (module *QueueModule) PrivMsg(srv *Server, msg *Message) {
 	muted := "false"
 	loop := "false"
 
-	// validate command usage
+	// Validate the command's usage, and get back a map array representing the
+	// media items that were passed, along with each one's start and end
+	// bounds.
 	mediaList, err := parseArgList(msg.Args)
 	if err != nil {
 		srv.IRCPrivMsg(msg.ReplyTo, usage)
 		return
 	}
 
+	// Make the array that will house the pointers to the MediaObjs.
 	mediaObjs := []*MediaObj{}
 
+	// Parse all the media items in 'mediaList' into MediaObjs
 	for _, mediaItem := range mediaList {
 		mObj := new(MediaObj)
 		err := mObj.SetSrc(mediaItem["url"])
@@ -32,7 +36,7 @@ func (module *QueueModule) PrivMsg(srv *Server, msg *Message) {
 			return
 		}
 
-		// check the media type
+		// Check the media types.
 		if mObj.GetMediaType() == "img" || mObj.GetMediaType() == "web" {
 			errMsg := "error: URL must be audio file, video file, YouTube " +
 				"video, or imgur .gif/gifv. (" + mObj.GetURL() + ")"
@@ -43,12 +47,11 @@ func (module *QueueModule) PrivMsg(srv *Server, msg *Message) {
 		mObj.Start = mediaItem["start"]
 		mObj.End = mediaItem["end"]
 		mObj.Muted = muted
-		// construct the mediaObj for this mediaItem that will go into the
-		// array in the media command JSON
+		// Append the constructed MediaObj onto the mediaObjs array.
 		mediaObjs = append(mediaObjs, mObj)
 	}
 
-	// serialize the JSON that will be passed to the minions
+	// Serialize the JSON that will be passed to the connected minions.
 	json := "{" +
 		"\"status\":\"media\"," +
 		"\"track\":\"" + track + "\"," +
@@ -57,13 +60,14 @@ func (module *QueueModule) PrivMsg(srv *Server, msg *Message) {
 	for i, mObj := range mediaObjs {
 		json += mObj.Serialize()
 		if i < (len(mediaObjs) - 1) {
+			// Add a comma after each MediaObj, unless it's the last one.
 			json += ","
 		}
 	}
 	json += "]" +
 		"}"
 
-	// send command to minions
+	// Send the command to the connected minions.
 	srv.SendToChannelMinions(msg.ReplyTo,
 		"queue "+json)
 }
