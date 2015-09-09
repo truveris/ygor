@@ -8,16 +8,16 @@ type QSkipModule struct{}
 
 // PrivMsg is the message handler for user requests.
 func (module *QSkipModule) PrivMsg(srv *Server, msg *Message) {
-    srv.SendToChannelMinions(msg.ReplyTo, "qskip")
+	srv.SendToChannelMinions(msg.ReplyTo, "qskip")
 }
 
 // Init registers all the commands for this module.
 func (module QSkipModule) Init(srv *Server) {
-    srv.RegisterCommand(Command{
-        Name:            "qskip",
-        PrivMsgFunction: module.PrivMsg,
-        Addressed:       true,
-        AllowPrivate:    false,
-        AllowChannel:    true,
-    })
+	srv.RegisterCommand(Command{
+		Name:            "qskip",
+		PrivMsgFunction: module.PrivMsg,
+		Addressed:       true,
+		AllowPrivate:    false,
+		AllowChannel:    true,
+	})
 }

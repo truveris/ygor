@@ -8,16 +8,16 @@ type MSkipModule struct{}
 
 // PrivMsg is the message handler for user requests.
 func (module *MSkipModule) PrivMsg(srv *Server, msg *Message) {
-    srv.SendToChannelMinions(msg.ReplyTo, "mskip")
+	srv.SendToChannelMinions(msg.ReplyTo, "mskip")
 }
 
 // Init registers all the commands for this module.
 func (module MSkipModule) Init(srv *Server) {
-    srv.RegisterCommand(Command{
-        Name:            "mskip",
-        PrivMsgFunction: module.PrivMsg,
-        Addressed:       true,
-        AllowPrivate:    false,
-        AllowChannel:    true,
-    })
+	srv.RegisterCommand(Command{
+		Name:            "mskip",
+		PrivMsgFunction: module.PrivMsg,
+		Addressed:       true,
+		AllowPrivate:    false,
+		AllowChannel:    true,
+	})
 }
