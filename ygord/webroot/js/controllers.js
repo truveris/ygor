@@ -243,7 +243,7 @@ ygorMinionControllers.controller("ChannelController", [
                 event.origin !== "https://truveris.com"){
                 return;
             }
-            msg = JSON.parse(event.data);
+            msg = $.parseJSON(event.data);
             switch (msg.source){
                 case "queueTrack":
                     switch (msg.playerState) {
@@ -429,7 +429,7 @@ ygorMinionControllers.controller("ChannelController", [
             }
 
             if (command.name == "queue") {
-                mediaObj = JSON.parse(command.args[0]);
+                mediaObj = $.parseJSON(command.args[0]);
                 $scope.queueTrack.playlist.push(mediaObj);
                 if (!$scope.queueTrack.playing) {
                     $scope.queueTrack.playNext()
@@ -438,7 +438,7 @@ ygorMinionControllers.controller("ChannelController", [
             }
 
             if (command.name == "music") {
-                mediaObj = JSON.parse(command.args[0]);
+                mediaObj = $.parseJSON(command.args[0]);
                 $scope.musicTrack.playlist.push(mediaObj);
                 if (!$scope.musicTrack.playing) {
                     $scope.musicTrack.playNext()
@@ -447,14 +447,14 @@ ygorMinionControllers.controller("ChannelController", [
             }
 
             if (command.name == "bg") {
-                mediaObj = JSON.parse(command.args[0]);
+                mediaObj = $.parseJSON(command.args[0]);
                 $scope.bgTrack.shutup();
                 $scope.bgTrack.post(mediaObj);
                 return;
             }
 
             if (command.name == "play") {
-                mediaObj = JSON.parse(command.args[0]);
+                mediaObj = $.parseJSON(command.args[0]);
                 $scope.playTrack.post(mediaObj);
                 return;
             }
