@@ -61,7 +61,7 @@ func (module *MusicModule) PrivMsg(srv *Server, msg *Message) {
 
 	// Send the command to the connected minions.
 	srv.SendToChannelMinions(msg.ReplyTo,
-		"music " + json)
+		"music "+json)
 }
 
 // Init registers all the commands for this module.

@@ -60,7 +60,7 @@ func (module *SayModule) PrivMsg(srv *Server, msg *Message) {
 
 	// send command to minions
 	srv.SendToChannelMinions(msg.ReplyTo,
-		"play " + json)
+		"play "+json)
 }
 
 // Init registers all the commands for this module.

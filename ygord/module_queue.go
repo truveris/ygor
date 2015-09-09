@@ -60,7 +60,7 @@ func (module *QueueModule) PrivMsg(srv *Server, msg *Message) {
 
 	// Send the command to the connected minions.
 	srv.SendToChannelMinions(msg.ReplyTo,
-		"queue " + json)
+		"queue "+json)
 }
 
 // Init registers all the commands for this module.

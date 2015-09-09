@@ -13,7 +13,7 @@ func (module *BgModule) PrivMsg(srv *Server, msg *Message) {
 	usage := "usage: bg url [-s start] [-e end][, url [-s start] [-e end]]..."
 	track := "bgTrack"
 	muted := true
-	loop  := true
+	loop := true
 
 	// Validate the command's usage, and get back a map array representing the
 	// media items that were passed, along with each one's start and end
@@ -60,7 +60,7 @@ func (module *BgModule) PrivMsg(srv *Server, msg *Message) {
 
 	// Send the command to the connected minions.
 	srv.SendToChannelMinions(msg.ReplyTo,
-		"bg " + json)
+		"bg "+json)
 }
 
 // Init registers all the commands for this module.

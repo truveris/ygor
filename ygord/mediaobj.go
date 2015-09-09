@@ -4,11 +4,11 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"net/url"
 	"regexp"
 	"strings"
-	"encoding/json"
 )
 
 var (
@@ -81,20 +81,20 @@ var (
 type MediaObj struct {
 	// 'Src' is formatted over time and is what will eventually be passed to
 	// the connected minions.
-	Src       string `json:"src"`
-	url       string
-	host      string
-	path      string
+	Src  string `json:"src"`
+	url  string
+	host string
+	path string
 	// 'MediaType' tells the connected minions how to embed the desired content
 	// using 'Src'.
 	MediaType string `json:"mediaType"`
 	// Start represents where in the desired content's timeline to begin
 	// playing
-	Start     string `json:"start"`
+	Start string `json:"start"`
 	// End represents where in the desired content's timeline to stop playing
-	End       string `json:"end"`
+	End string `json:"end"`
 	// Muted represents whether or not the desired content should be muted
-	Muted     bool   `json:"muted"`
+	Muted bool `json:"muted"`
 }
 
 // SetSrc takes in a string that represents a URL. This function determines if
@@ -331,10 +331,10 @@ func (mObjList *MediaObjList) Append(mObj *MediaObj) {
 // Serialize generates and returns the JSON string out of the MediaObjs in the
 // 'mediaObj' array. This JSON string is what should be sent to the connected
 // minions.
-func (mObjList *MediaObjList) Serialize() string{
-	serializedJSON,_ := json.Marshal(struct{
+func (mObjList *MediaObjList) Serialize() string {
+	serializedJSON, _ := json.Marshal(struct {
 		*MediaObjList
-		Status        string `json:"status"`
+		Status string `json:"status"`
 	}{
 		Status:       "media",
 		MediaObjList: mObjList,
