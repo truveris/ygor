@@ -12,8 +12,8 @@ type PlayModule struct {
 func (module *PlayModule) PrivMsg(srv *Server, msg *Message) {
 	usage := "usage: play url [s=start] [e=end][, url [s=start] [e=end]]..."
 	track := "playTrack"
-	muted := "false"
-	loop := "false"
+	muted := false
+	loop := false
 
 	// Validate the command's usage, and get back a map array representing the
 	// media items that were passed, along with each one's start and end
@@ -24,8 +24,11 @@ func (module *PlayModule) PrivMsg(srv *Server, msg *Message) {
 		return
 	}
 
-	// Make the array that will house the pointers to the MediaObjs.
-	mediaObjs := []*MediaObj{}
+	// Make the MediaObjList that will house the pointers to the MediaObjs.
+	mObjList := &MediaObjList{
+		Track: track,
+		Loop:  loop,
+	}
 
 	// Parse all the media items in 'mediaList' into MediaObjs
 	for _, mediaItem := range mediaList {
@@ -48,29 +51,16 @@ func (module *PlayModule) PrivMsg(srv *Server, msg *Message) {
 		mObj.Start = mediaItem["start"]
 		mObj.End = mediaItem["end"]
 		mObj.Muted = muted
-		// Append the constructed MediaObj onto the mediaObjs array.
-		mediaObjs = append(mediaObjs, mObj)
+		// Add the constructed MediaObj to the MediaObjList.
+		mObjList.Append(mObj)
 	}
 
 	// Serialize the JSON that will be passed to the connected minions.
-	json := "{" +
-		"\"status\":\"media\"," +
-		"\"track\":\"" + track + "\"," +
-		"\"loop\":" + loop + "," +
-		"\"mediaObjs\":["
-	for i, mObj := range mediaObjs {
-		json += mObj.Serialize()
-		if i < (len(mediaObjs) - 1) {
-			// Add a comma after each MediaObj, unless it's the last one.
-			json += ","
-		}
-	}
-	json += "]" +
-		"}"
+	json := mObjList.Serialize()
 
 	// Send the command to the connected minions.
 	srv.SendToChannelMinions(msg.ReplyTo,
-		"play "+json)
+		"play " + json)
 }
 
 // Init registers all the commands for this module.

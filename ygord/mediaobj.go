@@ -9,7 +9,6 @@ import (
 	"regexp"
 	"strings"
 	"encoding/json"
-	"log"
 )
 
 var (
@@ -80,34 +79,34 @@ var (
 // the data, so that command modules aren't filled with a lot of excessive
 // code.
 type MediaObj struct {
-	// 'src' is formatted over time and is what will eventually be passed to
+	// 'Src' is formatted over time and is what will eventually be passed to
 	// the connected minions.
-	src       string
+	Src       string `json:"src"`
 	url       string
 	host      string
 	path      string
-	// 'mediaType' tells the connected minions how to embed the desired content
-	// using 'src'.
-	mediaType string
+	// 'MediaType' tells the connected minions how to embed the desired content
+	// using 'Src'.
+	MediaType string `json:"mediaType"`
 	// Start represents where in the desired content's timeline to begin
 	// playing
-	Start     string
+	Start     string `json:"start"`
 	// End represents where in the desired content's timeline to stop playing
-	End       string
+	End       string `json:"end"`
 	// Muted represents whether or not the desired content should be muted
-	Muted     string
+	Muted     bool   `json:"muted"`
 }
 
 // SetSrc takes in a string that represents a URL. This function determines if
 // the URL is a valid URL, formats imgur links to use .webm instead of .gif(v),
-// determines the mediaType that the URL represents, and grabs the videoID from
+// determines the MediaType that the URL represents, and grabs the videoID from
 // YouTube links.
 //
-// The MediaObj's 'src' attribute will either be set to the passed URL, the
+// The MediaObj's 'Src' attribute will either be set to the passed URL, the
 // formatted imgur URL (if it was an imgur link), or the YouTube video's
 // videoID (if it was a YouTube video).
 //
-// The MediaObj's 'src' attribute can be retrieved using the MediaObj's
+// The MediaObj's 'Src' attribute can be retrieved using the MediaObj's
 // 'GetSrc()' function.
 //
 // The URL that was originally passed, is saved as the MediaObj's 'url'
@@ -118,7 +117,7 @@ func (mObj *MediaObj) SetSrc(url string) error {
 		errMsg := "error: " + err.Error() + " (" + url + ")"
 		return errors.New(errMsg)
 	}
-	mObj.src = uri.String()
+	mObj.Src = uri.String()
 	mObj.url = url
 	mObj.host = uri.Host
 	mObj.path = uri.Path
@@ -141,10 +140,10 @@ func (mObj *MediaObj) SetSrc(url string) error {
 	return nil
 }
 
-// GetSrc returns the MediaObj's 'src' attribute (this is what should get passed to
+// GetSrc returns the MediaObj's 'Src' attribute (this is what should get passed to
 // the connected minions).
 func (mObj *MediaObj) GetSrc() string {
-	return mObj.src
+	return mObj.Src
 }
 
 // GetURL returns the URL that was originally passed to the 'SetSrc()' function.
@@ -152,17 +151,17 @@ func (mObj *MediaObj) GetURL() string {
 	return mObj.url
 }
 
-// setMediaType sets the 'mediaType' attribute of the MediaObj. This tells the
+// setMediaType sets the 'MediaType' attribute of the MediaObj. This tells the
 // connected minions what kind of content they should be trying to embed.
 func (mObj *MediaObj) setMediaType() {
 	// Is the passed URL a YouTube video link?
 	if mObj.isYouTube() {
-		mObj.mediaType = "youtube"
+		mObj.MediaType = "youtube"
 		return
 	}
 
 	// Does the passed URL have a file extension that can be used to determine
-	// mediaType?
+	// MediaType?
 	matches := reFileExt.FindAllStringSubmatch(mObj.path, -1)
 	if len(matches) > 0 {
 		fileExt := matches[0][1]
@@ -170,7 +169,7 @@ func (mObj *MediaObj) setMediaType() {
 		// Is it an image file?
 		for _, ext := range imageFileExts {
 			if fileExt == ext {
-				mObj.mediaType = "img"
+				mObj.MediaType = "img"
 				return
 			}
 		}
@@ -178,7 +177,7 @@ func (mObj *MediaObj) setMediaType() {
 		// Is it an audio file?
 		for _, ext := range audioFileExts {
 			if fileExt == ext {
-				mObj.mediaType = "audio"
+				mObj.MediaType = "audio"
 				return
 			}
 		}
@@ -186,7 +185,7 @@ func (mObj *MediaObj) setMediaType() {
 		// Is it a video file?
 		for _, ext := range videoFileExts {
 			if fileExt == ext {
-				mObj.mediaType = "video"
+				mObj.MediaType = "video"
 				return
 			}
 		}
@@ -194,18 +193,18 @@ func (mObj *MediaObj) setMediaType() {
 
 	// If it's not a link to a YouTube video, and it's not a link to an image
 	// file, audio file, or video file (at least, of those that are supported
-	// by Firefox), then make the MediaObj's 'mediaType' be 'web' so the
+	// by Firefox), then make the MediaObj's 'MediaType' be 'web' so the
 	// connected minions can just embed the URL as an iframe and hope for the
 	// best.
-	mObj.mediaType = "web"
+	mObj.MediaType = "web"
 	return
 }
 
-// GetMediaType returnes the MediaObj's 'mediaType' attribute. The 'mediaType'
+// GetMediaType returnes the MediaObj's 'MediaType' attribute. The 'MediaType'
 // tells the connected minions what kind of content they should be trying to
-// embed when using the MediaObj's 'src' attribute.
+// embed when using the MediaObj's 'Src' attribute.
 func (mObj *MediaObj) GetMediaType() string {
-	return mObj.mediaType
+	return mObj.MediaType
 }
 
 // isImgur attempts to determine if the desired content is hosted on imgur
@@ -229,32 +228,32 @@ func (mObj *MediaObj) isYouTube() bool {
 	return false
 }
 
-// formatImgurURL swaps .gif(v) file extension of MediaObj's src with .webm
+// formatImgurURL swaps .gif(v) file extension of MediaObj's Src with .webm
 //
 // imgur will automatically convert any .gif to .webm, but wrap it as a .gifv.
 // WEBM files take far less bandwidth to download than their .gif counterparts,
 // and are much easier to render, as well.
 //
 // Formatting the URL to use .webm (if applicable), allows the URL to be
-// recognized as a video file (and thus, will make the 'mediaType' be 'video'),
+// recognized as a video file (and thus, will make the 'MediaType' be 'video'),
 // so when passed to the connected minions, they can embed it as a video,
 // rather than an image.
 func (mObj *MediaObj) formatImgurURL() error {
-	newURL := reGifV.ReplaceAllString(mObj.src, ".webm")
+	newURL := reGifV.ReplaceAllString(mObj.Src, ".webm")
 	uri, err := parseURL(newURL)
 	if err != nil {
 		errMsg := "error: " + err.Error() + " (" + mObj.url + ")"
 		return errors.New(errMsg)
 	}
-	mObj.src = uri.String()
+	mObj.Src = uri.String()
 	mObj.path = uri.Path
 	return nil
 }
 
 // setYouTubeVideoID grabs the YouTube video's videoID from the passed URL, and
-// sets it as the MediaObj's 'src' attribute.
+// sets it as the MediaObj's 'Src' attribute.
 func (mObj *MediaObj) setYouTubeVideoID() {
-	mObj.src = reYTVideoID.FindAllStringSubmatch(mObj.src, -1)[0][2]
+	mObj.Src = reYTVideoID.FindAllStringSubmatch(mObj.Src, -1)[0][2]
 	return
 }
 
@@ -312,19 +311,6 @@ func parseURL(link string) (*url.URL, error) {
 	return uri, nil
 }
 
-// Serialize returns stringified JSON representation of the MediaObj. This is
-// what would normally be passed to the connected minions.
-func (mObj *MediaObj) Serialize() string {
-	json := "{" +
-		"\"mediaType\":\"" + mObj.mediaType + "\"," +
-		"\"src\":\"" + mObj.src + "\"," +
-		"\"start\":\"" + mObj.Start + "\"," +
-		"\"end\":\"" + mObj.End + "\"," +
-		"\"muted\":" + mObj.Muted +
-		"}"
-	return json
-}
-
 // MediaObjList provides a simple way to hold multiple MediaObjs as well as
 // references to their intended track, and whether or not the list should loop.
 //
@@ -333,25 +319,25 @@ func (mObj *MediaObj) Serialize() string {
 type MediaObjList struct {
 	Track     string      `json:"track"`
 	Loop      bool        `json:"loop"`
-	mediaObjs []*MediaObj `json:"mediaObjs"`
+	MediaObjs []*MediaObj `json:"mediaObjs"`
 }
 
-// Append appends a pointer to a MediaObj to the end of the 'mediaObjs'
+// Append appends a pointer to a MediaObj to the end of the 'MediaObjs'
 // array.
 func (mObjList *MediaObjList) Append(mObj *MediaObj) {
-	mObjList.mediaObjs = append(mObjList.mediaObjs, mObj)
+	mObjList.MediaObjs = append(mObjList.MediaObjs, mObj)
 }
 
 // Serialize generates and returns the JSON string out of the MediaObjs in the
 // 'mediaObj' array. This JSON string is what should be sent to the connected
 // minions.
-func (mObjList *MediaObjList) Serialize(){
+func (mObjList *MediaObjList) Serialize() string{
 	serializedJSON,_ := json.Marshal(struct{
 		*MediaObjList
 		Status        string `json:"status"`
 	}{
-		MediaObjList: mObjList,
 		Status:       "media",
+		MediaObjList: mObjList,
 	})
 	return string(serializedJSON)
 }

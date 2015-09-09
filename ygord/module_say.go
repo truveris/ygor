@@ -44,20 +44,23 @@ func (module *SayModule) PrivMsg(srv *Server, msg *Message) {
 
 	mObj.Start = ""
 	mObj.End = ""
-	mObj.Muted = "false"
+	mObj.Muted = false
 
-	json := "{" +
-		"\"status\":\"media\"," +
-		"\"track\":\"playTrack\"," +
-		"\"loop\":false," +
-		"\"mediaObjs\":[" +
-		mObj.Serialize() +
-		"]" +
-		"}"
+	// Make the MediaObjList that will house the pointer to the MediaObj.
+	mObjList := &MediaObjList{
+		Track: "playTrack",
+		Loop:  false,
+	}
+
+	// Add the constructed MediaObj to the MediaObjList.
+	mObjList.Append(mObj)
+
+	// Serialize the JSON that will be passed to the connected minions.
+	json := mObjList.Serialize()
 
 	// send command to minions
 	srv.SendToChannelMinions(msg.ReplyTo,
-		"play "+json)
+		"play " + json)
 }
 
 // Init registers all the commands for this module.
