@@ -11,7 +11,9 @@ import (
 )
 
 var (
-	// known domains to check for
+	// These are the known domains to check for, where special formatting of
+	// the passed URL is required so connected minions can most effectively
+	// embed and manipulate the desired content.
 	youtubeHostNames = []string{
 		"www.youtube.com",
 		"www.youtu.be",
@@ -23,7 +25,8 @@ var (
 		"www.imgur.com",
 		"imgur.com",
 	}
-	// known file extensions that are supported by Firefox
+
+	// These are the known file extensions that are supported by Firefox.
 	audioFileExts = []string{
 		"mp3",
 		"wav",
@@ -59,7 +62,6 @@ var (
 		"opus",
 	}
 
-	// regex
 	rePort         = regexp.MustCompile(`^[0-9]+$`)
 	reHostnamePart = regexp.MustCompile(`^([a-zA-Z0-9]+\-+)*[a-zA-Z0-9]+$`)
 	reYTVideoID    = regexp.MustCompile(
@@ -76,13 +78,21 @@ var (
 // the data, so that command modules aren't filled with a lot of excessive
 // code.
 type MediaObj struct {
-	src       string // is formatted over time and will be passed to minions
-	url       string // used to track the original URL passed by the command
+	// 'src' is formatted over time and is what will eventually be passed to
+	// the connected minions.
+	src       string
+	url       string
 	host      string
 	path      string
+	// 'mediaType' tells the connected minions how to embed the desired content
+	// using 'src'.
 	mediaType string
+	// Start represents where in the desired content's timeline to begin
+	// playing
 	Start     string
+	// End represents where in the desired content's timeline to stop playing
 	End       string
+	// Muted represents whether or not the desired content should be muted
 	Muted     string
 }
 
@@ -111,7 +121,8 @@ func (mObj *MediaObj) SetSrc(url string) error {
 	mObj.host = uri.Host
 	mObj.path = uri.Path
 
-	// if it's an imgur link, change any .giv/.gifv extension to a .webm
+	// If it's an imgur link, change any .giv(v) extension to .webm, so minions
+	// can embed it as a video, instead of an image.
 	if mObj.isImgur() {
 		err := mObj.formatImgurURL()
 		if err != nil {
@@ -142,18 +153,19 @@ func (mObj *MediaObj) GetURL() string {
 // setMediaType sets the 'mediaType' attribute of the MediaObj. This tells the
 // connected minions what kind of content they should be trying to embed.
 func (mObj *MediaObj) setMediaType() {
-	// is it a youtube URI?
+	// Is the passed URL a YouTube video link?
 	if mObj.isYouTube() {
 		mObj.mediaType = "youtube"
 		return
 	}
 
-	// see if there's a file extension
+	// Does the passed URL have a file extension that can be used to determine
+	// mediaType?
 	matches := reFileExt.FindAllStringSubmatch(mObj.path, -1)
 	if len(matches) > 0 {
 		fileExt := matches[0][1]
 
-		// check if it's an image
+		// Is it an image file?
 		for _, ext := range imageFileExts {
 			if fileExt == ext {
 				mObj.mediaType = "img"
@@ -161,7 +173,7 @@ func (mObj *MediaObj) setMediaType() {
 			}
 		}
 
-		// check if it's audio
+		// Is it an audio file?
 		for _, ext := range audioFileExts {
 			if fileExt == ext {
 				mObj.mediaType = "audio"
@@ -169,7 +181,7 @@ func (mObj *MediaObj) setMediaType() {
 			}
 		}
 
-		// check if it's video
+		// Is it a video file?
 		for _, ext := range videoFileExts {
 			if fileExt == ext {
 				mObj.mediaType = "video"
@@ -178,8 +190,11 @@ func (mObj *MediaObj) setMediaType() {
 		}
 	}
 
-	// if it isn't recognized as a supported file format, or a file extension
-	// can't be found, just return 'web'
+	// If it's not a link to a YouTube video, and it's not a link to an image
+	// file, audio file, or video file (at least, of those that are supported
+	// by Firefox), then make the MediaObj's 'mediaType' be 'web' so the
+	// connected minions can just embed the URL as an iframe and hope for the
+	// best.
 	mObj.mediaType = "web"
 	return
 }
@@ -252,7 +267,7 @@ func parseURL(link string) (*url.URL, error) {
 		return uri, errors.New(errorMsg)
 	}
 
-	// validate scheme is either HTTP, HTTPS, or FILE
+	// Validate that the scheme is either HTTP, HTTPS, or FILE.
 	scheme := strings.ToUpper(uri.Scheme)
 	if scheme != "HTTP" && scheme != "HTTPS" && scheme != "FILE" {
 		errorMsg := "invalid scheme"
@@ -260,7 +275,8 @@ func parseURL(link string) (*url.URL, error) {
 	}
 
 	if scheme != "FILE" {
-		// validate hostname and port (if there is a port)
+		// Validate that the hostname and port (if there is a port) are
+		// acceptible.
 		hostParts := strings.Split(uri.Host, ":")
 		if len(hostParts) > 2 {
 			errorMsg := "invalid host"
@@ -272,13 +288,15 @@ func parseURL(link string) (*url.URL, error) {
 			}
 		}
 		hostnameParts := strings.Split(hostParts[0], ".")
-		// there needs to be at least 1 part
+		// Validate that there is at least something to the hostname.
 		if len(hostnameParts) < 1 {
 			errorMsg := "invalid hostname"
 			return uri, errors.New(errorMsg)
 		}
 
-		// validate the hostname parts
+		// Validate that the hostname parts are limited to letters, numbers,
+		// and dashes, and that the dashes are neither the first nor last
+		// character in any of the parts.
 		for _, part := range hostnameParts {
 			if !reHostnamePart.MatchString(part) {
 				errorMsg := "invalid hostname"
@@ -287,7 +305,8 @@ func parseURL(link string) (*url.URL, error) {
 		}
 	}
 
-	// everything's good
+	// If it made it to this point, it must be a valid URL, so return the
+	// pointer to the URL object.
 	return uri, nil
 }
 
