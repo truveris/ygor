@@ -36,7 +36,8 @@ func (module *QueueModule) PrivMsg(srv *Server, msg *Message) {
 			return
 		}
 
-		// Check the media types.
+		// The queueTrack shouldn't use images or webpages, because they don't
+		// end, and it won't ever move to the next item in the queue.
 		if mObj.GetMediaType() == "img" || mObj.GetMediaType() == "web" {
 			errMsg := "error: URL must be audio file, video file, YouTube " +
 				"video, or imgur .gif/gifv. (" + mObj.GetURL() + ")"

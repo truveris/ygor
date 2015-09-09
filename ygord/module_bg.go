@@ -36,6 +36,8 @@ func (module *BgModule) PrivMsg(srv *Server, msg *Message) {
 			return
 		}
 
+		// The bgTrack shouldn't use audio, because it's meant for visuals and
+		// everything it shows should be muted anyway.
 		if mObj.GetMediaType() == "audio" {
 			errMsg := "error: backgrounds are seen, not heard (" +
 				mObj.GetURL() + ")"

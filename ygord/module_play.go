@@ -36,7 +36,8 @@ func (module *PlayModule) PrivMsg(srv *Server, msg *Message) {
 			return
 		}
 
-		// Check the media types.
+		// The playTrack shouldn't use images or webpages, because they don't
+		// end, and they won't ever disappear.
 		if mObj.GetMediaType() == "img" || mObj.GetMediaType() == "web" {
 			errMsg := "error: URL must be audio file, video file, YouTube " +
 				"video, or imgur .gif/gifv. (" + mObj.GetURL() + ")"

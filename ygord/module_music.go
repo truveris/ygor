@@ -36,6 +36,10 @@ func (module *MusicModule) PrivMsg(srv *Server, msg *Message) {
 			return
 		}
 
+		// The musicTrack shouldn't embed images or webpages, because they are
+		// assumed to not have audio, so there wouldn't be a point in embedding
+		// them. Also, they don't end, so musicTrack won't ever move to the
+		// next item in the queue.
 		if mObj.GetMediaType() == "img" || mObj.GetMediaType() == "web" {
 			errMsg := "error: music is heard, not seen (" + mObj.GetURL() + ")"
 			srv.IRCPrivMsg(msg.ReplyTo, errMsg)
