@@ -669,7 +669,9 @@ function sendMessage(srcTrack, state, submessage) {
 }
 
 function setVolume(newVolume) {
-    volume = newVolume || volume;
+    if (newVolume !== undefined && newVolume !== null){
+        volume = newVolume;
+    }
     for (mp of miniPlaylistArr) {
         mp.setVolume(volume * trackVolume);
     }
