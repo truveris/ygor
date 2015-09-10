@@ -1,0 +1,211 @@
+<html>
+    <head>
+        <style type="text/css">
+            html { 
+                background: black no-repeat center center fixed; 
+            }
+
+            html, body {
+                min-width: 100%;
+                min-height: 100%;
+                height: 100%;
+                width: 100%;
+                padding: 0;
+                margin: 0;
+            }
+
+            .media {
+                position: fixed;
+                object-fit: contain;
+                height: 100%;
+                width: 100%;
+                x-index: -100;
+            }
+        </style>
+        <script type="text/javascript">
+            // valid file extensions
+            var image_file_exts = [
+                "jpg",
+                "jpeg",
+                "jpe",
+                "jif",
+                "jfif",
+                "jfi",
+                "png",
+                "apng",
+                "bmp",
+                "dib",
+                "gif",
+            ];
+            var video_file_exts = [
+                "gifv",
+                "webm",
+                "mp4",
+            ];
+
+            // notable domains to check for
+            var imgur_domains = [
+                "i.imgur.com",
+                "www.imgur.com",
+                "imgur.com",
+            ];
+            var youtube_domains = [
+                "www.youtube.com",
+                "www.youtu.be",
+                "youtube.com",
+                "youtu.be",
+            ];
+
+            var volume = 0;
+            var volumeChangeEvent = new Event("volumeChange");
+
+            function extractDomain(url) {
+                var domain;
+                //find & remove protocol (http, ftp, etc.) and get domain
+                if (url.indexOf("://") > -1) {
+                    domain = url.split('/')[2];
+                }
+                else {
+                    domain = url.split('/')[0];
+                }
+                //find & remove port number
+                domain = domain.split(':')[0];
+
+                return domain;
+            }
+
+            function extractYouTubeVideoID(url) {
+                var video_id;
+                var regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                var match = url.match(regExp);
+                if (match && match[2].length == 11) {
+                    return match[2];
+                } else {
+                    //error
+                }
+            }
+
+            function extractFileExtension(url) {
+                var extension;
+                var regExp = /.*\.([a-zA-Z0-9]+)$/;
+                var match = url.match(regExp);
+                if (match) {
+                    return match[1];
+                } else {
+                    //error
+                }
+            }
+
+            function spawnImgElement(url) {
+                var body = document.getElementsByTagName("body")[0]
+                var img = document.createElement("IMG");
+                img.setAttribute("class", "media");
+                img.setAttribute("src", url);
+                body.appendChild(img);
+                return;
+            }
+
+            // video stuff
+            function spawnVideoElement(url) {
+                var body = document.getElementsByTagName("body")[0]
+                var video = document.createElement("VIDEO");
+                video.setAttribute("class", "media");
+                video.setAttribute("id", "videoPlayer");
+                video.setAttribute("loop", "loop");
+                video.setAttribute("preload", "auto");
+                video.setAttribute("autoplay", "autoplay");
+                video.setAttribute("src", url);
+                window.addEventListener("volumeChange", adjustVideoVolume);
+                body.appendChild(video);
+                adjustVideoVolume(volume);
+                return;
+            }
+
+            function adjustVideoVolume() {
+                document.querySelector("#videoPlayer").volume = volume / 100.0;
+            }
+
+            // YouTube stuff
+            function spawnYouTubePlayer(url) {
+                var video_id = extractYouTubeVideoID(url);
+                var body = document.getElementsByTagName("body")[0];
+                var tag = document.createElement('script');
+                tag.src = "https://www.youtube.com/iframe_api";
+                var firstScriptTag = document.getElementsByTagName('script')[0];
+                firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+                var iframe = document.createElement("IFRAME");
+                iframe.setAttribute("class", "media");
+                iframe.setAttribute("id", "player");
+                iframe.setAttribute("height", "100%");
+                iframe.setAttribute("width", "100%");
+                iframe.setAttribute("src", "https://www.youtube.com/embed/" + video_id + "?playlist=" + video_id +"&autoplay=1&controls=0&loop=1&showinfo=0&enablejsapi=1&origin=https://truveris.com");
+                body.appendChild(iframe);
+            }
+
+            var player;
+            function onYouTubeIframeAPIReady() {
+                player = new YT.Player('player', {
+                    events: {
+                        'onReady': onPlayerReady,
+                    }
+                });
+            }
+
+            function onPlayerReady(event) {
+                /*
+                * YouTube player has loaded, so set the player's volume level 
+                * to the global volume level
+                */
+                adjustYouTubeVolume(volume);
+                // now that the player is loaded, its volume can be adjusted
+                window.addEventListener("volumeChange", adjustYouTubeVolume);
+            }
+
+            function adjustYouTubeVolume() {
+                player.setVolume(volume);
+            }
+
+            function setVolume(newVolume) {
+                volume = newVolume;
+                window.dispatchEvent(volumeChangeEvent);
+            }
+
+            window.onload=function(){
+                // set the volume variable to parent window's volume variable
+                volume = parent.volume * 100;
+                // grab the media's URL
+                var query = window.location.search;
+                if (query == null){
+                    return;
+                }
+                url = query.substr(1);
+                // figure out who is hosting the media
+                var domain = extractDomain(url);
+                if (youtube_domains.indexOf(domain) > -1) {
+                    // if it's a YT video, a player will need to be embeded
+                    spawnYouTubePlayer(url);
+                }
+                else {
+                    // no embeded player is needed
+                    if (imgur_domains.indexOf(domain) > -1) {
+                        // if hosted on imgur, enforce .webm if applicable
+                        url = url.replace(/\.gif(v)?/g, ".webm")
+                    }
+                    // grab the file ext to determine how to display the media
+                    file_ext = extractFileExtension(url);
+                    if (image_file_exts.indexOf(file_ext) > -1) {
+                        // url links to image file
+                        spawnImgElement(url);
+                    }
+                    else if (video_file_exts.indexOf(file_ext) > -1) {
+                        // url links to video file
+                        spawnVideoElement(url);
+                    }
+                    return;
+                }
+            }
+        </script>
+    </head>
+    <body>
+    </body>
+</html>
