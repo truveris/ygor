@@ -14,6 +14,11 @@ func (module *PlayModule) PrivMsg(srv *Server, msg *Message) {
 	track := "playTrack"
 	muted := false
 	loop := false
+	acceptableMediaTypes := []string{
+		"video",
+		"youtube",
+		"audio",
+	}
 
 	// Validate the command's usage, and get back a map array representing the
 	// media items that were passed, along with each one's start and end
@@ -41,7 +46,7 @@ func (module *PlayModule) PrivMsg(srv *Server, msg *Message) {
 
 		// The playTrack shouldn't use images or webpages, because they don't
 		// end, and they won't ever disappear.
-		if mObj.GetMediaType() == "img" || mObj.GetMediaType() == "web" {
+		if !mObj.IsOfMediaType(acceptableMediaTypes) {
 			errMsg := "error: URL must be audio file, video file, YouTube " +
 				"video, or imgur .gif/gifv. (" + mObj.GetURL() + ")"
 			srv.IRCPrivMsg(msg.ReplyTo, errMsg)
