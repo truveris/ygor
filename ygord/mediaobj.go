@@ -207,6 +207,18 @@ func (mObj *MediaObj) GetMediaType() string {
 	return mObj.MediaType
 }
 
+// IsOfMediaType determines if the MediaObj's MediaType is contained in the
+// passed string array
+func (mObj *MediaObj) IsOfMediaType(mediaTypes []string) bool {
+	mediaType := mObj.GetMediaType()
+	for _, mt := range mediaTypes {
+		if mediaType == mt {
+			return true
+		}
+	}
+	return false
+}
+
 // isImgur attempts to determine if the desired content is hosted on imgur
 func (mObj *MediaObj) isImgur() bool {
 	for _, d := range imgurHostNames {
