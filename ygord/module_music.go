@@ -14,6 +14,11 @@ func (module *MusicModule) PrivMsg(srv *Server, msg *Message) {
 	track := "musicTrack"
 	muted := false
 	loop := false
+	acceptableMediaTypes := []string{
+		"video",
+		"youtube",
+		"audio",
+	}
 
 	// Validate the command's usage, and get back a map array representing the
 	// media items that were passed, along with each one's start and end
@@ -43,7 +48,7 @@ func (module *MusicModule) PrivMsg(srv *Server, msg *Message) {
 		// assumed to not have audio, so there wouldn't be a point in embedding
 		// them. Also, they don't end, so musicTrack won't ever move to the
 		// next item in the queue.
-		if mObj.GetMediaType() == "img" || mObj.GetMediaType() == "web" {
+		if !mObj.IsOfMediaType(acceptableMediaTypes) {
 			errMsg := "error: music is heard, not seen (" + mObj.GetURL() + ")"
 			srv.IRCPrivMsg(msg.ReplyTo, errMsg)
 			return
