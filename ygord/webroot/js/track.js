@@ -138,14 +138,12 @@ function MiniPlaylist(mediaMessage) {
 }
 
 // modify prototypes to add and unify functionality
-HTMLVideoElement.prototype.spawn = function(miniPlaylist, mediaObj) {
-    this.miniPlaylist = miniPlaylist;
-    this.mediaObj = mediaObj;
-    this.hide = function() {
+function modifyVideoElementPrototype() {
+    HTMLVideoElement.prototype.hide = function() {
         videoArr.remove(this);
         this.setAttribute("hidden", "hidden");
     };
-    this.show = function() {
+    HTMLVideoElement.prototype.show = function() {
         if (videoArr.indexOf(this) < 0) {
             // if it's not in the videoArr already, put it there.
             videoArr.push(this);
@@ -153,10 +151,10 @@ HTMLVideoElement.prototype.spawn = function(miniPlaylist, mediaObj) {
         playerStarted(this.miniPlaylist.track);
         this.removeAttribute("hidden");
     };
-    this.hasStarted = function() {
+    HTMLVideoElement.prototype.hasStarted = function() {
         this.show();
     };
-    this.hasEnded = function() {
+    HTMLVideoElement.prototype.hasEnded = function() {
         if (this.didEnd == false){
             this.didEnd = true;
             if (!this.soloLoop){
@@ -165,7 +163,7 @@ HTMLVideoElement.prototype.spawn = function(miniPlaylist, mediaObj) {
             }
         }
     };
-    this.hasErrored = function() {
+    HTMLVideoElement.prototype.hasErrored = function() {
         submessage = "";
         switch (this.error.code) {
             case this.error.MEDIA_ERR_ABORTED:
@@ -189,10 +187,10 @@ HTMLVideoElement.prototype.spawn = function(miniPlaylist, mediaObj) {
         this.miniPlaylist.playNext();
         reportError(this.miniPlaylist.track, submessage);
     };
-    this.setVolume = function(volumeLevel) {
+    HTMLVideoElement.prototype.setVolume = function(volumeLevel) {
         this.volume = volumeLevel / 100.0;
     };
-    this.timeUpdated = function() {
+    HTMLVideoElement.prototype.timeUpdated = function() {
         if (this.currentTime >= this.endTime && this.duration != "Inf"){
             if (this.soloLoop){
                 // when this is the only player in the playlist and the
@@ -206,7 +204,7 @@ HTMLVideoElement.prototype.spawn = function(miniPlaylist, mediaObj) {
             }
         }
     }
-    this.loadMediaObj = function() {
+    HTMLVideoElement.prototype.loadMediaObj = function() {
         var s = this.mediaObj.start;
         var e = this.mediaObj.end;
         if (s.length > 0) {
@@ -222,53 +220,56 @@ HTMLVideoElement.prototype.spawn = function(miniPlaylist, mediaObj) {
         }
         this.load();
     };
-    this.seekToEnd = function() {
+    HTMLVideoElement.prototype.seekToEnd = function() {
         this.currentTime = this.endTime;
     };
-    this.destroy = function() {
+    HTMLVideoElement.prototype.destroy = function() {
         videoArr.remove(this);
         this.parentNode.removeChild(this);
     };
-    this.ondurationchange = function() {
-        this.endTime = this.endTime || this.duration;
-        this.hasStarted();
-    };
-    this.onplay = function() {
-        this.show();
+    HTMLVideoElement.prototype.spawn = function(miniPlaylist, mediaObj) {
+        this.ondurationchange = function() {
+            this.endTime = this.endTime || this.duration;
+            this.hasStarted();
+        };
+        this.onplay = function() {
+            this.show();
+            this.didEnd = false;
+        };
+        this.ontimeupdate = function() {this.timeUpdated();};
+        this.onerror = function() {this.hasErrored();};
+        this.onended =  function() {this.hasEnded();};
+        this.onpause = function() {this.hasEnded();};
+        this.miniPlaylist = miniPlaylist;
+        this.mediaObj = mediaObj;
+        this.soloLoop = false;
+        this.startTime = 0.0;
+        this.endTime = false;
         this.didEnd = false;
-    };
-    this.ontimeupdate = function() {this.timeUpdated();};
-    this.onerror = function() {this.hasErrored();};
-    this.onended =  function() {this.hasEnded();};
-    this.onpause = function() {this.hasEnded();};
-    this.soloLoop = false;
-    this.startTime = 0.0;
-    this.endTime = false;
-    this.didEnd = false;
-    this.setVolume(volume * trackVolume);
-    this.setAttribute("class", "media");
-    this.setAttribute("preload", "auto");
-    this.setAttribute("autoplay", "autoplay");
-    this.loadMediaObj();
-    this.miniPlaylist.container.appendChild(this);
+        this.setVolume(volume * trackVolume);
+        this.setAttribute("class", "media");
+        this.setAttribute("preload", "auto");
+        this.setAttribute("autoplay", "autoplay");
+        this.loadMediaObj();
+        this.miniPlaylist.container.appendChild(this);
+        return;
+    }
     return;
 }
 
-HTMLAudioElement.prototype.spawn = function(miniPlaylist, mediaObj) {
-    this.miniPlaylist = miniPlaylist;
-    this.mediaObj = mediaObj;
-    this.hide = function() {
+function modifyAudioElementPrototype() {
+    HTMLAudioElement.prototype.hide = function() {
         this.setAttribute("hidden", "hidden");
     };
-    this.show = function() {
+    HTMLAudioElement.prototype.show = function() {
         // does nothing to prevent audio player becomming visible
         return;
     };
-    this.hasStarted = function() {
+    HTMLAudioElement.prototype.hasStarted = function() {
         // audio doesn't need to tell parent that it's playing
         //playerStarted(this.miniPlaylist.track);
     };
-    this.hasEnded = function() {
+    HTMLAudioElement.prototype.hasEnded = function() {
         if (this.didEnd == false){
             this.didEnd = true;
             if (!this.soloLoop){
@@ -277,7 +278,7 @@ HTMLAudioElement.prototype.spawn = function(miniPlaylist, mediaObj) {
             }
         }
     };
-    this.hasErrored = function() {
+    HTMLAudioElement.prototype.hasErrored = function() {
         submessage = "";
         switch (this.error.code) {
             case this.error.MEDIA_ERR_ABORTED:
@@ -301,10 +302,10 @@ HTMLAudioElement.prototype.spawn = function(miniPlaylist, mediaObj) {
         this.miniPlaylist.playNext();
         reportError(this.miniPlaylist.track, submessage);
     };
-    this.setVolume = function(volumeLevel) {
+    HTMLAudioElement.prototype.setVolume = function(volumeLevel) {
         this.volume = volumeLevel / 100.0;
     };
-    this.timeUpdated = function() {
+    HTMLAudioElement.prototype.timeUpdated = function() {
         if (this.currentTime >= this.endTime && this.duration != "Inf"){
             if (this.soloLoop){
                 // when this is the only player in the playlist and the
@@ -318,10 +319,10 @@ HTMLAudioElement.prototype.spawn = function(miniPlaylist, mediaObj) {
             }
         }
     }
-    this.seekToEnd = function() {
+    HTMLAudioElement.prototype.seekToEnd = function() {
         this.currentTime = this.endTime;
     };
-    this.loadMediaObj = function() {
+    HTMLAudioElement.prototype.loadMediaObj = function() {
         var s = this.mediaObj.start;
         var e = this.mediaObj.end;
         if (s.length > 0) {
@@ -337,40 +338,43 @@ HTMLAudioElement.prototype.spawn = function(miniPlaylist, mediaObj) {
         }
         this.load();
     };
-    this.destroy = function() {
+    HTMLAudioElement.prototype.destroy = function() {
         this.parentNode.removeChild(this);
     };
-    this.ondurationchange = function() {
-        this.endTime = this.endTime || this.duration;
-        this.hasStarted();
-    };
-    this.onplay = function() {
+    HTMLAudioElement.prototype.spawn = function(miniPlaylist, mediaObj) {
+        this.ondurationchange = function() {
+            this.endTime = this.endTime || this.duration;
+            this.hasStarted();
+        };
+        this.onplay = function() {
+            this.didEnd = false;
+        };
+        this.ontimeupdate = function() {this.timeUpdated();};
+        this.onerror = function() {this.hasErrored();};
+        this.onended =  function() {this.hasEnded();};
+        this.miniPlaylist = miniPlaylist;
+        this.mediaObj = mediaObj;
+        this.soloLoop = false;
+        this.startTime = 0.0;
+        this.endTime = false;
         this.didEnd = false;
-    };
-    this.ontimeupdate = function() {this.timeUpdated();};
-    this.onerror = function() {this.hasErrored();};
-    this.onended =  function() {this.hasEnded();};
-    this.soloLoop = false;
-    this.startTime = 0.0;
-    this.endTime = false;
-    this.didEnd = false;
-    this.setVolume(volume * trackVolume);
-    this.setAttribute("class", "media");
-    this.setAttribute("preload", "auto");
-    this.setAttribute("autoplay", "autoplay");
-    this.loadMediaObj();
-    this.miniPlaylist.container.appendChild(this);
+        this.setVolume(volume * trackVolume);
+        this.setAttribute("class", "media");
+        this.setAttribute("preload", "auto");
+        this.setAttribute("autoplay", "autoplay");
+        this.loadMediaObj();
+        this.miniPlaylist.container.appendChild(this);
+        return;
+    }
     return;
 }
 
-HTMLImageElement.prototype.spawn = function(miniPlaylist, mediaObj) {
-    this.miniPlaylist = miniPlaylist;
-    this.mediaObj = mediaObj;
-    this.hide = function() {
+function modifyImgElementPrototype() {
+    HTMLImageElement.prototype.hide = function() {
         videoArr.remove(this);
         this.setAttribute("hidden", "hidden");
     };
-    this.show = function() {
+    HTMLImageElement.prototype.show = function() {
         if (videoArr.indexOf(this) < 0) {
             // if it's not in the videoArr already, put it there.
             videoArr.push(this);
@@ -378,35 +382,38 @@ HTMLImageElement.prototype.spawn = function(miniPlaylist, mediaObj) {
         playerStarted(this.miniPlaylist.track);
         this.removeAttribute("hidden");
     };
-    this.loadMediaObj = function() {
+    HTMLImageElement.prototype.loadMediaObj = function() {
         this.src = this.mediaObj.src;
     };
-    this.destroy = function() {
+    HTMLImageElement.prototype.destroy = function() {
         this.parentNode.removeChild(this);
     };
-    this.setVolume = function(volumeLevel) {
+    HTMLImageElement.prototype.setVolume = function(volumeLevel) {
         // should do nothing
         return;
     };
-    this.seekToEnd = function(volumeLevel) {
+    HTMLImageElement.prototype.seekToEnd = function(volumeLevel) {
         this.miniPlaylist.playNext();
         this.hide();
         return;
     };
-    this.setAttribute("class", "media");
-    this.loadMediaObj();
-    this.miniPlaylist.container.appendChild(this);
+    HTMLImageElement.prototype.spawn = function(miniPlaylist, mediaObj) {
+        this.miniPlaylist = miniPlaylist;
+        this.mediaObj = mediaObj;
+        this.setAttribute("class", "media");
+        this.loadMediaObj();
+        this.miniPlaylist.container.appendChild(this);
+        return;
+    }
     return;
 }
 
-HTMLIFrameElement.prototype.spawn = function(miniPlaylist, mediaObj) {
-    this.miniPlaylist = miniPlaylist;
-    this.mediaObj = mediaObj;
-    this.hide = function() {
+function modifyIFrameElementPrototype() {
+    HTMLIFrameElement.prototype.hide = function() {
         videoArr.remove(this);
         this.setAttribute("hidden", "hidden");
     };
-    this.show = function() {
+    HTMLIFrameElement.prototype.show = function() {
         if (videoArr.indexOf(this) < 0) {
             // if it's not in the videoArr already, put it there.
             videoArr.push(this);
@@ -414,24 +421,29 @@ HTMLIFrameElement.prototype.spawn = function(miniPlaylist, mediaObj) {
         playerStarted(this.miniPlaylist.track);
         this.removeAttribute("hidden");
     };
-    this.loadMediaObj = function() {
+    HTMLIFrameElement.prototype.loadMediaObj = function() {
         this.src = this.mediaObj.src;
     };
-    this.destroy = function() {
+    HTMLIFrameElement.prototype.destroy = function() {
         this.parentNode.removeChild(this);
     };
-    this.setVolume = function(volumeLevel) {
+    HTMLIFrameElement.prototype.setVolume = function(volumeLevel) {
         // should do nothing
         return;
     };
-    this.seekToEnd = function(volumeLevel) {
+    HTMLIFrameElement.prototype.seekToEnd = function(volumeLevel) {
         this.miniPlaylist.playNext();
         this.hide();
         return;
     };
-    this.setAttribute("class", "media");
-    this.loadMediaObj();
-    this.miniPlaylist.container.appendChild(this);
+    HTMLIFrameElement.prototype.spawn = function(miniPlaylist, mediaObj) {
+        this.miniPlaylist = miniPlaylist;
+        this.mediaObj = mediaObj;
+        this.setAttribute("class", "media");
+        this.loadMediaObj();
+        this.miniPlaylist.container.appendChild(this);
+        return;
+    }
     return;
 }
 
@@ -513,7 +525,6 @@ function modifyYouTubePlayerPrototype() {
     YT.Player.prototype.divId = null;
     YT.Player.prototype.soloLoop = false;
 }
-
 
 function receiveMessage(event) {
     if (event.origin !== "http://localhost:8181" &&
@@ -701,6 +712,11 @@ window.onload=function(){
     window.addEventListener("message", receiveMessage, false);
     // set the volume variable to parent window's volume variable
     volume = parent.volume;
+
+    modifyVideoElementPrototype();
+    modifyAudioElementPrototype();
+    modifyImgElementPrototype();
+    modifyIFrameElementPrototype();
 
     modifyYouTubePlayerPrototype();
 
