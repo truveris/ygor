@@ -435,7 +435,7 @@ HTMLIFrameElement.prototype.spawn = function(miniPlaylist, mediaObj) {
     return;
 }
 
-function onYouTubeIframeAPIReady() {
+function modifyYouTubePlayerPrototype() {
     // adjust YT.Player prototype for easier management
     YT.Player.prototype.isReady = false;
     YT.Player.prototype.startTime = 0.0;
@@ -513,6 +513,7 @@ function onYouTubeIframeAPIReady() {
     YT.Player.prototype.divId = null;
     YT.Player.prototype.soloLoop = false;
 }
+
 
 function receiveMessage(event) {
     if (event.origin !== "http://localhost:8181" &&
@@ -700,10 +701,8 @@ window.onload=function(){
     window.addEventListener("message", receiveMessage, false);
     // set the volume variable to parent window's volume variable
     volume = parent.volume;
-    // Load the IFrame Player API code asynchronously
-    var tag = document.createElement('script');
-    tag.src = "https://www.youtube.com/iframe_api";
-    var firstScriptTag = document.getElementsByTagName('script')[0];
-    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+    modifyYouTubePlayerPrototype();
+
     return;
 }
