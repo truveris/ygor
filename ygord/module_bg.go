@@ -14,6 +14,12 @@ func (module *BgModule) PrivMsg(srv *Server, msg *Message) {
 	track := "bgTrack"
 	muted := true
 	loop := true
+	acceptableMediaTypes := []string{
+		"video",
+		"youtube",
+		"image",
+		"web",
+	}
 
 	// Validate the command's usage, and get back a map array representing the
 	// media items that were passed, along with each one's start and end
@@ -39,9 +45,9 @@ func (module *BgModule) PrivMsg(srv *Server, msg *Message) {
 			return
 		}
 
-		// The bgTrack shouldn't use audio, because it's meant for visuals and
-		// everything it shows should be muted anyway.
-		if mObj.GetMediaType() == "audio" {
+		// The bgTrack is meant for visuals and everything it shows should be
+		// muted anyway.
+		if !mObj.IsOfMediaType(acceptableMediaTypes) {
 			errMsg := "error: backgrounds are seen, not heard (" +
 				mObj.GetURL() + ")"
 			srv.IRCPrivMsg(msg.ReplyTo, errMsg)
