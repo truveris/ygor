@@ -134,13 +134,12 @@ function MiniPlaylist(mediaMessage) {
             currentPlayer.seekToEnd();
         }
         //this.playNext();
-    }
+    };
 }
 
 // modify prototypes to add and unify functionality
-function modifyVideoElementPrototype() {
-    HTMLVideoElement.prototype.hide = function() {
-        videoArr.remove(this);
+function modifyMediaElementPrototypes() {
+    HTMLMediaElement.prototype.hide = function() {
         this.setAttribute("hidden", "hidden");
     };
     HTMLVideoElement.prototype.show = function() {
@@ -151,10 +150,18 @@ function modifyVideoElementPrototype() {
         playerStarted(this.miniPlaylist.track);
         this.removeAttribute("hidden");
     };
+    HTMLAudioElement.prototype.show = function() {
+        // does nothing to prevent audio player becomming visible
+        return;
+    };
     HTMLVideoElement.prototype.hasStarted = function() {
         this.show();
     };
-    HTMLVideoElement.prototype.hasEnded = function() {
+    HTMLAudioElement.prototype.hasStarted = function() {
+        // audio doesn't need to tell parent that it's playing
+        //playerStarted(this.miniPlaylist.track);
+    };
+    HTMLMediaElement.prototype.hasEnded = function() {
         if (this.didEnd == false){
             this.didEnd = true;
             if (!this.soloLoop){
@@ -163,23 +170,24 @@ function modifyVideoElementPrototype() {
             }
         }
     };
-    HTMLVideoElement.prototype.hasErrored = function() {
+    HTMLMediaElement.prototype.hasErrored = function() {
         submessage = "";
+        type = this.nodeName.toLowerCase();
         switch (this.error.code) {
             case this.error.MEDIA_ERR_ABORTED:
-                submessage = "video file playback has been aborted";
+                submessage = type + " file playback has been aborted";
                 break;
             case this.error.MEDIA_ERR_NETWORK:
-                submessage = "video file download halted due to network error";
+                submessage = type + " file download halted due to network error";
                 break;
             case this.error.MEDIA_ERR_DECODE:
-                submessage = "video file could not be decoded";
+                submessage = type + " file could not be decoded";
                 break;
             case this.error.MEDIA_ERR_SRC_NOT_SUPPORTED:
                 if (this.networkState == HTMLMediaElement.NETWORK_NO_SOURCE) {
-                    submessage = "video file could not be found";
+                    submessage = type + " file could not be found";
                 } else {
-                    submessage = "video file format is not supported";
+                    submessage = type + " file format is not supported";
                 }
                 break;
         }
@@ -187,10 +195,10 @@ function modifyVideoElementPrototype() {
         this.miniPlaylist.playNext();
         reportError(this.miniPlaylist.track, submessage);
     };
-    HTMLVideoElement.prototype.setVolume = function(volumeLevel) {
+    HTMLMediaElement.prototype.setVolume = function(volumeLevel) {
         this.volume = volumeLevel / 100.0;
     };
-    HTMLVideoElement.prototype.timeUpdated = function() {
+    HTMLMediaElement.prototype.timeUpdated = function() {
         if (this.currentTime >= this.endTime && this.duration != "Inf"){
             if (this.soloLoop){
                 // when this is the only player in the playlist and the
@@ -203,8 +211,8 @@ function modifyVideoElementPrototype() {
                 this.currentTime = this.startTime;
             }
         }
-    }
-    HTMLVideoElement.prototype.loadMediaObj = function() {
+    };
+    HTMLMediaElement.prototype.loadMediaObj = function() {
         var s = this.mediaObj.start;
         var e = this.mediaObj.end;
         if (s.length > 0) {
@@ -220,14 +228,14 @@ function modifyVideoElementPrototype() {
         }
         this.load();
     };
-    HTMLVideoElement.prototype.seekToEnd = function() {
+    HTMLMediaElement.prototype.seekToEnd = function() {
         this.currentTime = this.endTime;
     };
-    HTMLVideoElement.prototype.destroy = function() {
+    HTMLMediaElement.prototype.destroy = function() {
         videoArr.remove(this);
         this.parentNode.removeChild(this);
-    };
-    HTMLVideoElement.prototype.spawn = function(miniPlaylist, mediaObj) {
+    };    
+    HTMLMediaElement.prototype.spawn = function(miniPlaylist, mediaObj) {
         this.ondurationchange = function() {
             this.endTime = this.endTime || this.duration;
             this.hasStarted();
@@ -239,7 +247,7 @@ function modifyVideoElementPrototype() {
         this.ontimeupdate = function() {this.timeUpdated();};
         this.onerror = function() {this.hasErrored();};
         this.onended =  function() {this.hasEnded();};
-        this.onpause = function() {this.hasEnded();};
+        //this.onpause = function() {this.hasEnded();};
         this.miniPlaylist = miniPlaylist;
         this.mediaObj = mediaObj;
         this.soloLoop = false;
@@ -253,120 +261,7 @@ function modifyVideoElementPrototype() {
         this.loadMediaObj();
         this.miniPlaylist.container.appendChild(this);
         return;
-    }
-    return;
-}
-
-function modifyAudioElementPrototype() {
-    HTMLAudioElement.prototype.hide = function() {
-        this.setAttribute("hidden", "hidden");
     };
-    HTMLAudioElement.prototype.show = function() {
-        // does nothing to prevent audio player becomming visible
-        return;
-    };
-    HTMLAudioElement.prototype.hasStarted = function() {
-        // audio doesn't need to tell parent that it's playing
-        //playerStarted(this.miniPlaylist.track);
-    };
-    HTMLAudioElement.prototype.hasEnded = function() {
-        if (this.didEnd == false){
-            this.didEnd = true;
-            if (!this.soloLoop){
-                this.hide();
-                this.miniPlaylist.playNext();
-            }
-        }
-    };
-    HTMLAudioElement.prototype.hasErrored = function() {
-        submessage = "";
-        switch (this.error.code) {
-            case this.error.MEDIA_ERR_ABORTED:
-                submessage = "audio file playback has been aborted";
-                break;
-            case this.error.MEDIA_ERR_NETWORK:
-                submessage = "audio file download halted due to network error";
-                break;
-            case this.error.MEDIA_ERR_DECODE:
-                submessage = "audio file could not be decoded";
-                break;
-            case this.error.MEDIA_ERR_SRC_NOT_SUPPORTED:
-                if (this.networkState == HTMLMediaElement.NETWORK_NO_SOURCE) {
-                    submessage = "audio file could not be found";
-                } else {
-                    submessage = "audio file format is not supported";
-                }
-                break;
-        }
-        this.miniPlaylist.removePlayer(this);
-        this.miniPlaylist.playNext();
-        reportError(this.miniPlaylist.track, submessage);
-    };
-    HTMLAudioElement.prototype.setVolume = function(volumeLevel) {
-        this.volume = volumeLevel / 100.0;
-    };
-    HTMLAudioElement.prototype.timeUpdated = function() {
-        if (this.currentTime >= this.endTime && this.duration != "Inf"){
-            if (this.soloLoop){
-                // when this is the only player in the playlist and the
-                // playlist should loop, this should loop on it's own.
-                this.currentTime = this.startTime;
-                this.play();
-            } else {
-                this.pause();
-                this.hasEnded();
-                this.currentTime = this.startTime;
-            }
-        }
-    }
-    HTMLAudioElement.prototype.seekToEnd = function() {
-        this.currentTime = this.endTime;
-    };
-    HTMLAudioElement.prototype.loadMediaObj = function() {
-        var s = this.mediaObj.start;
-        var e = this.mediaObj.end;
-        if (s.length > 0) {
-            this.startTime = s;
-        }
-        if (e.length > 0) {
-            this.endTime = e;
-        }
-        this.muted = this.mediaObj.muted;
-        this.src = this.mediaObj.src + "#t=" + this.startTime;
-        if (e.length > 0) {
-            this.src += "," + this.endTime;
-        }
-        this.load();
-    };
-    HTMLAudioElement.prototype.destroy = function() {
-        this.parentNode.removeChild(this);
-    };
-    HTMLAudioElement.prototype.spawn = function(miniPlaylist, mediaObj) {
-        this.ondurationchange = function() {
-            this.endTime = this.endTime || this.duration;
-            this.hasStarted();
-        };
-        this.onplay = function() {
-            this.didEnd = false;
-        };
-        this.ontimeupdate = function() {this.timeUpdated();};
-        this.onerror = function() {this.hasErrored();};
-        this.onended =  function() {this.hasEnded();};
-        this.miniPlaylist = miniPlaylist;
-        this.mediaObj = mediaObj;
-        this.soloLoop = false;
-        this.startTime = 0.0;
-        this.endTime = false;
-        this.didEnd = false;
-        this.setVolume(volume * trackVolume);
-        this.setAttribute("class", "media");
-        this.setAttribute("preload", "auto");
-        this.setAttribute("autoplay", "autoplay");
-        this.loadMediaObj();
-        this.miniPlaylist.container.appendChild(this);
-        return;
-    }
-    return;
 }
 
 function modifyImgElementPrototype() {
@@ -713,8 +608,7 @@ window.onload=function(){
     // set the volume variable to parent window's volume variable
     volume = parent.volume;
 
-    modifyVideoElementPrototype();
-    modifyAudioElementPrototype();
+    modifyMediaElementPrototypes();
     modifyImgElementPrototype();
     modifyIFrameElementPrototype();
 
