@@ -26,6 +26,10 @@ var (
 		"www.imgur.com",
 		"imgur.com",
 	}
+	soundcloudHostNames = []string{
+		"soundcloud.com",
+		"www.soundcloud.com",
+	}
 
 	// These are the known file extensions that are supported by Firefox.
 	audioFileExts = []string{
@@ -160,6 +164,12 @@ func (mObj *MediaObj) setMediaType() {
 		return
 	}
 
+	// Is the passed URL a SoundCloud link?
+	if mObj.isSoundCloud() {
+		mObj.MediaType = "soundcloud"
+		return
+	}
+
 	// Does the passed URL have a file extension that can be used to determine
 	// MediaType?
 	matches := reFileExt.FindAllStringSubmatch(mObj.path, -1)
@@ -222,6 +232,17 @@ func (mObj *MediaObj) IsOfMediaType(mediaTypes []string) bool {
 // isImgur attempts to determine if the desired content is hosted on imgur
 func (mObj *MediaObj) isImgur() bool {
 	for _, d := range imgurHostNames {
+		if mObj.host == d {
+			return true
+		}
+	}
+	return false
+}
+
+// isSoundCloud attempts to determine if the desired content is hosted on
+// soundcloud
+func (mObj *MediaObj) isSoundCloud() bool {
+	for _, d := range soundcloudHostNames {
 		if mObj.host == d {
 			return true
 		}

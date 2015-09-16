@@ -3,6 +3,7 @@ var volume = 0; // master volume (0 by default)
 var trackVolume = 1.0; // percentage of master volume to use in this track
 var miniPlaylistArr = [];
 var videoArr = []; // used to track visible elements in a track
+var soundcloudClientId = "1b10b405b1065aadc1639a2620521638";
 Array.prototype.remove = function(item) {
     itemIndex = this.indexOf(item);
     if (itemIndex > -1) {
@@ -18,8 +19,8 @@ function MiniPlaylist(mediaMessage) {
     miniPlaylistArr.push(this);
     // create div for this to put players in
     this.container = document.createElement("div");
-    var divId = Math.floor((Math.random() * 100000) + 1).toString();
-    this.container.setAttribute("id", divId);
+    var containerId = Math.floor((Math.random() * 100000) + 1).toString();
+    this.container.setAttribute("id", containerId);
     document.body.appendChild(this.container);
     this.track = mediaMessage.track;
     this.mediaObjArr = mediaMessage.mediaObjs;
@@ -51,6 +52,9 @@ function MiniPlaylist(mediaMessage) {
             switch (mediaObj.mediaType){
                 case "youtube":
                     player = spawnYouTubePlayer(this, mediaObj);
+                    break;
+                case "soundcloud":
+                    player = spawnSoundCloudPlayer(this, mediaObj);
                     break;
                 case "video":
                     player = spawnPlayer(this, mediaObj);
@@ -133,7 +137,6 @@ function MiniPlaylist(mediaMessage) {
         if (currentPlayer.seekToEnd) {
             currentPlayer.seekToEnd();
         }
-        //this.playNext();
     };
 }
 
@@ -362,7 +365,7 @@ function modifyYouTubePlayerPrototype() {
     };
     // player should hold the mediaObj used to create it, so it can be
     // referenced later
-    YT.Player.prototype.mediaObj = false; 
+    YT.Player.prototype.mediaObj = false;
     YT.Player.prototype.pause = function() {
         if (this.isReady) {
             this.pauseVideo();
@@ -417,8 +420,132 @@ function modifyYouTubePlayerPrototype() {
         playerStarted(this.miniPlaylist.track);
         this.getIframe().removeAttribute("hidden");
     };
-    YT.Player.prototype.divId = null;
+    YT.Player.prototype.containerId = null;
     YT.Player.prototype.soloLoop = false;
+}
+
+function modifySoundCloudPlayerPrototype(widget) {
+    // adjust YT.Player prototype for easier management
+    widget.isReady = false;
+    widget.startTime = 0.0;
+    widget.endTime = false;
+    widget.didEnd = false;
+    // player should hold the mediaObj used to create it, so it can be
+    // referenced later
+    widget.mediaObj = false;
+    widget.setReady = function() {
+        this.setVolume(volume * trackVolume);
+        if (this.mediaObj.muted) {
+            this.mute();
+        }
+        this.isReady = true;
+        // player may have been given a mediaObj before the player was ready,
+        // so it should now load the desired video with the specified
+        // parameters
+        if (this.mediaObj) {
+            this.loadMediaObj();
+        }
+        return;
+    };
+    widget.gotDuration = function(value) {
+        this.duration = value / 1000;
+        this.endTime = this.endTime || this.duration;
+    }
+    widget.onReady = function() {
+        widget.getDuration(widget.gotDuration);
+        widget.setReady();
+    };
+    widget.bind(SC.Widget.Events.READY, widget.onReady);
+    widget.onError = function() {
+        var srcTrack = this.miniPlaylist.track;
+        // remove all traces of the player
+        this.miniPlaylist.playNext();
+        submessage = "soundcloud player had an error";
+        reportError(this.miniPlaylist.track, submessage);
+        this.miniPlaylist.removePlayer(this);
+        return;
+    };
+    widget.bind(SC.Widget.Events.ERROR, widget.onError);
+    widget.hasEnded = function() {
+        if (this.didEnd == false){
+            this.didEnd = true;
+            if (!this.soloLoop){
+                this.hide();
+                this.miniPlaylist.playNext();
+            }
+        }
+    };
+    widget.onPlayProgress = function(event) {
+        this.currentTime = event.currentPosition / 1000;
+        if (this.currentTime < this.startTime) {
+            this.seekToStart();
+        } else if (this.currentTime >= this.endTime){
+            if (this.soloLoop){
+                // when this is the only player in the playlist and the
+                // playlist should loop, this should loop on it's own.
+                this.currentTime = this.startTime;
+                this.play();
+            } else {
+                this.pause();
+                this.hasEnded();
+                this.currentTime = this.startTime;
+            }
+        }
+        return;
+    };
+    widget.bind(SC.Widget.Events.PLAY_PROGRESS, widget.onPlayProgress);
+    widget.onPause = function(event) {
+        this.hasEnded();
+        return;
+    };
+    widget.bind(SC.Widget.Events.PAUSE, widget.onPause);
+    widget.onFinish = function(event) {
+        this.hasEnded();
+        return;
+    };
+    widget.bind(SC.Widget.Events.FINISH, widget.onFinish);
+    widget.seekToStart = function() {
+        widget.seekTo(this.startTime * 1000); // takes milliseconds
+        return;
+    };
+    widget.seekToEnd = function() {
+        this.endTime = this.endTime;
+        this.seekTo(this.endTime * 1000); // takes milliseconds
+        return;
+    };
+    widget.getIframe = function() {
+        return document.getElementById(this.containerId);
+    };
+    widget.destroy = function() {
+        var iframe = this.getIframe();
+        iframe.parentNode.removeChild(iframe);
+        return;
+    };
+    widget.loadMediaObj = function() {
+        if (this.isReady) {
+            // if the player is ready AND it has a mediaObj, 
+            var start = this.mediaObj.start;
+            var end = this.mediaObj.end;
+            if (start.length > 0) {
+                this.seekTo(parseFloat(start));
+                this.startTime = start;
+            }
+            if (end.length > 0) {
+                this.endTime = end;
+            }
+            this.play();
+        }
+        return;
+    };
+    widget.hide = function() {
+        this.getIframe().setAttribute("hidden", "hidden");
+    };
+    widget.show = function() {
+        //should never show
+        return;
+    };
+    widget.containerId = null;
+    widget.soloLoop = false;
 }
 
 function receiveMessage(event) {
@@ -451,8 +578,8 @@ function spawnYouTubePlayer(miniPlaylist, mediaObj) {
     // create a <div> for the YouTube player to replace
     var playerDiv = document.createElement("div");
     // use a unique ID so multiple players can be spawned and referenced
-    var divId = Math.floor((Math.random() * 100000) + 1).toString();
-    playerDiv.setAttribute("id", divId);
+    var containerId = Math.floor((Math.random() * 100000) + 1).toString();
+    playerDiv.setAttribute("id", containerId);
     playerDiv.setAttribute("class", "media");
     // hide it at first so it doesn't block anything before it starts actually
     // playing
@@ -471,13 +598,13 @@ function spawnYouTubePlayer(miniPlaylist, mediaObj) {
             "origin": "https://truveris.com",
         },
         events: {
-            "onReady": onPlayerReady,
-            "onStateChange": onPlayerStateChange,
-            "onError": onError,
+            "onReady": onYTPlayerReady,
+            "onStateChange": onYTPlayerStateChange,
+            "onError": onYTPlayerError,
         },
     }
-    var ytPlayer = new YT.Player(divId, playerParams);
-    ytPlayer.divId = divId;
+    var ytPlayer = new YT.Player(containerId, playerParams);
+    ytPlayer.containerId = containerId;
     ytPlayer.miniPlaylist = miniPlaylist;
     ytPlayer.mediaObj = mediaObj;
     ytPlayer.loadMediaObj();
@@ -485,7 +612,43 @@ function spawnYouTubePlayer(miniPlaylist, mediaObj) {
     return ytPlayer;
 }
 
-function onPlayerStateChange(event) {
+function spawnSoundCloudPlayer(miniPlaylist, mediaObj) {
+    // create a <div> for the YouTube player to replace
+    var playerIFrame = document.createElement("iframe");
+
+    // use a unique ID so multiple players can be spawned and referenced
+    var containerId = Math.floor((Math.random() * 100000) + 1).toString();
+    playerIFrame.setAttribute("id", containerId);
+    playerIFrame.setAttribute("class", "media");
+    // hide it at first so it doesn't block anything before it starts actually
+    // playing
+    playerIFrame.setAttribute("hidden", "hidden");
+    // get trackID of song URL in order to embed the widget properly
+    resolvedURL = resolveSoundCloudURL(mediaObj.src);
+    playerIFrame.src = "https://w.soundcloud.com/player/?url=" + resolvedURL;
+    miniPlaylist.container.appendChild(playerIFrame);
+    var scPlayer = SC.Widget(containerId);
+    modifySoundCloudPlayerPrototype(scPlayer)
+    scPlayer.containerId = containerId;
+    scPlayer.miniPlaylist = miniPlaylist;
+    scPlayer.mediaObj = mediaObj;
+    scPlayer.loadMediaObj();
+    return scPlayer;
+}
+
+function resolveSoundCloudURL(songURL) {
+    var xmlHttp = new XMLHttpRequest();
+    var resolveURL = "http://api.soundcloud.com/resolve?url=";
+    resolveURL += songURL;
+    resolveURL += "&client_id=" + soundcloudClientId;
+    xmlHttp.open("GET", resolveURL, false); // synchronous
+    xmlHttp.send(null);
+    response = JSON.parse(xmlHttp.responseText);
+    return response.uri;
+}
+
+//Embedded players' state change handlers
+function onYTPlayerStateChange(event) {
     switch (event.data){
         case YT.PlayerState.UNSTARTED:
             // hide the player so the thumbnail isn't seen while the video
@@ -514,12 +677,14 @@ function onPlayerStateChange(event) {
     return;
 }
 
-function onPlayerReady(event) {
+//Embedded players' ready state handlers
+function onYTPlayerReady(event) {
     // YouTube player is now ready
     event.target.setReady();
 }
 
-function onError(event) {
+//Embedded players' error handling
+function onYTPlayerError(event) {
     var srcTrack = event.target.miniPlaylist.track;
     submessage = "";
     switch(event.data){
@@ -582,11 +747,13 @@ function setVolume(newVolume) {
     for (mp of miniPlaylistArr) {
         mp.setVolume(volume * trackVolume);
     }
+    return;
 }
 
 function setTrackVolume(newVolume) {
     trackVolume = newVolume;
     setVolume();
+    return;
 }
 
 function shutup() {
@@ -596,12 +763,14 @@ function shutup() {
     }
     // it's safer to clear the arrays after body is bodied
     videoArr = [];
+    return;
 }
 
 function skip() {
     if (miniPlaylistArr.length > 0) {
         miniPlaylistArr[0].skip();
     }
+    return;
 }
 
 window.onload=function(){

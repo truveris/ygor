@@ -18,6 +18,7 @@ func (module *MusicModule) PrivMsg(srv *Server, msg *Message) {
 		"video",
 		"youtube",
 		"audio",
+		"soundcloud",
 	}
 
 	// Validate the command's usage, and get back a map array representing the
