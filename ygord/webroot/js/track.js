@@ -599,7 +599,9 @@ function shutup() {
 }
 
 function skip() {
-    miniPlaylistArr[0].skip();
+    if (miniPlaylistArr.length > 0) {
+        miniPlaylistArr[0].skip();
+    }
 }
 
 window.onload=function(){
