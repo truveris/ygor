@@ -171,6 +171,9 @@ func (mObj *MediaObj) SetSrc(url string) error {
 			return err
 		}
 	}
+	if mObj.isWavur() {
+		mObj.setWavurID()
+	}
 
 	return nil
 }
@@ -247,7 +250,6 @@ func (mObj *MediaObj) setMediaType() {
 		mObj.MediaType = "vimeo"
 		return
 	}
-
 
 	// If the MediaType can't be determined, set it as "web" and hope for the
 	// best when the minion embeds it
@@ -384,6 +386,13 @@ func (mObj *MediaObj) setWavurID() error {
 	}
 	mObj.Src = match[0][1]
 	return nil
+}
+
+// setWavurID grabs the YouTube video's videoID from the passed URL, and
+// sets it as the MediaObj's 'Src' attribute.
+func (mObj *MediaObj) setWavurID() {
+	mObj.Src = reWavurID.FindAllStringSubmatch(mObj.Src, -1)[0][1]
+	return
 }
 
 // parseURL determines if the passed URL is acceptable, and then (if it's
