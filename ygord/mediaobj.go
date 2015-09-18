@@ -29,6 +29,8 @@ var (
 	soundcloudHostNames = []string{
 		"soundcloud.com",
 		"www.soundcloud.com",
+		"api.soundcloud.com",
+		"www.api.soundcloud.com",
 	}
 
 	// These are the known file extensions that are supported by Firefox.
