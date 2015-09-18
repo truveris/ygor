@@ -4,6 +4,7 @@ var trackVolume = 1.0; // percentage of master volume to use in this track
 var miniPlaylistArr = [];
 var videoArr = []; // used to track visible elements in a track
 var soundcloudClientId = "1b10b405b1065aadc1639a2620521638";
+
 Array.prototype.remove = function(item) {
     itemIndex = this.indexOf(item);
     if (itemIndex > -1) {
@@ -55,6 +56,9 @@ function MiniPlaylist(mediaMessage) {
                     break;
                 case "soundcloud":
                     player = spawnSoundCloudPlayer(this, mediaObj);
+                    break;
+                case "vimeo":
+                    player = spawnVimeoPlayer(this, mediaObj);
                     break;
                 case "video":
                     player = spawnPlayer(this, mediaObj);
@@ -439,9 +443,6 @@ function modifySoundCloudPlayerPrototype(widget) {
             this.mute();
         }
         this.isReady = true;
-        // player may have been given a mediaObj before the player was ready,
-        // so it should now load the desired video with the specified
-        // parameters
         if (this.mediaObj) {
             this.loadMediaObj();
         }
@@ -548,8 +549,199 @@ function modifySoundCloudPlayerPrototype(widget) {
     widget.soloLoop = false;
 }
 
+var VimeoPlayer = function(miniPlaylist, mediaObj) {
+    //constructor for VimeoPlayer object class
+    this.miniPlaylist = miniPlaylist;
+    this.mediaObj = mediaObj;
+    this.playerId = "vimeoplayer-" + Math.floor((Math.random() * 100000) + 1).toString();
+    this.iframe = null;
+    this.isReady = false;
+    this.startTime = 0;
+    this.endTime = false;
+    this.didEnd = false;
+    this.soloLoop = false;
+    this.duration = null;
+};
+
+function modifyVimeoPlayerPrototype() {
+    VimeoPlayer.prototype.spawn = function() {
+        // create a <div> for the Vimeo player
+        this.iframe = document.createElement("iframe");
+        var player = this;
+        this.iframe.getPlayer = function() {
+            return player;
+        }
+
+        // use a unique ID so multiple players can be spawned and referenced
+        this.iframe.setAttribute("id", this.playerId);
+        this.iframe.setAttribute("class", "media");
+
+        // hide the vimeo trackbar
+        this.iframe.style.height = "200%";
+        this.iframe.style.overflow = "hidden";
+        this.iframe.style.transform = "translate(0, -25%)";
+
+        // hide the player at first so it doesn't block anything before it
+        // starts actually playing
+        this.iframe.style.visibility = "hidden";
+        // get trackID of song URL in order to embed the widget properly
+        this.iframe.src = "http://player.vimeo.com/video/" +
+            this.mediaObj.src + "?player_id=" + this.playerId +
+            "&api=1&badge=0&byline=0&portrait=0&title=0&loop1";
+        this.miniPlaylist.container.appendChild(this.iframe);
+    };
+    VimeoPlayer.prototype.onReady = function(event) {
+        this.post("addEventListener", "playProgress");
+        this.post("addEventListener", "play");
+        this.post("addEventListener", "pause");
+        this.post("addEventListener", "finish");
+        this.storeDuration();
+        this.setReady();
+        
+    };
+    VimeoPlayer.prototype.setReady = function() {
+        this.setVolume(volume * trackVolume);
+        if (this.mediaObj.muted) {
+            this.mute();
+        }
+        this.isReady = true;
+        if (this.mediaObj) {
+            this.loadMediaObj();
+        }
+        return;
+    };
+    VimeoPlayer.prototype.post = function(action, value) {
+        var data = {
+          method: action
+        };
+        if (value) {
+            data.value = value;
+        }
+        var message = JSON.stringify(data);
+        if (this.iframe.contentWindow) {
+            // player may already be destroyed
+            this.iframe.contentWindow.postMessage(message, "*");
+        }
+    };
+    VimeoPlayer.prototype.storeDuration = function(level) {
+        this.post("getDuration");
+    };
+    VimeoPlayer.prototype.setVolume = function(level) {
+        this.post("setVolume", (level/100.0));
+    };
+    VimeoPlayer.prototype.mute = function() {
+        this.post("setVolume", 0.0001);
+    };
+    VimeoPlayer.prototype.loadMediaObj = function() {
+        if (this.isReady) {
+            // if the player is ready 
+            var start = this.mediaObj.start;
+            var end = this.mediaObj.end;
+            if (start.length > 0) {
+                this.seekTo(parseFloat(start));
+                this.startTime = start;
+            }
+            if (end.length > 0) {
+                this.endTime = end;
+            } else if (this.duration) {
+                this.endTime = this.duration;
+            }
+            this.play();
+        }
+        return;
+    };
+    VimeoPlayer.prototype.seekTo = function(time) {
+        this.post("seekTo", time);
+    };
+    VimeoPlayer.prototype.play = function() {
+        this.post("play");
+    };
+    VimeoPlayer.prototype.pause = function() {
+        this.post("pause");
+    };
+    VimeoPlayer.prototype.hide = function() {
+        videoArr.remove(this);
+        this.iframe.style.visibility = "hidden";
+    };
+    VimeoPlayer.prototype.show = function() {
+        if (videoArr.indexOf(this) < 0) {
+            // if it's not in the videoArr already, put it there.
+            videoArr.push(this);
+        }
+        playerStarted(this.miniPlaylist.track);
+        this.iframe.style.visibility = "visible";
+    };
+    VimeoPlayer.prototype.seekToStart = function() {
+        if (this.startTime == 0) {
+            this.startTime = 0.001; // vimeo requires a positive float
+        }
+        this.seekTo(this.startTime);
+    };
+    VimeoPlayer.prototype.seekToEnd = function() {
+        this.endTime = this.endTime || this.duration;
+        this.seekTo(this.endTime);
+    };
+    VimeoPlayer.prototype.onPlayProgress = function(message) {
+        var currentTime = message.seconds;
+        if (currentTime < this.startTime) {
+            this.seekToStart();
+        } else if (currentTime >= this.endTime){
+            if (this.soloLoop){
+                // when this is the only player in the playlist and the
+                // playlist should loop, this should loop on it's own.
+                this.seekToStart();
+                this.play();
+            } else if (!this.soloLoop) {
+                this.hasEnded();
+                this.seekTo(this.startTime);
+            }
+        }
+        return;
+    };
+    VimeoPlayer.prototype.onPlay = function(event) {
+        this.show();
+        this.didEnd = false;
+    };
+    VimeoPlayer.prototype.onPause = function(event) {
+        this.hasEnded();
+        return;
+    };
+    VimeoPlayer.prototype.onFinish = function(event) {
+        if (this.soloLoop){
+            this.seekToStart();
+            this.play();
+            return;
+        }
+        this.hasEnded();
+        return;
+    };
+    VimeoPlayer.prototype.hasEnded = function() {
+        if (this.didEnd == false){
+            this.didEnd = true;
+            if (!this.soloLoop){
+                this.hide();
+                this.pause();
+                this.seekToStart();
+                this.miniPlaylist.playNext();
+            }
+        }
+    };
+    VimeoPlayer.prototype.destroy = function() {
+        this.iframe.parentNode.removeChild(this.iframe);
+        return;
+    };
+    VimeoPlayer.prototype.onDurationChange = function() {
+        this.endTime = this.endTime || this.duration;
+        return;
+    }
+}
+
 function receiveMessage(event) {
-    if (event.origin !== "http://localhost:8181" &&
+    if ((/^https?:\/\/player.vimeo.com/).test(event.origin)) {
+        var message = JSON.parse(event.data);
+        vimeoPlayerMessageHandler(message);
+
+    } else if (event.origin !== "http://localhost:8181" &&
         event.origin !== "https://truveris.com"){
         return;
     }
@@ -647,6 +839,13 @@ function resolveSoundCloudURL(songURL) {
     return response.uri;
 }
 
+function spawnVimeoPlayer(miniPlaylist, mediaObj) {
+    var vimeoplayer = new VimeoPlayer(miniPlaylist, mediaObj);
+
+    vimeoplayer.spawn();
+    return vimeoplayer;
+}
+
 //Embedded players' state change handlers
 function onYTPlayerStateChange(event) {
     switch (event.data){
@@ -710,6 +909,41 @@ function onYTPlayerError(event) {
     reportError(this.miniPlaylist.track, submessage);
     this.miniPlaylist.removePlayer(this);
     return;
+}
+
+function vimeoPlayerMessageHandler(message) {
+    var playerIframe = document.getElementById(message.player_id);
+    if (!playerIframe){
+        //player may already be destroyed
+        return;
+    }
+    var player = playerIframe.getPlayer();
+    if (message.event) {
+        switch(message.event) {
+            case "ready":
+                player.onReady();
+                break;
+            case "play":
+                player.onPlay(message.data);
+                break;
+            case "playProgress":
+                player.onPlayProgress(message.data);
+                break;
+            case "pause":
+                player.onPause(message.data);
+                break;
+            case "finish":
+                player.onFinish(message.data);
+                break;
+        }
+    } else if (message.method) {
+        switch (message.method) {
+            case "getDuration":
+                player.duration = message.value;
+                player.onDurationChange();
+                break;
+        }
+    }
 }
 
 function playerStarted(srcTrack) {
@@ -784,6 +1018,7 @@ window.onload=function(){
     modifyIFrameElementPrototype();
 
     modifyYouTubePlayerPrototype();
+    modifyVimeoPlayerPrototype();
 
     return;
 }

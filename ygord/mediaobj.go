@@ -32,6 +32,12 @@ var (
 		"api.soundcloud.com",
 		"www.api.soundcloud.com",
 	}
+	vimeoHostNames = []string{
+		"vimeo.com",
+		"www.vimeo.com",
+		"player.vimeo.com",
+		"www.player.vimeo.com",
+	}
 
 	// These are the known file extensions that are supported by Firefox.
 	audioFileExts = []string{
@@ -73,6 +79,8 @@ var (
 	reHostnamePart = regexp.MustCompile(`^([a-zA-Z0-9]+\-+)*[a-zA-Z0-9]+$`)
 	reYTVideoID    = regexp.MustCompile(
 		`^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*`)
+	reVVideoID    = regexp.MustCompile(
+		`^.*vimeo.com\/(player\/|video\/)?([0-9]+)($|\?).*`)
 	reGifV    = regexp.MustCompile(`\.gif(v)?`)
 	reFileExt = regexp.MustCompile(`.*\.([a-zA-Z0-9]+)[^a-zA-Z0-9]*$`)
 )
@@ -142,6 +150,9 @@ func (mObj *MediaObj) SetSrc(url string) error {
 	if mObj.isYouTube() {
 		mObj.setYouTubeVideoID()
 	}
+	if mObj.isVimeo() {
+		mObj.setVimeoVideoID()
+	}
 
 	return nil
 }
@@ -169,6 +180,12 @@ func (mObj *MediaObj) setMediaType() {
 	// Is the passed URL a SoundCloud link?
 	if mObj.isSoundCloud() {
 		mObj.MediaType = "soundcloud"
+		return
+	}
+
+	// Is the passed URL a Vimeo link?
+	if mObj.isVimeo() {
+		mObj.MediaType = "vimeo"
 		return
 	}
 
@@ -252,6 +269,17 @@ func (mObj *MediaObj) isSoundCloud() bool {
 	return false
 }
 
+// isVimeo attempts to determine if the desired content is hosted on
+// vimeo
+func (mObj *MediaObj) isVimeo() bool {
+	for _, d := range vimeoHostNames {
+		if mObj.host == d {
+			return true
+		}
+	}
+	return false
+}
+
 // isYouTube attempts to determine if the desired content is a video hosted on
 // YouTube
 func (mObj *MediaObj) isYouTube() bool {
@@ -289,6 +317,13 @@ func (mObj *MediaObj) formatImgurURL() error {
 // sets it as the MediaObj's 'Src' attribute.
 func (mObj *MediaObj) setYouTubeVideoID() {
 	mObj.Src = reYTVideoID.FindAllStringSubmatch(mObj.Src, -1)[0][2]
+	return
+}
+
+// setVimeoVideoID grabs the YouTube video's videoID from the passed URL, and
+// sets it as the MediaObj's 'Src' attribute.
+func (mObj *MediaObj) setVimeoVideoID() {
+	mObj.Src = reVVideoID.FindAllStringSubmatch(mObj.Src, -1)[0][2]
 	return
 }
 
