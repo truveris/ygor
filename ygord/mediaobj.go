@@ -153,19 +153,19 @@ func (mObj *MediaObj) SetSrc(url string) error {
 
 	mObj.setMediaType()
 
-	if mObj.isYouTube() {
+	if mObj.GetMediaType() == "youtube" {
 		err := mObj.setYouTubeVideoID()
 		if err != nil {
 			return err
 		}
 	}
-	if mObj.isVimeo() {
+	if mObj.GetMediaType() == "vimeo" {
 		err := mObj.setVimeoVideoID()
 		if err != nil {
 			return err
 		}
 	}
-	if mObj.isWavur() {
+	if mObj.GetMediaType() == "wavur" {
 		err := mObj.setWavurID()
 		if err != nil {
 			return err
@@ -189,24 +189,6 @@ func (mObj *MediaObj) GetURL() string {
 // setMediaType sets the 'MediaType' attribute of the MediaObj. This tells the
 // connected minions what kind of content they should be trying to embed.
 func (mObj *MediaObj) setMediaType() {
-	// Is the passed URL a YouTube video link?
-	if mObj.isYouTube() {
-		mObj.MediaType = "youtube"
-		return
-	}
-
-	// Is the passed URL a SoundCloud link?
-	if mObj.isSoundCloud() {
-		mObj.MediaType = "soundcloud"
-		return
-	}
-
-	// Is the passed URL a Vimeo link?
-	if mObj.isVimeo() {
-		mObj.MediaType = "vimeo"
-		return
-	}
-
 	// Does the passed URL have a file extension that can be used to determine
 	// MediaType?
 	matches := reFileExt.FindAllStringSubmatch(mObj.path, -1)
@@ -248,12 +230,27 @@ func (mObj *MediaObj) setMediaType() {
 		return
 	}
 
+	// Is the passed URL a YouTube video link?
+	if mObj.isYouTube() {
+		mObj.MediaType = "youtube"
+		return
+	}
 
-	// If it's not a link to a YouTube video, and it's not a link to an image
-	// file, audio file, or video file (at least, of those that are supported
-	// by Firefox), then make the MediaObj's 'MediaType' be 'web' so the
-	// connected minions can just embed the URL as an iframe and hope for the
-	// best.
+	// Is the passed URL a SoundCloud link?
+	if mObj.isSoundCloud() {
+		mObj.MediaType = "soundcloud"
+		return
+	}
+
+	// Is the passed URL a Vimeo link?
+	if mObj.isVimeo() {
+		mObj.MediaType = "vimeo"
+		return
+	}
+
+
+	// If the MediaType can't be determined, set it as "web" and hope for the
+	// best when the minion embeds it
 	mObj.MediaType = "web"
 	return
 }
