@@ -49,7 +49,8 @@ func (module *PlayModule) PrivMsg(srv *Server, msg *Message) {
 		// end, and they won't ever disappear.
 		if !mObj.IsOfMediaType(acceptableMediaTypes) {
 			errMsg := "error: URL must be audio file, video file, YouTube " +
-				"video, or imgur .gif/gifv. (" + mObj.GetURL() + ")"
+				"video, SoundCloud link, or imgur .gif/gifv. " +
+				"(" + mObj.GetURL() + ")"
 			srv.IRCPrivMsg(msg.ReplyTo, errMsg)
 			return
 		}
