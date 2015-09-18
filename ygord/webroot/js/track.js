@@ -393,7 +393,7 @@ function modifyYouTubePlayerPrototype() {
     };
     YT.Player.prototype.loadMediaObj = function() {
         if (this.isReady) {
-            // if the player is ready AND it has a mediaObj, 
+            // if the player is ready
             params = {
                 "videoId": this.mediaObj.src,
             }
@@ -429,7 +429,7 @@ function modifyYouTubePlayerPrototype() {
 }
 
 function modifySoundCloudPlayerPrototype(widget) {
-    // adjust YT.Player prototype for easier management
+    // adjust SoundCloud widget prototype for easier management
     widget.isReady = false;
     widget.startTime = 0.0;
     widget.endTime = false;
@@ -524,7 +524,7 @@ function modifySoundCloudPlayerPrototype(widget) {
     };
     widget.loadMediaObj = function() {
         if (this.isReady) {
-            // if the player is ready AND it has a mediaObj, 
+            // if the player is ready
             var start = this.mediaObj.start;
             var end = this.mediaObj.end;
             if (start.length > 0) {
@@ -565,7 +565,7 @@ var VimeoPlayer = function(miniPlaylist, mediaObj) {
 
 function modifyVimeoPlayerPrototype() {
     VimeoPlayer.prototype.spawn = function() {
-        // create a <div> for the Vimeo player
+        // create a <iframe> for the Vimeo player
         this.iframe = document.createElement("iframe");
         var player = this;
         this.iframe.getPlayer = function() {
