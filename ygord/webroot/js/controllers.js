@@ -34,9 +34,9 @@ ygorMinionControllers.controller("ChannelController", [
         $scope.musicTrack.playlist = [];
         $scope.queueTrack.playlist = [];
         $scope.content = $("#ygor-content");
-        $scope.musicTrack.attr("hidden", "hidden");
-        $scope.queueTrack.attr("hidden", "hidden");
-        $scope.playTrack.attr("hidden", "hidden");
+        $scope.musicTrack.css("visibility", "hidden");
+        $scope.queueTrack.css("visibility", "hidden");
+        $scope.playTrack.css("visibility", "hidden");
         $scope.popUpContainer = $("#pop-up-container");
         var increment = 5;
         // set global volume variables for easy access by embedded iframes
@@ -47,11 +47,11 @@ ygorMinionControllers.controller("ChannelController", [
 
         // musicTrack functions
         $scope.musicTrack.hide = function() {
-            $scope.musicTrack.attr("hidden", "hidden");
+            $scope.musicTrack.css("visibility", "hidden");
         }
 
         $scope.musicTrack.show = function() {
-            $scope.musicTrack.removeAttr("hidden");
+            $scope.musicTrack.css("visibility", "visible");
         }
 
         $scope.musicTrack.post = function(message) {
@@ -99,11 +99,11 @@ ygorMinionControllers.controller("ChannelController", [
 
         // queueTrack functions
         $scope.queueTrack.hide = function() {
-            $scope.queueTrack.attr("hidden", "hidden");
+            $scope.queueTrack.css("visibility", "hidden");
         }
 
         $scope.queueTrack.show = function() {
-            $scope.queueTrack.removeAttr("hidden");
+            $scope.queueTrack.css("visibility", "visible");
         }
 
         $scope.queueTrack.post = function(message) {
@@ -134,11 +134,11 @@ ygorMinionControllers.controller("ChannelController", [
 
         // playTrack functions
         $scope.playTrack.hide = function() {
-            $scope.playTrack.attr("hidden", "hidden");
+            $scope.playTrack.css("visibility", "hidden");
         }
 
         $scope.playTrack.show = function() {
-            $scope.playTrack.removeAttr("hidden");
+            $scope.playTrack.css("visibility", "visible");
         }
 
         $scope.playTrack.post = function(message) {
