@@ -154,13 +154,22 @@ func (mObj *MediaObj) SetSrc(url string) error {
 	mObj.setMediaType()
 
 	if mObj.isYouTube() {
-		mObj.setYouTubeVideoID()
+		err := mObj.setYouTubeVideoID()
+		if err != nil {
+			return err
+		}
 	}
 	if mObj.isVimeo() {
-		mObj.setVimeoVideoID()
+		err := mObj.setVimeoVideoID()
+		if err != nil {
+			return err
+		}
 	}
 	if mObj.isWavur() {
-		mObj.setWavurID()
+		err := mObj.setWavurID()
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -346,23 +355,38 @@ func (mObj *MediaObj) formatImgurURL() error {
 
 // setYouTubeVideoID grabs the YouTube video's videoID from the passed URL, and
 // sets it as the MediaObj's 'Src' attribute.
-func (mObj *MediaObj) setYouTubeVideoID() {
-	mObj.Src = reYTVideoID.FindAllStringSubmatch(mObj.Src, -1)[0][2]
-	return
+func (mObj *MediaObj) setYouTubeVideoID() error {
+	match := reYTVideoID.FindAllStringSubmatch(mObj.Src, -1)
+	if len(match) == 0 {
+		errMsg := "error: could not find video ID (" + mObj.url + ")"
+		return errors.New(errMsg)
+	}
+	mObj.Src = match[0][2]
+	return nil
 }
 
 // setVimeoVideoID grabs the YouTube video's videoID from the passed URL, and
 // sets it as the MediaObj's 'Src' attribute.
-func (mObj *MediaObj) setVimeoVideoID() {
-	mObj.Src = reVVideoID.FindAllStringSubmatch(mObj.Src, -1)[0][2]
-	return
+func (mObj *MediaObj) setVimeoVideoID() error {
+	match := reVVideoID.FindAllStringSubmatch(mObj.Src, -1)
+	if len(match) == 0 {
+		errMsg := "error: could not find video ID (" + mObj.url + ")"
+		return errors.New(errMsg)
+	}
+	mObj.Src = match[0][2]
+	return nil
 }
 
 // setWavurID grabs the YouTube video's videoID from the passed URL, and
 // sets it as the MediaObj's 'Src' attribute.
-func (mObj *MediaObj) setWavurID() {
-	mObj.Src = reWavurID.FindAllStringSubmatch(mObj.Src, -1)[0][1]
-	return
+func (mObj *MediaObj) setWavurID() error {
+	match := reWavurID.FindAllStringSubmatch(mObj.Src, -1)
+	if len(match) == 0 {
+		errMsg := "error: could not find wavur file ID (" + mObj.url + ")"
+		return errors.New(errMsg)
+	}
+	mObj.Src = match[0][1]
+	return nil
 }
 
 // parseURL determines if the passed URL is acceptable, and then (if it's
