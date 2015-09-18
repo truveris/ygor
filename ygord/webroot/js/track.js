@@ -60,6 +60,9 @@ function MiniPlaylist(mediaMessage) {
                 case "vimeo":
                     player = spawnVimeoPlayer(this, mediaObj);
                     break;
+                case "wavur":
+                    player = spawnWavurPlayer(this, mediaObj);
+                    break;
                 case "video":
                     player = spawnPlayer(this, mediaObj);
                     break;
@@ -229,11 +232,14 @@ function modifyMediaElementPrototypes() {
             this.endTime = e;
         }
         this.muted = this.mediaObj.muted;
-        this.src = this.mediaObj.src + "#t=" + this.startTime;
-        if (e.length > 0) {
-            this.src += "," + this.endTime;
+        var newSrc = {
+            "src": this.mediaObj.src,
+            "startTime": this.startTime,
         }
-        this.load();
+        if (e.length > 0) {
+            newSrc.endTime = this.endTime;
+        }
+        this.attachSrc(newSrc);
     };
     HTMLMediaElement.prototype.seekToEnd = function() {
         this.currentTime = this.endTime;
@@ -241,7 +247,24 @@ function modifyMediaElementPrototypes() {
     HTMLMediaElement.prototype.destroy = function() {
         videoArr.remove(this);
         this.parentNode.removeChild(this);
-    };    
+    };
+    HTMLMediaElement.prototype.attachSrc = function(newSrc) {
+        if (typeof newSrc.src == "string") {
+            newSrc.src = [newSrc.src];
+        }
+        for (url of newSrc.src) {
+            var srcEle = document.createElement("source");
+            srcEle.src = url + "#t=";
+            if (newSrc.startTime > 0) {
+                srcEle.src += newSrc.startTime;
+            }
+            if (newSrc.endTime) {
+                srcEle.src += "," + newSrc.endTime;
+            }
+            this.appendChild(srcEle);
+        }
+        this.load();
+    }
     HTMLMediaElement.prototype.spawn = function(miniPlaylist, mediaObj) {
         this.ondurationchange = function() {
             this.endTime = this.endTime || this.duration;
@@ -267,6 +290,7 @@ function modifyMediaElementPrototypes() {
         this.setAttribute("autoplay", "autoplay");
         this.loadMediaObj();
         this.miniPlaylist.container.appendChild(this);
+        this.play();
         return;
     };
 }
@@ -756,6 +780,20 @@ function receiveMessage(event) {
 function spawnPlayer(miniPlaylist, mediaObj) {
     var player = document.createElement(mediaObj.mediaType);
     player.spawn(miniPlaylist, mediaObj);
+    return player;
+}
+
+// spawns <video>, <audio>, or <img>
+function spawnWavurPlayer(miniPlaylist, mediaObj) {
+    wavurId = mediaObj.src;
+    var wavurURLBase = "https://wavur.com/f/" + wavurId + ".";
+    var srcArr = []
+    srcArr.push(wavurURLBase + "mp3");
+    srcArr.push(wavurURLBase + "wav");
+    srcArr.push(wavurURLBase + "ogg");
+    mediaObj.src = srcArr;
+    mediaObj.mediaType = "audio";
+    var player = spawnPlayer(miniPlaylist, mediaObj);
     return player;
 }
 

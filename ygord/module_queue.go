@@ -20,6 +20,7 @@ func (module *QueueModule) PrivMsg(srv *Server, msg *Message) {
 		"audio",
 		"soundcloud",
 		"vimeo",
+		"wavur",
 	}
 
 	// Validate the command's usage, and get back a map array representing the

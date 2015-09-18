@@ -38,6 +38,10 @@ var (
 		"player.vimeo.com",
 		"www.player.vimeo.com",
 	}
+	wavurHostNames = []string{
+		"wavur.com",
+		"www.wavur.com",
+	}
 
 	// These are the known file extensions that are supported by Firefox.
 	audioFileExts = []string{
@@ -81,6 +85,8 @@ var (
 		`^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*`)
 	reVVideoID    = regexp.MustCompile(
 		`^.*vimeo.com\/(player\/|video\/)?([0-9]+)($|\?).*`)
+	reWavurID    = regexp.MustCompile(
+		`^.*wavur.com\/[wf]\/([a-zA-Z0-9]+)(\.(mp3|wav|ogg))?$`)
 	reGifV    = regexp.MustCompile(`\.gif(v)?`)
 	reFileExt = regexp.MustCompile(`.*\.([a-zA-Z0-9]+)[^a-zA-Z0-9]*$`)
 )
@@ -153,6 +159,9 @@ func (mObj *MediaObj) SetSrc(url string) error {
 	if mObj.isVimeo() {
 		mObj.setVimeoVideoID()
 	}
+	if mObj.isWavur() {
+		mObj.setWavurID()
+	}
 
 	return nil
 }
@@ -214,11 +223,22 @@ func (mObj *MediaObj) setMediaType() {
 		// Is it a video file?
 		for _, ext := range videoFileExts {
 			if fileExt == ext {
+				if mObj.isWavur() && fileExt == "ogg" {
+					mObj.MediaType = "audio"
+					return
+				}
 				mObj.MediaType = "video"
 				return
 			}
 		}
 	}
+
+	// Is the passed URL a Wavur link?
+	if mObj.isWavur() {
+		mObj.MediaType = "wavur"
+		return
+	}
+
 
 	// If it's not a link to a YouTube video, and it's not a link to an image
 	// file, audio file, or video file (at least, of those that are supported
@@ -291,6 +311,17 @@ func (mObj *MediaObj) isYouTube() bool {
 	return false
 }
 
+// isWavur attempts to determine if the desired content is hosted on
+// wavur
+func (mObj *MediaObj) isWavur() bool {
+	for _, d := range wavurHostNames {
+		if mObj.host == d {
+			return true
+		}
+	}
+	return false
+}
+
 // formatImgurURL swaps .gif(v) file extension of MediaObj's Src with .webm
 //
 // imgur will automatically convert any .gif to .webm, but wrap it as a .gifv.
@@ -324,6 +355,13 @@ func (mObj *MediaObj) setYouTubeVideoID() {
 // sets it as the MediaObj's 'Src' attribute.
 func (mObj *MediaObj) setVimeoVideoID() {
 	mObj.Src = reVVideoID.FindAllStringSubmatch(mObj.Src, -1)[0][2]
+	return
+}
+
+// setWavurID grabs the YouTube video's videoID from the passed URL, and
+// sets it as the MediaObj's 'Src' attribute.
+func (mObj *MediaObj) setWavurID() {
+	mObj.Src = reWavurID.FindAllStringSubmatch(mObj.Src, -1)[0][1]
 	return
 }
 
