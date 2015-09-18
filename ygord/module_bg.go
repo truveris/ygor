@@ -17,7 +17,7 @@ func (module *BgModule) PrivMsg(srv *Server, msg *Message) {
 	acceptableMediaTypes := []string{
 		"video",
 		"youtube",
-		"image",
+		"img",
 		"web",
 		"vimeo",
 	}
