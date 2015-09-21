@@ -83,9 +83,9 @@ var (
 	reHostnamePart = regexp.MustCompile(`^([a-zA-Z0-9]+\-+)*[a-zA-Z0-9]+$`)
 	reYTVideoID    = regexp.MustCompile(
 		`^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*`)
-	reVVideoID    = regexp.MustCompile(
+	reVVideoID = regexp.MustCompile(
 		`^.*vimeo.com\/(player\/|video\/)?([0-9]+)($|\?).*`)
-	reWavurID    = regexp.MustCompile(
+	reWavurID = regexp.MustCompile(
 		`^.*wavur.com\/[wf]\/([a-zA-Z0-9]+)(\.(mp3|wav|ogg))?$`)
 	reGifV    = regexp.MustCompile(`\.gif(v)?`)
 	reFileExt = regexp.MustCompile(`.*\.([a-zA-Z0-9]+)[^a-zA-Z0-9]*$`)
