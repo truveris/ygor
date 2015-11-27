@@ -41,7 +41,13 @@ func getEnd(args []string) (string, error) {
 	// things.
 	end := ""
 	if len(args) == 2 {
-		end = reTime.FindStringSubmatch(args[1])[1]
+		match := reTime.FindStringSubmatch(args[1])
+		if len(match) > 0 {
+			end = match[1]
+		} else {
+			err := errors.New("end must be a number")
+			return "", err
+		}
 	}
 
 	return end, nil
