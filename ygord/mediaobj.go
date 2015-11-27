@@ -88,6 +88,47 @@ var (
 			"text/",
 		},
 	}
+
+	// ygor should fallback to checking the file extensions for potential
+	// matches if the content-type doesn't appear to be supported. The server
+	// may simply be providing the wrong content-type in the header.
+	supportedFormatsAndExtensions = map[string][]string{
+		"img": {
+			".apng",
+			".bmp",
+			".dib",
+			".gif",
+			".jfi",
+			".jfif",
+			".jif",
+			".jpe",
+			".jpeg",
+			".jpg",
+			".png",
+			".webp",
+		},
+		"audio": {
+			".mp3",
+			".wav",
+			".wave",
+		},
+		"video": {
+			".m4a",
+			".m4b",
+			".m4p",
+			".m4r",
+			".m4v",
+			".mp4",
+			".oga",
+			".ogg",
+			".ogm",
+			".ogv",
+			".ogx",
+			".opus",
+			".spx",
+			".webm",
+		},
+	}
 )
 
 // MediaObj represents the relevant data that will eventually be passed to
@@ -232,6 +273,19 @@ func (mObj *MediaObj) setFormat(header map[string][]string) error {
 						mObj.mediaType = mediaType
 						return nil
 					}
+				}
+			}
+		}
+
+		// Fallback to known supported file extensions if content-type isn't
+		// recognized as supported.
+		ext := mObj.GetExt()
+		for format, formatExtensions := range supportedFormatsAndExtensions {
+			for _, extension := range formatExtensions {
+				if extension == ext {
+					mObj.Format = format
+					mObj.mediaType = ext
+					return nil
 				}
 			}
 		}
