@@ -107,8 +107,8 @@ type MediaObj struct {
 	// using 'Src'.
 	Format string `json:"format"`
 	Type   string `json:"type"`
-	// Duration represents where in the desired content's timeline to stop playing.
-	Duration string `json:"duration"`
+	// End represents where in the desired content's timeline to stop playing.
+	End string `json:"end"`
 	// Muted represents whether or not the desired content should be muted.
 	Muted             bool `json:"muted"`
 	Loop              bool `json:"loop"`
@@ -308,7 +308,7 @@ func (mObj *MediaObj) Serialize() string {
 func NewMediaObj(mediaItem map[string]string, track string, muted bool, loop bool, acceptableFormats []string) (*MediaObj, error) {
 	// Parse the mediaItem map into a MediaObj.
 	mObj := new(MediaObj)
-	mObj.Duration = mediaItem["duration"]
+	mObj.End = mediaItem["end"]
 	mObj.Muted = muted
 	mObj.Loop = loop
 	mObj.track = track
