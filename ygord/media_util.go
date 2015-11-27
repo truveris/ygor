@@ -23,7 +23,7 @@ func parseArgList(msgArgs []string) (map[string]string, error) {
 	// it will be determined and handled elsewhere.
 	m["url"] = msgArgs[0]
 	// Get the end passed for this media item (if it was passed).
-	end, err := getDuration(msgArgs)
+	end, err := getEnd(msgArgs)
 	if err != nil {
 		return nil, err
 	}
@@ -33,9 +33,9 @@ func parseArgList(msgArgs []string) (map[string]string, error) {
 	return m, nil
 }
 
-// getDuration grabs the end that the media item is to be played, if it is
+// getEnd grabs the end that the media item is to be played, if it is
 // passed. If a end isn't passed, an empty string is returned.
-func getDuration(args []string) (string, error) {
+func getEnd(args []string) (string, error) {
 	reTime := regexp.MustCompile(`^(([0-9]*\.)?[0-9]+)`)
 	// Set the default string for end to an empty string to simplify
 	// things.
