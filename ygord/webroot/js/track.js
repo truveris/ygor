@@ -75,16 +75,11 @@ function modifyMediaElementPrototypes() {
     };
     HTMLMediaElement.prototype.loadMediaObj = function() {
         var e = this.mediaObj.end;
-        this.endTime = "";
         if (e.length > 0) {
             this.endTime = e;
         }
         this.muted = this.mediaObj.muted;
-        boundries = "#t=0";
-        if (this.endTime.length > 0){
-            boundries += "," + this.endTime;
-        }
-        this.src = this.mediaObj.src + boundries;
+        this.src = this.mediaObj.src;
     };
     HTMLMediaElement.prototype.seekToEnd = function() {
         this.currentTime = this.endTime;
@@ -110,10 +105,11 @@ function modifyMediaElementPrototypes() {
         this.endTime = false;
         this.didEnd = false;
         this.setVolume(volume * trackVolume);
+        this.loadMediaObj();
         this.setAttribute("class", "media");
         this.setAttribute("opacity", 0);
+        this.setAttribute("preload", "auto");
         document.body.appendChild(this);
-        this.loadMediaObj();
         this.play();
         return;
     };
