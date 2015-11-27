@@ -172,6 +172,8 @@ function spawnMediaObj(mediaObj) {
         case "web":
             spawnWeb(mediaObj);
             break;
+        default:
+            reportError("unrecognized format: " + mediaObj.format)
     }
 }
 
