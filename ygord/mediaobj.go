@@ -105,8 +105,8 @@ type MediaObj struct {
 	host string
 	// 'Format' tells the connected minions how to embed the desired content
 	// using 'Src'.
-	Format string `json:"format"`
-	Type   string `json:"type"`
+	Format      string `json:"format"`
+	mediaType   string
 	// End represents where in the desired content's timeline to stop playing.
 	End string `json:"end"`
 	// Muted represents whether or not the desired content should be muted.
@@ -140,8 +140,8 @@ func (mObj *MediaObj) checkFormatIsAcceptable() error {
 	}
 
 	// If it made it here, the determined media type must not be acceptable.
-	errMsg := "error: content-type (" + mObj.Type + ") not supported by " +
-		"this command"
+	errMsg := "error: content-type (" + mObj.mediaType + ") not supported " +
+		"by this command"
 	return errors.New(errMsg)
 }
 
@@ -188,12 +188,12 @@ func (mObj *MediaObj) SetSrc(link string) error {
 	// If it's an imgur link, and the content-type contains "image/gif", modify
 	// the MediaObj so minions embed the far more efficient webm version.
 	if mObj.isImgur() {
-		isGIF := strings.Contains(strings.ToLower(mObj.Type), "image/gif")
+		isGIF := strings.Contains(strings.ToLower(mObj.mediaType), "image/gif")
 		hasGIFVExt := mObj.GetExt() == ".gifv"
 		if isGIF || hasGIFVExt {
 			mObj.replaceSrcExt(".webm")
 			mObj.Format = "video"
-			mObj.Type = "video/webm"
+			mObj.mediaType = "video/webm"
 		}
 	}
 
@@ -229,7 +229,7 @@ func (mObj *MediaObj) setFormat(header map[string][]string) error {
 				for _, cType := range contentType {
 					if strings.Contains(cType, mediaType) {
 						mObj.Format = format
-						mObj.Type = mediaType
+						mObj.mediaType = mediaType
 						return nil
 					}
 				}

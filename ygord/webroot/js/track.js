@@ -85,7 +85,6 @@ function modifyMediaElementPrototypes() {
             boundries += "," + this.endTime;
         }
         this.src = this.mediaObj.src + boundries;
-        this.setAttribute("type", this.mediaObj.type);
     };
     HTMLMediaElement.prototype.seekToEnd = function() {
         this.currentTime = this.endTime;
