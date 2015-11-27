@@ -22,27 +22,27 @@ func parseArgList(msgArgs []string) (map[string]string, error) {
 	// The URL should be the first argument. If the first argument isn't a URL,
 	// it will be determined and handled elsewhere.
 	m["url"] = msgArgs[0]
-	// Get the duration passed for this media item (if it was passed).
-	duration, err := getDuration(msgArgs)
+	// Get the end passed for this media item (if it was passed).
+	end, err := getDuration(msgArgs)
 	if err != nil {
 		return nil, err
 	}
-	// Insert the duration into the map.
-	m["duration"] = duration
+	// Insert the end into the map.
+	m["end"] = end
 	// Return the completed map.
 	return m, nil
 }
 
-// getDuration grabs the duration that the media item is to be played, if it is
-// passed. If a duration isn't passed, an empty string is returned.
+// getDuration grabs the end that the media item is to be played, if it is
+// passed. If a end isn't passed, an empty string is returned.
 func getDuration(args []string) (string, error) {
 	reTime := regexp.MustCompile(`^(([0-9]*\.)?[0-9]+)`)
-	// Set the default string for duration to an empty string to simplify
+	// Set the default string for end to an empty string to simplify
 	// things.
-	duration := ""
+	end := ""
 	if len(args) == 2 {
-		duration = reTime.FindStringSubmatch(args[1])[1]
+		end = reTime.FindStringSubmatch(args[1])[1]
 	}
 
-	return duration, nil
+	return end, nil
 }
