@@ -146,6 +146,37 @@ function modifyImgElementPrototype() {
     return;
 }
 
+function modifyIframeElementPrototype() {
+    HTMLIFrameElement.prototype.hide = function() {
+        this.setAttribute("opacity", 0);
+    };
+    HTMLIFrameElement.prototype.show = function() {
+        playerStarted();
+        this.setAttribute("opacity", 1);
+    };
+    HTMLIFrameElement.prototype.loadMediaObj = function() {
+        this.src = this.mediaObj.src;
+    };
+    HTMLIFrameElement.prototype.destroy = function() {
+        this.parentNode.removeChild(this);
+    };
+    HTMLIFrameElement.prototype.setVolume = function(volumeLevel) {
+        // should do nothing
+        return;
+    };
+    HTMLIFrameElement.prototype.seekToEnd = function(volumeLevel) {
+        return;
+    };
+    HTMLIFrameElement.prototype.spawn = function(mediaObj) {
+        this.mediaObj = mediaObj;
+        this.setAttribute("class", "media");
+        this.loadMediaObj();
+        document.body.appendChild(this);
+        return;
+    }
+    return;
+}
+
 function receiveMessage(event) {
     if (event.origin !== "http://localhost:8181" &&
         event.origin !== "https://truveris.com"){
@@ -266,6 +297,7 @@ window.onload=function(){
 
     modifyMediaElementPrototypes();
     modifyImgElementPrototype();
+    modifyIframeElementPrototype();
 
     return;
 }
