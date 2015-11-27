@@ -21,8 +21,6 @@ func main() {
 	srv.RegisterModule(&AliasModule{})
 	srv.RegisterModule(&CommandsModule{})
 	srv.RegisterModule(&ImageModule{})
-	srv.RegisterModule(&VideoModule{})
-	srv.RegisterModule(&MediaModule{})
 	srv.RegisterModule(&RebootModule{})
 	srv.RegisterModule(&MinionsModule{})
 	srv.RegisterModule(&NopModule{})
@@ -33,7 +31,6 @@ func main() {
 	srv.RegisterModule(&ShutUpModule{})
 	srv.RegisterModule(&TurretModule{})
 	srv.RegisterModule(&VolumeModule{})
-	srv.RegisterModule(&XombreroModule{})
 
 	log.Printf("starting i/o adapters")
 	minionerrch, err := srv.StartAdapters()
