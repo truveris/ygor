@@ -161,7 +161,11 @@ function modifyIframeElementPrototype() {
         this.parentNode.removeChild(this);
     };
     HTMLIFrameElement.prototype.setVolume = function(volumeLevel) {
-        // should do nothing
+        // if the iframe is being used to embed a player, call the player's
+        // setVolume function.
+        if(this.player) {
+            this.player.setVolume(volumeLevel);
+        }
         return;
     };
     HTMLIFrameElement.prototype.seekToEnd = function(volumeLevel) {
@@ -176,6 +180,182 @@ function modifyIframeElementPrototype() {
     }
     return;
 }
+
+/* -------------------------------- YOUTUBE -------------------------------- */
+
+function modifyYouTubePlayerPrototype() {
+    // adjust YT.Player prototype for easier management
+    YT.Player.prototype.isReady = false;
+    YT.Player.prototype.startTime = 0.0;
+    YT.Player.prototype.endTime = false;
+    YT.Player.prototype.setReady = function() {
+        this.setVolume(volume * trackVolume);
+        iframe = this.getIframe();
+        iframe.player = this;
+        if (this.mediaObj.muted) {
+            this.mute();
+        }
+        this.isReady = true;
+        // player may have been given a mediaObj before the player was ready,
+        // so it should now load the desired video with the specified
+        // parameters
+        if (this.mediaObj) {
+            this.loadMediaObj();
+        }
+    };
+    // player should hold the mediaObj used to create it, so it can be
+    // referenced later
+    YT.Player.prototype.mediaObj = false;
+    YT.Player.prototype.pause = function() {
+        if (this.isReady) {
+            this.pauseVideo();
+        }
+    };
+    YT.Player.prototype.play = function() {
+        if (this.isReady) {
+            this.playVideo();
+        }
+    };
+    YT.Player.prototype.seekToStart = function() {
+        this.seekTo(this.startTime);
+    };
+    YT.Player.prototype.seekToEnd = function() {
+        this.endTime = this.endTime || this.getDuration();
+        this.seekTo(this.endTime);
+    };
+    YT.Player.prototype.destroy = function() {
+        iframe = this.getIframe();
+        iframe.destroy();
+    };
+    YT.Player.prototype.loadMediaObj = function() {
+        if (this.isReady) {
+            // if the player is ready
+            params = {
+                "videoId": this.mediaObj.src,
+            }
+            var end = this.mediaObj.end;
+            if (end.length > 0) {
+                params.endSeconds = parseFloat(end);
+                this.endTime = end;
+            }
+            this.soloLoop = mediaObj.loop;
+            this.loadVideoById(params);
+        }
+    };
+    YT.Player.prototype.hide = function() {
+        this.getIframe().setAttribute("opacity", 0);
+    };
+    YT.Player.prototype.show = function() {
+        playerStarted();
+        this.getIframe().setAttribute("opacity", 1);
+    };
+    YT.Player.prototype.containerId = null;
+    YT.Player.prototype.soloLoop = false;
+}
+
+function spawnYouTubePlayer(mediaObj) {
+    // create a <div> for the YouTube player to replace
+    var playerDiv = document.createElement("div");
+    // use a unique ID so multiple players can be spawned and referenced
+    var containerId = Math.floor((Math.random() * 100000) + 1).toString();
+    playerDiv.setAttribute("id", containerId);
+    playerDiv.setAttribute("class", "media");
+    // hide it at first so it doesn't block anything before it starts actually
+    // playing
+    playerDiv.setAttribute("opacity", 0);
+    document.body.appendChild(playerDiv);
+    playerParams = {
+        height: "100%",
+        width: "100%",
+        playerVars :{
+            "controls": 0,
+            "showinfo": 0,
+            "rel": 0,
+            "modestbranding": 1,
+            "iv_load_policy": 3,
+            "enablejsapi": 1,
+            "origin": "https://truveris.com",
+        },
+        events: {
+            "onReady": onYTPlayerReady,
+            "onStateChange": onYTPlayerStateChange,
+            "onError": onYTPlayerError,
+        },
+    }
+    var ytPlayer = new YT.Player(containerId, playerParams);
+    ytPlayer.containerId = containerId;
+    ytPlayer.mediaObj = mediaObj;
+    ytPlayer.loadMediaObj();
+
+    return ytPlayer;
+}
+
+//Embedded players' state change handlers
+function onYTPlayerStateChange(event) {
+    switch (event.data){
+        case YT.PlayerState.UNSTARTED:
+            // hide the player so the thumbnail isn't seen while the video
+            // isn't playing
+
+            event.target.setPlaybackQuality("highres");
+            event.target.hide();
+            event.target.playVideo();
+            break;
+        case YT.PlayerState.PLAYING:
+            // reveal the player now that the thumbnail won't be shown
+            event.target.show();
+            break;
+        case YT.PlayerState.ENDED:
+            // hide the player so the thumbnail isn't seen while the video
+            // isn't playing
+            event.target.hide();
+            event.target.seekToStart();
+            if (event.target.soloLoop) {
+                event.target.playVideo();
+            } else {
+                playerEnded();
+                event.target.destroy();
+            }
+            break;
+    }
+    return;
+}
+
+//Embedded players' ready state handlers
+function onYTPlayerReady(event) {
+    // YouTube player is now ready
+    event.target.setReady();
+}
+
+//Embedded players' error handling
+function onYTPlayerError(event) {
+    submessage = "";
+    switch(event.data){
+        case 2:
+            submessage = "invalid youtube video parameter"
+            break;
+        case 5:
+            submessage = "youtube video doesn't work with html5"
+            break;
+        case 100:
+            submessage = "no such youtube video"
+            break;
+        case 101:
+            submessage = "can't embed this youtube video"
+            break;
+        case 150:
+            submessage = "can't embed this youtube video"
+            break;
+    }
+    submessage = submessage || "unrecognized error code: " + event.data;
+    // remove all traces of the player
+    reportError(this.miniPlaylist.track, submessage);
+    playerEnded();
+    this.destroy();
+    return;
+}
+
+/* ------------------------------ END YOUTUBE ------------------------------ */
 
 function receiveMessage(event) {
     if (event.origin !== "http://localhost:8181" &&
@@ -202,6 +382,9 @@ function spawnMediaObj(mediaObj) {
             break;
         case "web":
             spawnWeb(mediaObj);
+            break;
+        case "youtube":
+            spawnYouTubePlayer(mediaObj);
             break;
         default:
             reportError("unrecognized format: " + mediaObj.format)
@@ -304,6 +487,7 @@ window.onload=function(){
     modifyMediaElementPrototypes();
     modifyImgElementPrototype();
     modifyIframeElementPrototype();
+    modifyYouTubePlayerPrototype();
 
     return;
 }
