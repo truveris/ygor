@@ -291,6 +291,7 @@ function shutup() {
     while (getAllPlayers().length > 0){
         getAllPlayers()[0].destroy();
     }
+    playerEnded();
     return;
 }
 
