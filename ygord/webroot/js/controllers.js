@@ -46,7 +46,7 @@ ygorMinionControllers.controller("ChannelController", [
         }
 
         $scope.imageTrack.skip = function() {
-            $scope.imageTrack[0].contentWindow.skip();
+            $scope.imageTrack[0].contentWindow.shutup();
         }
 
         $scope.imageTrack.stop = function() {
@@ -80,7 +80,7 @@ ygorMinionControllers.controller("ChannelController", [
         }
 
         $scope.playTrack.skip = function() {
-            $scope.playTrack[0].contentWindow.skip();
+            $scope.playTrack[0].contentWindow.shutup();
         }
 
         $scope.playTrack.stop = function() {
