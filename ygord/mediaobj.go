@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -21,6 +22,12 @@ var (
 		"i.imgur.com",
 		"www.imgur.com",
 		"imgur.com",
+	}
+	youtubeHostNames = []string{
+		"www.youtube.com",
+		"www.youtu.be",
+		"youtube.com",
+		"youtu.be",
 	}
 
 	supportedFormatsAndTypes = map[string][]string{
@@ -129,6 +136,9 @@ var (
 			".webm",
 		},
 	}
+
+	reYTVideoID = regexp.MustCompile(
+		`^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*`)
 )
 
 // MediaObj represents the relevant data that will eventually be passed to
@@ -261,6 +271,17 @@ func (mObj *MediaObj) GetURL() string {
 // setFormat sets the 'Format' attribute of the MediaObj. This tells the
 // connected minions what kind of content they should be trying to embed.
 func (mObj *MediaObj) setFormat(header map[string][]string) error {
+	// If it's a YouTube link, check if there's a video ID we can grab.
+	if mObj.isYouTube() {
+		match := reYTVideoID.FindAllStringSubmatch(mObj.Src, -1)
+		if len(match) > 0 {
+			mObj.Src = match[0][2]
+			mObj.Format = "youtube"
+			mObj.mediaType = "youtube"
+			return nil
+		}
+	}
+
 	// Is the media type in the contentType an image|audio|video type that
 	// Chromium supports?
 	if contentType, ok := header["Content-Type"]; ok {
@@ -329,6 +350,17 @@ func (mObj *MediaObj) GetExt() string {
 // isImgur attempts to determine if the desired content is hosted on imgur.
 func (mObj *MediaObj) isImgur() bool {
 	for _, d := range imgurHostNames {
+		if mObj.host == d {
+			return true
+		}
+	}
+	return false
+}
+
+// isYouTube attempts to determine if the desired content is a video hosted on
+// YouTube
+func (mObj *MediaObj) isYouTube() bool {
+	for _, d := range youtubeHostNames {
 		if mObj.host == d {
 			return true
 		}
