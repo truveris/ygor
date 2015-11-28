@@ -235,7 +235,7 @@ function playerEnded() {
 }
 
 function getVisibleCount() {
-    count = 0
+    count = 0;
     for(el of getAllPlayers()) {
         if(el.getAttribute("opacity") != 0) {
             count++;
@@ -245,7 +245,12 @@ function getVisibleCount() {
 }
 
 function getAllPlayers() {
-    return document.querySelectorAll("body > *");
+    collection = document.querySelectorAll("body > *");
+    elementArr = [];
+    for(i = 0; i < collection.length; i++){
+        elementArr.push(collection.item(i));
+    }
+    return elementArr;
 }
 
 function reportError(submessage) {
