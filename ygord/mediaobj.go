@@ -29,6 +29,12 @@ var (
 		"youtube.com",
 		"youtu.be",
 	}
+	vimeoHostNames = []string{
+		"vimeo.com",
+		"www.vimeo.com",
+		"player.vimeo.com",
+		"www.player.vimeo.com",
+	}
 
 	supportedFormatsAndTypes = map[string][]string{
 		"img": {
@@ -282,6 +288,27 @@ func (mObj *MediaObj) setFormat(header map[string][]string) error {
 		}
 	}
 
+	// If it's a Vimeo link, check if there's a video ID we can grab.
+	if mObj.isVimeo() {
+		// Vimeo video IDs are the last element in the URL (represented as an
+		// integer between 6 and 11 digits long) before the query string and/or
+		// fragment. mObj.Src has the query string and fragment stripped off,
+		// so if this is a link to a Vimeo video, potentialVideoID should be an
+		// integer between 6 and 11 digits long.
+		potentialVideoID := path.Base(mObj.Src)
+		// Check to see if it is between 6 and 11 characters long.
+		if 6 <= len(potentialVideoID) && len(potentialVideoID) <= 11 {
+			// Check to make sure it is a number.
+			if _, err := strconv.Atoi(potentialVideoID); err == nil {
+				// It is a number
+				mObj.Src = potentialVideoID
+				mObj.Format = "vimeo"
+				mObj.mediaType = "vimeo"
+				return nil
+			}
+		}
+	}
+
 	// Is the media type in the contentType an image|audio|video type that
 	// Chromium supports?
 	if contentType, ok := header["Content-Type"]; ok {
@@ -361,6 +388,17 @@ func (mObj *MediaObj) isImgur() bool {
 // YouTube
 func (mObj *MediaObj) isYouTube() bool {
 	for _, d := range youtubeHostNames {
+		if mObj.host == d {
+			return true
+		}
+	}
+	return false
+}
+
+// isVimeo attempts to determine if the desired content is a video hosted on
+// Vimeo
+func (mObj *MediaObj) isVimeo() bool {
+	for _, d := range vimeoHostNames {
 		if mObj.host == d {
 			return true
 		}
