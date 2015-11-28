@@ -349,7 +349,7 @@ function onYTPlayerError(event) {
     }
     submessage = submessage || "unrecognized error code: " + event.data;
     // remove all traces of the player
-    reportError(this.miniPlaylist.track, submessage);
+    reportError(submessage);
     playerEnded();
     this.destroy();
     return;
@@ -357,8 +357,235 @@ function onYTPlayerError(event) {
 
 /* ------------------------------ END YOUTUBE ------------------------------ */
 
+/* --------------------------------- VIMEO --------------------------------- */
+
+var VimeoPlayer = function(mediaObj) {
+    //constructor for VimeoPlayer object class
+    this.mediaObj = mediaObj;
+    this.playerId = "vimeoplayer-" + Math.floor((Math.random() * 100000) + 1).toString();
+    this.iframe = null;
+    this.isReady = false;
+    // vimeo requires a positive float
+    this.startTime = 0.001;
+    this.endTime = false;
+    this.didEnd = false;
+    this.soloLoop = false;
+    this.duration = null;
+};
+
+function modifyVimeoPlayerPrototype() {
+    VimeoPlayer.prototype.spawn = function() {
+        // create a <iframe> for the Vimeo player
+        this.iframe = document.createElement("iframe");
+        var player = this;
+        this.iframe.player = this;
+
+        // use a unique ID so multiple players can be spawned and referenced
+        this.iframe.setAttribute("id", this.playerId);
+        this.iframe.setAttribute("class", "media");
+
+        // hide the vimeo trackbar
+        this.iframe.style.height = "200%";
+        this.iframe.style.overflow = "hidden";
+        this.iframe.style.transform = "translate(0, -25%)";
+
+        // hide the player at first so it doesn't block anything before it
+        // starts actually playing
+        this.iframe.show();
+        // get trackID of song URL in order to embed the widget properly
+        looping = "";
+        if (this.mediaObj.loop) {
+            looping = "&loop=1";
+        }
+        this.iframe.src = "http://player.vimeo.com/video/" +
+            this.mediaObj.src + "?player_id=" + this.playerId +
+            "&api=1&badge=0&byline=0&portrait=0&title=0" + looping;
+        document.body.appendChild(this.iframe);
+    };
+    VimeoPlayer.prototype.onReady = function(event) {
+        this.post("addEventListener", "playProgress");
+        this.post("addEventListener", "play");
+        this.post("addEventListener", "pause");
+        this.post("addEventListener", "finish");
+        this.storeDuration();
+        this.setReady();
+        
+    };
+    VimeoPlayer.prototype.setReady = function() {
+        this.setVolume(volume * trackVolume);
+        if (this.mediaObj.muted) {
+            this.mute();
+        }
+        this.isReady = true;
+        if (this.mediaObj) {
+            this.loadMediaObj();
+        }
+        return;
+    };
+    VimeoPlayer.prototype.post = function(action, value) {
+        var data = {
+          method: action
+        };
+        if (value) {
+            data.value = value;
+        }
+        var message = JSON.stringify(data);
+        if (this.iframe.contentWindow) {
+            // player may already be destroyed
+            this.iframe.contentWindow.postMessage(message, "*");
+        }
+    };
+    VimeoPlayer.prototype.storeDuration = function() {
+        this.post("getDuration");
+    };
+    VimeoPlayer.prototype.setVolume = function(level) {
+        if (level == 0) {
+            // must be positive float
+            this.mute();
+        } else {
+            this.post("setVolume", (level/100.0));
+        }
+    };
+    VimeoPlayer.prototype.mute = function() {
+        this.post("setVolume", 0.0001);
+    };
+    VimeoPlayer.prototype.loadMediaObj = function() {
+        if (this.isReady) {
+            // if the player is ready 
+            var end = this.mediaObj.end;
+            if (end.length > 0) {
+                this.endTime = end;
+            } else if (this.duration) {
+                this.endTime = this.duration;
+            }
+            this.play();
+        }
+        return;
+    };
+    VimeoPlayer.prototype.seekTo = function(time) {
+        this.post("seekTo", time);
+    };
+    VimeoPlayer.prototype.play = function() {
+        this.post("play");
+    };
+    VimeoPlayer.prototype.pause = function() {
+        this.post("pause");
+    };
+    VimeoPlayer.prototype.hide = function() {
+        this.iframe.hide();
+    };
+    VimeoPlayer.prototype.show = function() {
+        this.iframe.show();
+        playerStarted();
+    };
+    VimeoPlayer.prototype.seekToStart = function() {
+        this.seekTo(this.startTime);
+    };
+    VimeoPlayer.prototype.seekToEnd = function() {
+        this.endTime = this.endTime || this.duration;
+        this.seekTo(this.endTime);
+    };
+    VimeoPlayer.prototype.onPlayProgress = function(message) {
+        var currentTime = message.seconds;
+        if (currentTime < this.startTime) {
+            this.seekToStart();
+        } else if (currentTime >= this.endTime){
+            if (this.soloLoop){
+                this.seekToStart();
+                this.play();
+            } else if (!this.soloLoop) {
+                this.hasEnded();
+                this.seekToStart();
+            }
+        }
+        return;
+    };
+    VimeoPlayer.prototype.onPlay = function(event) {
+        this.show();
+        this.didEnd = false;
+    };
+    VimeoPlayer.prototype.onPause = function(event) {
+        this.hasEnded();
+        return;
+    };
+    VimeoPlayer.prototype.onFinish = function(event) {
+        if (this.soloLoop){
+            this.seekToStart();
+            this.play();
+            return;
+        }
+        this.hasEnded();
+        return;
+    };
+    VimeoPlayer.prototype.hasEnded = function() {
+        if (this.didEnd == false){
+            this.didEnd = true;
+            if (!this.soloLoop){
+                this.hide();
+                playerEnded();
+                this.destroy();
+            }
+        }
+    };
+    VimeoPlayer.prototype.destroy = function() {
+        this.iframe.destroy();
+        delete this;
+    };
+    VimeoPlayer.prototype.onDurationChange = function() {
+        this.endTime = this.endTime || this.duration;
+        return;
+    }
+}
+
+function spawnVimeoPlayer(mediaObj) {
+    var vimeoplayer = new VimeoPlayer(mediaObj);
+
+    vimeoplayer.spawn();
+    return vimeoplayer;
+}
+
+function vimeoPlayerMessageHandler(message) {
+    var playerIframe = document.getElementById(message.player_id);
+    if (!playerIframe){
+        //player may already be destroyed
+        return;
+    }
+    var player = playerIframe.player;
+    if (message.event) {
+        switch(message.event) {
+            case "ready":
+                player.onReady();
+                break;
+            case "play":
+                player.onPlay(message.data);
+                break;
+            case "playProgress":
+                player.onPlayProgress(message.data);
+                break;
+            case "pause":
+                player.onPause(message.data);
+                break;
+            case "finish":
+                player.onFinish(message.data);
+                break;
+        }
+    } else if (message.method) {
+        switch (message.method) {
+            case "getDuration":
+                player.duration = message.value;
+                player.onDurationChange();
+                break;
+        }
+    }
+}
+
+/* ------------------------------- END VIMEO ------------------------------- */
+
 function receiveMessage(event) {
-    if (event.origin !== "http://localhost:8181" &&
+    if ((/^https?:\/\/player.vimeo.com/).test(event.origin)) {
+        var message = JSON.parse(event.data);
+        vimeoPlayerMessageHandler(message);
+    } else if (event.origin !== "http://localhost:8181" &&
         event.origin !== "https://truveris.com"){
         return;
     }
@@ -385,6 +612,9 @@ function spawnMediaObj(mediaObj) {
             break;
         case "youtube":
             spawnYouTubePlayer(mediaObj);
+            break;
+        case "vimeo":
+            spawnVimeoPlayer(mediaObj);
             break;
         default:
             reportError("unrecognized format: " + mediaObj.format)
@@ -488,6 +718,7 @@ window.onload=function(){
     modifyImgElementPrototype();
     modifyIframeElementPrototype();
     modifyYouTubePlayerPrototype();
+    modifyVimeoPlayerPrototype();
 
     return;
 }
