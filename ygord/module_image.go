@@ -20,7 +20,7 @@ func (module *ImageModule) PrivMsg(srv *Server, msg *Message) {
 		return
 	}
 
-	mObj, parseMObjErr := NewMediaObj(mediaItem, "imageTrack", true, true,
+	mObj, parseMObjErr := NewMediaObj(srv, mediaItem, "imageTrack", true, true,
 		[]string{
 			"vimeo",
 			"youtube",

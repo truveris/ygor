@@ -6,12 +6,14 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"path"
 	"regexp"
 	"strconv"
 	"strings"
+	"log"
 )
 
 var (
@@ -34,6 +36,12 @@ var (
 		"www.vimeo.com",
 		"player.vimeo.com",
 		"www.player.vimeo.com",
+	}
+	soundcloudHostNames = []string{
+	    "soundcloud.com",
+	    "www.soundcloud.com",
+	    "api.soundcloud.com",
+	    "www.api.soundcloud.com",
 	}
 
 	supportedFormatsAndTypes = map[string][]string{
@@ -171,6 +179,8 @@ type MediaObj struct {
 	Loop              bool `json:"loop"`
 	track             string
 	acceptableFormats []string
+	// srv provides easy access to the Server, just in case.
+	srv               *Server
 }
 
 // SetAcceptableFormats takes in a string array of acceptable media types,
@@ -309,6 +319,48 @@ func (mObj *MediaObj) setFormat(header map[string][]string) error {
 		}
 	}
 
+	// If it's a SoundCloud URL, attempt to resolve it and get the link to
+	// embed the song.
+	if mObj.isSoundCloud() {
+		if mObj.srv.Config.SoundCloudClientID == "" {
+			errMsg := "error: SoundCloudClientID is not configured"
+			return errors.New(errMsg)
+		}
+		resolveURL := "http://api.soundcloud.com/resolve?url=" + mObj.Src +
+			"&client_id=" + mObj.srv.Config.SoundCloudClientID
+		// Make the request.
+		res, err := http.Get(resolveURL)
+		if err != nil {
+			errMsg := "error: " + err.Error()
+			return errors.New(errMsg)
+		}
+		rBody, err := ioutil.ReadAll(res.Body)
+		res.Body.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+		var dat map[string]interface{}
+		if err := json.Unmarshal(rBody, &dat); err != nil {
+			panic(err)
+		}
+		if kind, hasKind := dat["kind"]; hasKind {
+			if kind == "track" {
+				if trackURI, hasTrackURI := dat["uri"]; hasTrackURI {
+					mObj.Src = trackURI.(string)
+					mObj.Format = "soundcloud"
+					mObj.mediaType = "soundcloud"
+					return nil
+				} else {
+					// If the API response says the kind is 'track', but there
+					// is no uri, return an error.
+					errMsg := "error: malformed SoundCloud API response " +
+						"(no track uri)"
+					return errors.New(errMsg)
+				}
+			}
+		}
+	}
+
 	// Is the media type in the contentType an image|audio|video type that
 	// Chromium supports?
 	if contentType, ok := header["Content-Type"]; ok {
@@ -406,6 +458,17 @@ func (mObj *MediaObj) isVimeo() bool {
 	return false
 }
 
+// isSoundCloud attempts to determine if the desired content is a song hosted
+// on SoundCloud.
+func (mObj *MediaObj) isSoundCloud() bool {
+    for _, d := range soundcloudHostNames {
+        if mObj.host == d {
+            return true
+        }
+    }
+    return false
+}
+
 // replaceSrcExt is a convenience function to replace the extension of the
 // MediaObj's current Src.
 func (mObj *MediaObj) replaceSrcExt(newExt string) {
@@ -429,9 +492,10 @@ func (mObj *MediaObj) Serialize() string {
 
 // NewMediaObj is a convenience function meant to clean up the code of modules.
 // It builds the MediaObj.
-func NewMediaObj(mediaItem map[string]string, track string, muted bool, loop bool, acceptableFormats []string) (*MediaObj, error) {
+func NewMediaObj(srv *Server, mediaItem map[string]string, track string, muted bool, loop bool, acceptableFormats []string) (*MediaObj, error) {
 	// Parse the mediaItem map into a MediaObj.
 	mObj := new(MediaObj)
+	mObj.srv = srv
 	mObj.End = mediaItem["end"]
 	mObj.Muted = muted
 	mObj.Loop = loop

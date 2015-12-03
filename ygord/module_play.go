@@ -20,8 +20,9 @@ func (module *PlayModule) PrivMsg(srv *Server, msg *Message) {
 		return
 	}
 
-	mObj, parseMObjErr := NewMediaObj(mediaItem, "playTrack", false, false,
+	mObj, parseMObjErr := NewMediaObj(srv, mediaItem, "playTrack", false, false,
 		[]string{
+			"soundcloud",
 			"vimeo",
 			"youtube",
 			"video",

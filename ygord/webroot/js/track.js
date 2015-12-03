@@ -581,6 +581,149 @@ function vimeoPlayerMessageHandler(message) {
 
 /* ------------------------------- END VIMEO ------------------------------- */
 
+/* ------------------------------- SOUNDCLOUD ------------------------------ */
+
+var SoundCloudPlayer = function(mediaObj) {
+    //constructor for SoundCloudPlayer object class
+    this.mediaObj = mediaObj;
+    this.playerId = "soundcloudplayer-" + Math.floor((Math.random() * 100000) + 1).toString();
+    this.iframe = null;
+    this.isReady = false;
+    // vimeo requires a positive float
+    this.startTime = 0.0;
+    this.endTime = false;
+    this.didEnd = false;
+    this.duration = null;
+    // methods
+    this.spawn = function() {
+        // create a <div> for the YouTube player to replace
+        this.iframe = document.createElement("iframe");
+
+        // use a unique ID so multiple players can be spawned and referenced
+        this.iframe.setAttribute("id", this.playerId);
+        this.iframe.setAttribute("class", "media");
+        this.iframe.hide();
+        // hide it at first so it doesn't block anything before it starts actually
+        // playing
+        //this.iframe.setAttribute("hidden", "hidden");
+        this.iframe.src = "https://w.soundcloud.com/player/?url=" + this.mediaObj.src;
+        document.body.appendChild(this.iframe);
+        scPlayer = SC.Widget(this.playerId);
+        this.iframe.player = this;
+        this.player = scPlayer;
+        modifySoundCloudPlayerPrototype(this.player)
+        this.player.containerId = this.playerId;
+        this.player.mediaObj = this.mediaObj;
+        this.player.loadMediaObj();
+    }
+    this.setVolume = function(level) {
+        // SoundCloud Widget requires float between 0 and 1
+        this.player.setVolume(level * 0.01);
+    }
+};
+
+function modifySoundCloudPlayerPrototype(widget) {
+    // adjust SoundCloud widget prototype for easier management
+    widget.isReady = false;
+    widget.startTime = 0.0;
+    widget.endTime = false;
+    widget.didEnd = false;
+    // player should hold the mediaObj used to create it, so it can be
+    // referenced later
+    widget.mediaObj = false;
+    widget.getIframe = function() {
+        return document.getElementById(this.containerId);
+    };
+    widget.setReady = function() {
+        // SoundCloud player requires float between 0 and 1 for volume
+        this.setVolume(volume * trackVolume * 0.01);
+        this.isReady = true;
+        if (this.mediaObj) {
+            this.loadMediaObj();
+        }
+        return;
+    };
+    widget.gotDuration = function(value) {
+        this.duration = value / 1000;
+        this.endTime = this.endTime || this.duration;
+    }
+    widget.onReady = function() {
+        widget.getDuration(widget.gotDuration);
+        widget.setReady();
+    };
+    widget.bind(SC.Widget.Events.READY, widget.onReady);
+    widget.onError = function() {
+        // remove all traces of the player
+        submessage = "soundcloud player had an error";
+        reportError(submessage);
+        playerEnded();
+        this.destroy();
+        return;
+    };
+    widget.bind(SC.Widget.Events.ERROR, widget.onError);
+    widget.hasEnded = function() {
+        if (this.didEnd == false){
+            this.didEnd = true;
+            playerEnded();
+            this.destroy();
+        }
+    };
+    widget.onPlayProgress = function(event) {
+        this.currentTime = event.currentPosition / 1000;
+        if (this.currentTime < this.startTime) {
+            this.seekToStart();
+        } else if (this.currentTime >= this.endTime){
+            this.pause();
+            this.hasEnded();
+        }
+        return;
+    };
+    widget.bind(SC.Widget.Events.PLAY_PROGRESS, widget.onPlayProgress);
+    widget.onPause = function(event) {
+        this.hasEnded();
+        return;
+    };
+    widget.bind(SC.Widget.Events.PAUSE, widget.onPause);
+    widget.onFinish = function(event) {
+        this.hasEnded();
+        return;
+    };
+    widget.bind(SC.Widget.Events.FINISH, widget.onFinish);
+    widget.destroy = function() {
+        var iframe = this.getIframe();
+        iframe.destroy();
+        return;
+    };
+    widget.loadMediaObj = function() {
+        if (this.isReady) {
+            // if the player is ready
+            var end = this.mediaObj.end;
+            if (end.length > 0) {
+                this.endTime = end;
+            }
+            this.play();
+        }
+        return;
+    };
+    widget.hide = function() {
+        this.getIframe().hide();
+    };
+    widget.show = function() {
+        //should never show
+        return;
+    };
+    widget.containerId = null;
+    widget.soloLoop = false;
+}
+
+function spawnSoundCloudPlayer(mediaObj) {
+    scPlayer = new SoundCloudPlayer(mediaObj);
+
+    scPlayer.spawn();
+}
+
+/* ----------------------------- END SOUNDCLOUD ---------------------------- */
+
 function receiveMessage(event) {
     if ((/^https?:\/\/player.vimeo.com/).test(event.origin)) {
         var message = JSON.parse(event.data);
@@ -615,6 +758,9 @@ function spawnMediaObj(mediaObj) {
             break;
         case "vimeo":
             spawnVimeoPlayer(mediaObj);
+            break;
+        case "soundcloud":
+            spawnSoundCloudPlayer(mediaObj);
             break;
         default:
             reportError("unrecognized format: " + mediaObj.format)
