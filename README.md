@@ -1,37 +1,17 @@
-# ygor - Truveris' Go Office Butler
+# ygor - IRC-controlled TV broadcast
 
 Ygor provides access to devices such as TVs from our internal IRC channel and
-mobile phones, it makes it easy to share a picture or sound with everyone and
-permits a large amount of trolling.
+mobile phones, it makes it easy to share a picture or sound with everyone in a
+physical room or channel.
 
-All the process in this system communicate via AWS SQS. Here is the break down
-of the processes:
-
- * **ygord**: central part of the system it takes instructions from various
-   sources (IRC, web/API) and sends commands to its minions accordingly. It
-   keeps a registration of all of them and knows where each minion belong (e.g.
-   which room and IRC channel).
- * **ygor-minion**: process receiving commands from ygord, through SQS. We run one
-   minion per controlled device and uses raspberry pis for that purpose.  You
-   can then connect this little machine to a TV, speakers, large monitor, alarm
-   system, etc. It can drive the playback of audio, video via mplayer/omxplayer
-   and use the local "say" or "espeak" to communicate with humans around.
-
-ygord does not connect to IRC by itself, since it could become a rather large
-part of the system, it could crash and restart the bot. Instead ygord receive
-all its IRC traffic through SQS as well, you can use the following project to
-route your IRC traffic properly:
-
-	https://github.com/truveris/sqs-irc-gateway
-
-This allows you to modify the personality/setting of the bot and restart it
-without dissconnecting/reconnecting your bot.
-
+**ygord** is central part of the system it takes instructions from various
+sources (IRC, web/API) and sends commands to its clients.  The clients are web
+browsers
 
 ## Requirements
 You need:
 
- * Go 1.2 to compile it
+ * Go 1.2+ to compile it
  * All the dependencies downloaded:
     - go get github.com/jessevdk/go-flags
     - go get github.com/mikedewar/aws4
@@ -39,7 +19,6 @@ You need:
     - go get github.com/truveris/ygor
     - go get github.com/truveris/sqs
     - go get github.com/truveris/sqs/sqschan
-
 
 ## Installation
 You can run ygord and ygor-minion however you want, we use supervisor, you
