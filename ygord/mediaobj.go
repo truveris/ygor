@@ -13,7 +13,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"log"
 )
 
 var (
@@ -322,43 +321,16 @@ func (mObj *MediaObj) setFormat(header map[string][]string) error {
 	// If it's a SoundCloud URL, attempt to resolve it and get the link to
 	// embed the song.
 	if mObj.isSoundCloud() {
-		if mObj.srv.Config.SoundCloudClientID == "" {
-			errMsg := "error: SoundCloudClientID is not configured"
-			return errors.New(errMsg)
+		resolveErr := mObj.resolveSoundCloudURL()
+		if resolveErr != nil {
+			return resolveErr
 		}
-		resolveURL := "http://api.soundcloud.com/resolve?url=" + mObj.Src +
-			"&client_id=" + mObj.srv.Config.SoundCloudClientID
-		// Make the request.
-		res, err := http.Get(resolveURL)
-		if err != nil {
-			errMsg := "error: " + err.Error()
-			return errors.New(errMsg)
+		if mObj.GetFormat() == "soundcloud" {
+			// The link was to a SoundCloud track.
+			return nil
 		}
-		rBody, err := ioutil.ReadAll(res.Body)
-		res.Body.Close()
-		if err != nil {
-			log.Fatal(err)
-		}
-		var dat map[string]interface{}
-		if err := json.Unmarshal(rBody, &dat); err != nil {
-			panic(err)
-		}
-		if kind, hasKind := dat["kind"]; hasKind {
-			if kind == "track" {
-				if trackURI, hasTrackURI := dat["uri"]; hasTrackURI {
-					mObj.Src = trackURI.(string)
-					mObj.Format = "soundcloud"
-					mObj.mediaType = "soundcloud"
-					return nil
-				} else {
-					// If the API response says the kind is 'track', but there
-					// is no uri, return an error.
-					errMsg := "error: malformed SoundCloud API response " +
-						"(no track uri)"
-					return errors.New(errMsg)
-				}
-			}
-		}
+		// If it isn't a link to a SoundCloud track, continue on and handle the
+		// URL like any other.
 	}
 
 	// Is the media type in the contentType an image|audio|video type that
@@ -467,6 +439,52 @@ func (mObj *MediaObj) isSoundCloud() bool {
         }
     }
     return false
+}
+
+func (mObj *MediaObj) resolveSoundCloudURL() error {
+	if mObj.srv.Config.SoundCloudClientID == "" {
+		errMsg := "error: SoundCloudClientID is not configured"
+		return errors.New(errMsg)
+	}
+	resolveURL := "http://api.soundcloud.com/resolve?url=" + mObj.Src +
+		"&client_id=" + mObj.srv.Config.SoundCloudClientID
+	// Make the request.
+	res, err := http.Get(resolveURL)
+	if err != nil {
+		errMsg := "error: " + err.Error()
+		return errors.New(errMsg)
+	}
+	rBody, err := ioutil.ReadAll(res.Body)
+	res.Body.Close()
+	if err != nil {
+		errMsg := "error: malformed SoundCloud API response " +
+			"(could not read all)"
+		return errors.New(errMsg)
+	}
+	var dat map[string]interface{}
+	if err := json.Unmarshal(rBody, &dat); err != nil {
+		errMsg := "error: malformed SoundCloud API response " +
+			"(could not parse)"
+		return errors.New(errMsg)
+	}
+	if kind, hasKind := dat["kind"]; hasKind {
+		if kind == "track" {
+			if trackURI, hasTrackURI := dat["uri"]; hasTrackURI {
+				mObj.Src = trackURI.(string)
+				mObj.Format = "soundcloud"
+				mObj.mediaType = "soundcloud"
+				return nil
+			} else {
+				// If the API response says the kind is 'track', but there
+				// is no uri, return an error.
+				errMsg := "error: malformed SoundCloud API response " +
+					"(no track uri)"
+				return errors.New(errMsg)
+			}
+		}
+	}
+	// If it hasn't returned by now, it isn't a link to a SoundCloud track.
+	return nil
 }
 
 // replaceSrcExt is a convenience function to replace the extension of the
