@@ -186,19 +186,15 @@ type MediaObj struct {
 	// End represents where in the desired content's timeline to stop playing.
 	End string `json:"end"`
 	// Muted represents whether or not the desired content should be muted.
-	Muted             bool `json:"muted"`
-	Loop              bool `json:"loop"`
-	track             string
+	Muted bool `json:"muted"`
+	Loop  bool `json:"loop"`
+	track string
+	// acceptableFormats is a list of acceptable media types, it which
+	// will be checked against during SetSrc. If the determined media type
+	// is not acceptable, the url will be rejected.
 	acceptableFormats []string
 	// srv provides easy access to the Server, just in case.
 	srv *Server
-}
-
-// SetAcceptableFormats takes in a string array of acceptable media types,
-// which will be checked against during SetSrc. If the determined media type is
-// not acceptable, the url will be rejected.
-func (mObj *MediaObj) SetAcceptableFormats(formats []string) {
-	mObj.acceptableFormats = formats
 }
 
 // checkFormatIsAcceptable checks to make sure that the determined media
@@ -613,7 +609,7 @@ func NewMediaObj(srv *Server, mediaItem map[string]string, track string, muted b
 	mObj.Muted = muted
 	mObj.Loop = loop
 	mObj.track = track
-	mObj.SetAcceptableFormats(acceptableFormats)
+	mObj.acceptableFormats = acceptableFormats
 
 	setSrcErr := mObj.SetSrc(mediaItem["url"])
 	if setSrcErr != nil {
