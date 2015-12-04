@@ -24,6 +24,18 @@ var (
 		"www.imgur.com",
 		"imgur.com",
 	}
+	gfycatHostNames = []string{
+		"gfycat.com",
+		"www.gfycat.com",
+		"zippy.gfycat.com",
+		"fat.gfycat.com",
+		"giant.gfycat.com",
+		"center.gfycat.com",
+		"center2.gfycat.com",
+		"centre.gfycat.com",
+		"test.gfycat.com",
+		"upload.gfycat.com",
+	}
 	youtubeHostNames = []string{
 		"www.youtube.com",
 		"www.youtu.be",
@@ -263,6 +275,15 @@ func (mObj *MediaObj) SetSrc(link string) error {
 		}
 	}
 
+	// If it's a Gfycat link, and the content-type isn't "video/webm", attempt
+	// to find a webm version of this link using the Gfycat API.
+	if mObj.isGfycat() {
+		isWEBM := strings.Contains(strings.ToLower(mObj.mediaType), "video/webm")
+		if !isWEBM {
+			mObj.resolveGfycatURL()
+		}
+	}
+
 	merr := mObj.checkFormatIsAcceptable()
 	if merr != nil {
 		return merr
@@ -408,6 +429,16 @@ func (mObj *MediaObj) isImgur() bool {
 	return false
 }
 
+// isGfycat attempts to determine if the desired content is hosted on gfycat.
+func (mObj *MediaObj) isGfycat() bool {
+	for _, d := range gfycatHostNames {
+		if mObj.host == d {
+			return true
+		}
+	}
+	return false
+}
+
 // isYouTube attempts to determine if the desired content is a video hosted on
 // YouTube
 func (mObj *MediaObj) isYouTube() bool {
@@ -490,6 +521,64 @@ func (mObj *MediaObj) resolveSoundCloudURL() error {
 		}
 	}
 	// If it hasn't returned by now, it isn't a link to a SoundCloud track.
+	return nil
+}
+
+// resolveGfycatURL attempts to find get the URL of the webm version of the
+// provided Gfycat URL. If there is no webm URL, it falls back to the mp4 URL.
+// If there is no mp4 URL, it then falls back to the gif URL. If the Gfycat API
+// doesn't return any JSON to be parsed, then it isn't a link to a Gfycat
+// image/video, so nothing should be changed in the MediaObj.
+func (mObj *MediaObj) resolveGfycatURL() error {
+	gfyName := path.Base(mObj.Src)
+	resolveURL := "http://gfycat.com/cajax/get/" + gfyName
+	// Make the request.
+	res, err := http.Get(resolveURL)
+	if err != nil {
+		errMsg := "error: " + err.Error()
+		return errors.New(errMsg)
+	}
+	rBody, err := ioutil.ReadAll(res.Body)
+	res.Body.Close()
+	if err != nil {
+		errMsg := "error: malformed Gfycat API response " +
+			"(could not read all)"
+		return errors.New(errMsg)
+	}
+	var dat map[string]map[string]interface{}
+	if err := json.Unmarshal(rBody, &dat); err != nil {
+		errMsg := "error: malformed Gfycat API response " +
+			"(could not parse)"
+		return errors.New(errMsg)
+	}
+	if gfyItem, hasGfyItem := dat["gfyItem"]; hasGfyItem {
+		if webmURL, hasWebmURL := gfyItem["webmUrl"]; hasWebmURL {
+			mObj.Src = webmURL.(string)
+			mObj.Format = "video"
+			mObj.mediaType = "video/webm"
+			return nil
+		} else if mp4URL, hasMp4URL := gfyItem["mp4Url"]; hasMp4URL {
+			// If, for some reason, there isn't a webm URL, fallback to the mp4
+			// URL.
+			mObj.Src = mp4URL.(string)
+			mObj.Format = "video"
+			mObj.mediaType = "video/mp4"
+			return nil
+		} else if gifURL, hasGifURL := gfyItem["gifUrl"]; hasGifURL {
+			// If, for some reason, there isn't an mp4 URL either, fallback to
+			// the gif URL.
+			mObj.Src = gifURL.(string)
+			mObj.Format = "image"
+			mObj.mediaType = "image/gif"
+			return nil
+		}
+		// If the API response says it has a 'gfyItem', but doesn't provide any
+		// URLs related to it, return an error.
+		errMsg := "error: malformed Gfycat API response " +
+			"(no content URLs provided)"
+		return errors.New(errMsg)
+	}
+	// If it hasn't returned by now, it isn't a link to a Gfycat track.
 	return nil
 }
 
