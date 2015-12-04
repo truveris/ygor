@@ -37,10 +37,10 @@ var (
 		"www.player.vimeo.com",
 	}
 	soundcloudHostNames = []string{
-	    "soundcloud.com",
-	    "www.soundcloud.com",
-	    "api.soundcloud.com",
-	    "www.api.soundcloud.com",
+		"soundcloud.com",
+		"www.soundcloud.com",
+		"api.soundcloud.com",
+		"www.api.soundcloud.com",
 	}
 
 	supportedFormatsAndTypes = map[string][]string{
@@ -169,8 +169,8 @@ type MediaObj struct {
 	host string
 	// 'Format' tells the connected minions how to embed the desired content
 	// using 'Src'.
-	Format      string `json:"format"`
-	mediaType   string
+	Format    string `json:"format"`
+	mediaType string
 	// End represents where in the desired content's timeline to stop playing.
 	End string `json:"end"`
 	// Muted represents whether or not the desired content should be muted.
@@ -179,7 +179,7 @@ type MediaObj struct {
 	track             string
 	acceptableFormats []string
 	// srv provides easy access to the Server, just in case.
-	srv               *Server
+	srv *Server
 }
 
 // SetAcceptableFormats takes in a string array of acceptable media types,
@@ -433,12 +433,12 @@ func (mObj *MediaObj) isVimeo() bool {
 // isSoundCloud attempts to determine if the desired content is a song hosted
 // on SoundCloud.
 func (mObj *MediaObj) isSoundCloud() bool {
-    for _, d := range soundcloudHostNames {
-        if mObj.host == d {
-            return true
-        }
-    }
-    return false
+	for _, d := range soundcloudHostNames {
+		if mObj.host == d {
+			return true
+		}
+	}
+	return false
 }
 
 // resolveSoundCloudURL attempts to find the track URI of the SoundCloud link

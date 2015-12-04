@@ -39,20 +39,20 @@ func (module *SayModule) PrivMsg(srv *Server, msg *Message) {
 	mediaItem["url"] = sayURL
 
 	mObj, parseMObjErr := NewMediaObj(srv, mediaItem, "playTrack", false, false,
-        []string{})
-    if parseMObjErr != nil {
-        srv.IRCPrivMsg(msg.ReplyTo, parseMObjErr.Error())
-        return
-    }
+		[]string{})
+	if parseMObjErr != nil {
+		srv.IRCPrivMsg(msg.ReplyTo, parseMObjErr.Error())
+		return
+	}
 
-    // Override the formatted Src to be the original sayURL, because, in this
-    // case, the query string is needed.
-    mObj.Src = sayURL
+	// Override the formatted Src to be the original sayURL, because, in this
+	// case, the query string is needed.
+	mObj.Src = sayURL
 
-    // Send the command to the connected minions, as though it were the play
-    // command.
-    srv.SendToChannelMinions(msg.ReplyTo,
-        "play "+mObj.Serialize())
+	// Send the command to the connected minions, as though it were the play
+	// command.
+	srv.SendToChannelMinions(msg.ReplyTo,
+		"play "+mObj.Serialize())
 }
 
 // Init registers all the commands for this module.
