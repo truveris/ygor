@@ -67,6 +67,10 @@ type Config struct {
 	// If defined, it enables the "say" command and converts sentences into
 	// streamable sound bites via a minion-accessible sayd.
 	SaydURL string
+
+	// If defined, it allows SoundCloud URLs to be resolved when passing URLs
+	// to commands that utilize MediaObj.
+	SoundCloudClientID string
 }
 
 // GetAutoJoinChannels returns a list of all the auto-join channels (all unique

@@ -1,40 +1,45 @@
-// Copyright 2014-2015, Truveris Inc. All Rights Reserved.
+// Copyright 2015, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 
 package main
 
-import (
-	"fmt"
-)
+// PlayModule controls the 'play' command.
+type PlayModule struct {
+	*Server
+}
 
-// PlayModule controls the 'play'
-type PlayModule struct{}
-
-// PrivMsg is the message handler for 'play' requests.
+// PrivMsg is the message handler for user 'play' requests.
 func (module *PlayModule) PrivMsg(srv *Server, msg *Message) {
-	var duration, cmd string
+	usage := "usage: play url [end]"
 
-	if len(msg.Args) == 0 {
-		srv.IRCPrivMsg(msg.ReplyTo, "usage: play url [duration]")
+	// Validate the command's usage, and get back a map representing the media
+	// item that was passed, along with it's start and end bounds.
+	mediaItem, parseArgErr := parseArgList(msg.Args)
+	if parseArgErr != nil {
+		srv.IRCPrivMsg(msg.ReplyTo, usage)
 		return
 	}
 
-	filename := msg.Args[0]
-	if len(msg.Args) > 1 {
-		duration = msg.Args[1]
+	mObj, parseMObjErr := NewMediaObj(srv, mediaItem, "playTrack", false, false,
+		[]string{
+			"soundcloud",
+			"vimeo",
+			"youtube",
+			"video",
+			"audio",
+		})
+	if parseMObjErr != nil {
+		srv.IRCPrivMsg(msg.ReplyTo, parseMObjErr.Error())
+		return
 	}
 
-	if duration != "" {
-		cmd = fmt.Sprintf("play %s %s", filename, duration)
-	} else {
-		cmd = fmt.Sprintf("play %s", filename)
-	}
-
-	srv.SendToChannelMinions(msg.ReplyTo, cmd)
+	// Send the command to the connected minions.
+	srv.SendToChannelMinions(msg.ReplyTo,
+		"play "+mObj.Serialize())
 }
 
 // Init registers all the commands for this module.
-func (module *PlayModule) Init(srv *Server) {
+func (module PlayModule) Init(srv *Server) {
 	srv.RegisterCommand(Command{
 		Name:            "play",
 		PrivMsgFunction: module.PrivMsg,
