@@ -441,6 +441,13 @@ func (mObj *MediaObj) isSoundCloud() bool {
     return false
 }
 
+// resolveSoundCloudURL attempts to find the track URI of the SoundCloud link
+// that was provided using SoundCloud's API along with the SoundCloudClientID
+// saved in the config file. If it finds a track URI, this is saved as the
+// MediaObj's Src and its Format is set to "soundcloud". If there isn't a track
+// URI, this function does not return an error. Instead, it relies on the
+// function calling it to determne whether or not the MediaObj's Format was set
+// to "soundcloud".
 func (mObj *MediaObj) resolveSoundCloudURL() error {
 	if mObj.srv.Config.SoundCloudClientID == "" {
 		errMsg := "error: SoundCloudClientID is not configured"
