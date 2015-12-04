@@ -20,15 +20,106 @@ ygorMinionControllers.controller("AliasListController", ["$scope", "$http",
 ygorMinionControllers.controller("ChannelController", [
     "$scope", "$http", "$routeParams",
     function($scope, $http, $routeParams) {
+        $(window).on("message", function(e) {
+            $scope.handleChildMessage(e.originalEvent);
+        });
         $scope.channelID = $routeParams.channelID;
         $scope.clientID = null;
-        $scope.playlist = [];
-        $scope.player = new Audio();
-        $scope.playing = false;
+        $scope.imageTrack = $("#ygor-content #imageTrack");
+        $scope.playTrack = $("#ygor-content #playTrack");
+        $scope.playTrack.playing = false;
+        $scope.playTrack.playlist = [];
         $scope.content = $("#ygor-content");
-        var increment = 0.05;
-        // set global volume variable for easy access by embedded iframes
-        window.volume = $scope.player.volume;
+        $scope.playTrack.css("visibility", "hidden");
+        $scope.popUpContainer = $("#pop-up-container");
+        var increment = 5;
+        // set global volume variables for easy access by embedded iframes
+        window.volume = 100;
+
+        // imageTrack functions
+        $scope.imageTrack.post = function(message) {
+            $scope.imageTrack[0].contentWindow.postMessage(JSON.stringify(message), "*");
+        }
+
+        $scope.imageTrack.shutup = function() {
+            $scope.imageTrack[0].contentWindow.shutup();
+        }
+
+        $scope.imageTrack.skip = function() {
+            $scope.imageTrack[0].contentWindow.shutup();
+        }
+
+        $scope.imageTrack.stop = function() {
+            $scope.imageTrack.shutup();
+        }
+
+        // playTrack functions
+        $scope.playTrack.hide = function() {
+            $scope.playTrack.css("visibility", "hidden");
+        }
+
+        $scope.playTrack.show = function() {
+            $scope.playTrack.css("visibility", "visible");
+        }
+
+        $scope.playTrack.post = function(message) {
+            $scope.playTrack[0].contentWindow.postMessage(JSON.stringify(message), "*");
+        }
+
+        $scope.playTrack.setVolume = function(level) {
+            $scope.playTrack[0].contentWindow.setVolume(level);
+        }
+
+        $scope.playTrack.setTrackVolume = function(level) {
+            window.qvolume = level;
+            $scope.playTrack[0].contentWindow.setTrackVolume(level * 0.01);
+        }
+
+        $scope.playTrack.shutup = function() {
+            $scope.playTrack.stop();
+        }
+
+        $scope.playTrack.skip = function() {
+            $scope.playTrack[0].contentWindow.shutup();
+        }
+
+        $scope.playTrack.stop = function() {
+            $scope.playTrack.playlist = [];
+            $scope.playTrack[0].contentWindow.shutup();
+        }
+
+        // scope functions
+        $scope.setVolume = function(level) {
+            // set global volume variable for easy access by embedded iframes
+            window.volume = level;
+            //adjust track volumes
+            $scope.playTrack.setVolume(level);
+        }
+
+        $scope.stop = function() {
+            $scope.playTrack.stop();
+        }
+
+        $scope.skip = function() {
+            $scope.playTrack.skip();
+        }
+
+        $scope.showError = function(srcTrack, submessage) {
+            submessage = submessage || "";
+            var $popUpDiv = $("<div>", {class: "error-pop-up"});
+            var $titleP = $("<p>", {class: "error-title"});
+            $titleP.html(srcTrack + " error");
+            $popUpDiv.append($titleP)
+            var $subtitleP = $("<p>", {class: "error-subtitle"});
+            $subtitleP.html(submessage);
+            $popUpDiv.append($subtitleP);
+            $scope.popUpContainer.append($popUpDiv);
+            // fade it out, then remove it.
+            $popUpDiv.delay(2000).fadeOut({
+                duration: 500,
+                complete: function(){$(this).remove();},
+            });
+        }
 
         $(".button-reconnect").click(function() {
             $scope.register();
@@ -44,51 +135,47 @@ ygorMinionControllers.controller("ChannelController", [
             $("#modal").hide();
         }
 
-        $scope.playNext = function() {
-            if ($scope.playlist.length > 0) {
-                var item = $scope.playlist.shift()
-                $scope.playing = true;
-                $scope.player.src = item.URL;
-                $scope.player.play();
-                if (item.Duration !== null) {
-                    setTimeout(function() { $scope.skip(); }, item.Duration);
-                }
+        $scope.playTrack.playNext = function() {
+            if ($scope.playTrack.playlist.length > 0) {
+                $scope.playTrack.playing = true;
+                var mediaObj = $scope.playTrack.playlist.shift();
+                $scope.playTrack.post(mediaObj);
             } else {
-                $scope.playing = false;
+                $scope.playTrack.playing = false;
             }
         }
 
-        /* The player ended, move on to the next tune. */
-        $scope.player.onended = function() {
-            $scope.playNext();
-        };
-
-        /* An error occurred (404, 500, etc..), move on. */
-        $scope.player.onerror = function() {
-            $scope.playNext();
-        };
-
-        $scope.increaseVolume = function() {
-            $scope.player.volume = Math.min(1, ($scope.player.volume + increment));
-        }
-
-        $scope.decreaseVolume = function() {
-            $scope.player.volume = Math.max(0, ($scope.player.volume - increment));
-        }
-
-        $scope.volume = function(percent) {
-            $scope.player.volume = parseInt(percent) / 100.0;
-        }
-
-        $scope.stop = function() {
-            $scope.player.pause();
-            $scope.playlist = [];
-            $scope.playing = false;
-        }
-
-        $scope.skip = function() {
-            $scope.player.pause();
-            $scope.playNext();
+        $scope.handleChildMessage = function(event) {
+            if (event.origin !== "http://localhost:8181" &&
+                event.origin !== "https://truveris.com"){
+                return;
+            }
+            msg = $.parseJSON(event.data);
+            srcTrack = event.source.frameElement.id;
+            switch (srcTrack){
+                case "playTrack":
+                    switch (msg.playerState) {
+                        case "PLAYING":
+                            $scope.playTrack.show();
+                            break;
+                        case "ENDED":
+                            $scope.playTrack.hide();
+                            $scope.playTrack.playing = false;
+                            $scope.playTrack.playNext();
+                            break;
+                        case "ERRORED":
+                            $scope.showError(srcTrack, msg.submessage);
+                            break;
+                    }
+                    break;
+                case "imageTrack":
+                    switch (msg.playerState) {
+                        case "ERRORED":
+                            $scope.showError(srcTrack, msg.submessage);
+                            break;
+                    }
+                    break;
+            }
         }
 
         /*
@@ -99,16 +186,10 @@ ygorMinionControllers.controller("ChannelController", [
          */
         $scope.translateCommand = function(msg) {
             var command = {};
-
             var tokens = msg.split(" ");
-            if (tokens[0] == "xombrero") {
-                command.name = tokens[0] + " " + tokens[1];
-                tokens.shift();
-                tokens.shift();
-            } else {
-                command.name = tokens[0];
-                tokens.shift();
-            }
+
+            command.name = tokens[0];
+            tokens.shift();
             command.args = tokens
 
             return command;
@@ -137,47 +218,33 @@ ygorMinionControllers.controller("ChannelController", [
 
             if (command.name == "volume") {
                 var level = command.args[0];
+                // volume level must be between 100 and 0.0
                 if (level == "1dB+") {
-                    $scope.increaseVolume();
+                    level = Math.min(100, volume + increment);
                 } else if (level == "1dB-") {
-                    $scope.decreaseVolume();
+                    level = Math.max(0, volume - increment);
                 } else {
-                    $scope.volume(level);
+                    level = parseInt(level);
+                    level = Math.max(0.0, Math.min(100, level));
                 }
-                // set global volume variable for easy access by embedded iframes
-                window.volume = $scope.player.volume;
-                /*
-                * if there is an iframe present in #ygor-content that links to 
-                * /fullscreen.html send a setVolume command to it, so the
-                * a/v players set the right volume
-                */
-                if (document.querySelector("#ygor-content iframe")) {
-                    i = document.querySelector("#ygor-content iframe");
-                    if (i.getAttribute("src").slice(0,16) == "/fullscreen.html") {
-                        i.contentWindow.setVolume($scope.player.volume * 100);
-                    }
-                }
-                return;
-            }
-
-            if (command.name == "xombrero open") {
-                // var url = command.args[0].replace(/http:/, "https:");
-                var url = command.args[0];
-                $scope.content.html($("<iframe>").attr("src", url));
+                $scope.setVolume(level);
                 return;
             }
 
             if (command.name == "play") {
-                // var url = command.args[0].replace(/http:/, "https:");
-                var url = command.args[0];
-                var duration = null;
-                if (command.args.length > 1) {
-                    duration = parseFloat(command.args[1]) * 1000.0;
+                mediaObj = $.parseJSON(command.args[0]);
+                $scope.playTrack.playlist.push(mediaObj);
+                if (!$scope.playTrack.playing) {
+                    $scope.playTrack.playNext()
                 }
-                $scope.playlist.push({"URL": url, "Duration": duration});
-                if (!$scope.playing) {
-                    $scope.playNext()
-                }
+                return;
+            }
+
+            if (command.name == "image") {
+                mediaObj = $.parseJSON(command.args[0]);
+                $scope.imageTrack.shutup();
+                $scope.imageTrack.post(mediaObj);
+                return;
             }
         }
 
@@ -220,7 +287,7 @@ ygorMinionControllers.controller("ChannelController", [
                             break;
                         case "unknown-client":
                         default:
-                            $scope.playlist = [];
+                            $scope.playTrack.playlist = [];
                             $scope.showModal("disconnected");
                             break;
                     }
@@ -233,7 +300,7 @@ ygorMinionControllers.controller("ChannelController", [
 
         $scope.$on('$destroy', function() {
             $scope.clientID = null;
-            $scope.player = null;
+            //$scope.player = null;
             $scope.content = null;
         });
 

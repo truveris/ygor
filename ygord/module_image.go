@@ -1,4 +1,4 @@
-// Copyright 2014-2015, Truveris Inc. All Rights Reserved.
+// Copyright 2015, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 
 package main
@@ -10,13 +10,32 @@ type ImageModule struct {
 
 // PrivMsg is the message handler for user 'image' requests.
 func (module *ImageModule) PrivMsg(srv *Server, msg *Message) {
-	if len(msg.Args) != 1 {
-		srv.IRCPrivMsg(msg.ReplyTo, "usage: image url")
+	usage := "usage: image url [end]"
+
+	// Validate the command's usage, and get back a map representing the media
+	// item that was passed, along with it's start and end bounds.
+	mediaItem, parseArgErr := parseArgList(msg.Args)
+	if parseArgErr != nil {
+		srv.IRCPrivMsg(msg.ReplyTo, usage)
 		return
 	}
 
+	mObj, parseMObjErr := NewMediaObj(srv, mediaItem, "imageTrack", true, true,
+		[]string{
+			"vimeo",
+			"youtube",
+			"video",
+			"img",
+			"web",
+		})
+	if parseMObjErr != nil {
+		srv.IRCPrivMsg(msg.ReplyTo, parseMObjErr.Error())
+		return
+	}
+
+	// Send the command to the connected minions.
 	srv.SendToChannelMinions(msg.ReplyTo,
-		"xombrero open https://truveris.github.io/fullscreen-image/?"+msg.Args[0])
+		"image "+mObj.Serialize())
 }
 
 // Init registers all the commands for this module.
