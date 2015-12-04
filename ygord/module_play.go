@@ -20,7 +20,7 @@ func (module *PlayModule) PrivMsg(srv *Server, msg *Message) {
 		return
 	}
 
-	mObj, parseMObjErr := NewMediaObj(srv, mediaItem, "playTrack", false, false,
+	media, parseMObjErr := NewMedia(srv, mediaItem, "playTrack", false, false,
 		[]string{
 			"soundcloud",
 			"vimeo",
@@ -35,7 +35,7 @@ func (module *PlayModule) PrivMsg(srv *Server, msg *Message) {
 
 	// Send the command to the connected minions.
 	srv.SendToChannelMinions(msg.ReplyTo,
-		"play "+mObj.Serialize())
+		"play "+media.Serialize())
 }
 
 // Init registers all the commands for this module.

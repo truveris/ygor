@@ -138,8 +138,8 @@ ygorMinionControllers.controller("ChannelController", [
         $scope.playTrack.playNext = function() {
             if ($scope.playTrack.playlist.length > 0) {
                 $scope.playTrack.playing = true;
-                var mediaObj = $scope.playTrack.playlist.shift();
-                $scope.playTrack.post(mediaObj);
+                var media = $scope.playTrack.playlist.shift();
+                $scope.playTrack.post(media);
             } else {
                 $scope.playTrack.playing = false;
             }
@@ -232,8 +232,8 @@ ygorMinionControllers.controller("ChannelController", [
             }
 
             if (command.name == "play") {
-                mediaObj = $.parseJSON(command.args[0]);
-                $scope.playTrack.playlist.push(mediaObj);
+                media = $.parseJSON(command.args[0]);
+                $scope.playTrack.playlist.push(media);
                 if (!$scope.playTrack.playing) {
                     $scope.playTrack.playNext()
                 }
@@ -241,9 +241,9 @@ ygorMinionControllers.controller("ChannelController", [
             }
 
             if (command.name == "image") {
-                mediaObj = $.parseJSON(command.args[0]);
+                media = $.parseJSON(command.args[0]);
                 $scope.imageTrack.shutup();
-                $scope.imageTrack.post(mediaObj);
+                $scope.imageTrack.post(media);
                 return;
             }
         }

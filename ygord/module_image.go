@@ -20,7 +20,7 @@ func (module *ImageModule) PrivMsg(srv *Server, msg *Message) {
 		return
 	}
 
-	mObj, parseMObjErr := NewMediaObj(srv, mediaItem, "imageTrack", true, true,
+	media, parseMObjErr := NewMedia(srv, mediaItem, "imageTrack", true, true,
 		[]string{
 			"vimeo",
 			"youtube",
@@ -35,7 +35,7 @@ func (module *ImageModule) PrivMsg(srv *Server, msg *Message) {
 
 	// Send the command to the connected minions.
 	srv.SendToChannelMinions(msg.ReplyTo,
-		"image "+mObj.Serialize())
+		"image "+media.Serialize())
 }
 
 // Init registers all the commands for this module.

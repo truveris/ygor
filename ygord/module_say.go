@@ -38,7 +38,7 @@ func (module *SayModule) PrivMsg(srv *Server, msg *Message) {
 	mediaItem := make(map[string]string)
 	mediaItem["url"] = sayURL
 
-	mObj, parseMObjErr := NewMediaObj(srv, mediaItem, "playTrack", false, false,
+	media, parseMObjErr := NewMedia(srv, mediaItem, "playTrack", false, false,
 		[]string{})
 	if parseMObjErr != nil {
 		srv.IRCPrivMsg(msg.ReplyTo, parseMObjErr.Error())
@@ -47,12 +47,12 @@ func (module *SayModule) PrivMsg(srv *Server, msg *Message) {
 
 	// Override the formatted Src to be the original sayURL, because, in this
 	// case, the query string is needed.
-	mObj.Src = sayURL
+	media.Src = sayURL
 
 	// Send the command to the connected minions, as though it were the play
 	// command.
 	srv.SendToChannelMinions(msg.ReplyTo,
-		"play "+mObj.Serialize())
+		"play "+media.Serialize())
 }
 
 // Init registers all the commands for this module.

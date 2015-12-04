@@ -166,14 +166,14 @@ var (
 		`^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*`)
 )
 
-// MediaObj represents the relevant data that will eventually be passed to
+// Media represents the relevant data that will eventually be passed to
 // the connected minions. It is used to generate the information that connected
 // minions would use to properly embed the desired content.
 //
 // It also provides several functions that can be used to more easily work with
 // the data, so that command modules aren't filled with a lot of excessive
 // code.
-type MediaObj struct {
+type Media struct {
 	// 'Src' is formatted over time and is what will eventually be passed to
 	// the connected minions.
 	Src  string `json:"src"`
@@ -198,23 +198,23 @@ type MediaObj struct {
 }
 
 // checkFormatIsAcceptable checks to make sure that the determined media
-// type is acceptable. If the MediaObj's acceptableFormats attribute is not
+// type is acceptable. If the Media's acceptableFormats attribute is not
 // set, it is assumed that the media type is acceptable.
-func (mObj *MediaObj) checkFormatIsAcceptable() error {
-	if len(mObj.acceptableFormats) == 0 {
+func (media *Media) checkFormatIsAcceptable() error {
+	if len(media.acceptableFormats) == 0 {
 		// if acceptableFormats is not set, all media types are acceptable
 		return nil
 	}
 
-	for _, acceptableFormat := range mObj.acceptableFormats {
-		if mObj.Format == acceptableFormat {
+	for _, acceptableFormat := range media.acceptableFormats {
+		if media.Format == acceptableFormat {
 			// The determined media type is acceptable.
 			return nil
 		}
 	}
 
 	// If it made it here, the determined media type must not be acceptable.
-	errMsg := "error: content-type (" + mObj.mediaType + ") not supported " +
+	errMsg := "error: content-type (" + media.mediaType + ") not supported " +
 		"by this command"
 	return errors.New(errMsg)
 }
@@ -223,27 +223,27 @@ func (mObj *MediaObj) checkFormatIsAcceptable() error {
 // the URL is a valid URL, formats imgur links to use .webm instead of .gif(v),
 // and determines the Format that the URL represents.
 //
-// The MediaObj's 'Src' attribute will either be set to the passed URL, or the
+// The Media's 'Src' attribute will either be set to the passed URL, or the
 // formatted imgur URL (if it was an imgur link).
 //
-// The MediaObj's 'Src' attribute can be retrieved using the MediaObj's
+// The Media's 'Src' attribute can be retrieved using the Media's
 // 'GetSrc()' function.
 //
-// The URL that was originally passed, is saved as the MediaObj's 'url'
-// attribute, and can be retrieved with the MediaObj's 'GetURL()' function.
-func (mObj *MediaObj) SetSrc(link string) error {
+// The URL that was originally passed, is saved as the Media's 'url'
+// attribute, and can be retrieved with the Media's 'GetURL()' function.
+func (media *Media) SetSrc(link string) error {
 	uri, linkErr := url.ParseRequestURI(link)
 	if linkErr != nil {
 		errorMsg := "error: not a valid URL"
 		return errors.New(errorMsg)
 	}
 	// Strip any query or fragment attached to the URL
-	mObj.Src = uri.String()
-	mObj.url = link
-	mObj.host = uri.Host
+	media.Src = uri.String()
+	media.url = link
+	media.host = uri.Host
 
 	// Check that the URL returns a status code of 200.
-	res, err := http.Head(mObj.Src)
+	res, err := http.Head(media.Src)
 	if err != nil {
 		errMsg := "error: " + err.Error()
 		return errors.New(errMsg)
@@ -254,33 +254,33 @@ func (mObj *MediaObj) SetSrc(link string) error {
 		return errors.New(errMsg)
 	}
 
-	headErr := mObj.setFormat(res.Header)
+	headErr := media.setFormat(res.Header)
 	if headErr != nil {
 		return headErr
 	}
 
 	// If it's an imgur link, and the content-type contains "image/gif", modify
-	// the MediaObj so minions embed the far more efficient webm version.
-	if mObj.isImgur() {
-		isGIF := strings.Contains(strings.ToLower(mObj.mediaType), "image/gif")
-		hasGIFVExt := mObj.GetExt() == ".gifv"
+	// the Media so minions embed the far more efficient webm version.
+	if media.isImgur() {
+		isGIF := strings.Contains(strings.ToLower(media.mediaType), "image/gif")
+		hasGIFVExt := media.GetExt() == ".gifv"
 		if isGIF || hasGIFVExt {
-			mObj.replaceSrcExt(".webm")
-			mObj.Format = "video"
-			mObj.mediaType = "video/webm"
+			media.replaceSrcExt(".webm")
+			media.Format = "video"
+			media.mediaType = "video/webm"
 		}
 	}
 
 	// If it's a Gfycat link, and the content-type isn't "video/webm", attempt
 	// to find a webm version of this link using the Gfycat API.
-	if mObj.isGfycat() {
-		isWEBM := strings.Contains(strings.ToLower(mObj.mediaType), "video/webm")
+	if media.isGfycat() {
+		isWEBM := strings.Contains(strings.ToLower(media.mediaType), "video/webm")
 		if !isWEBM {
-			mObj.resolveGfycatURL()
+			media.resolveGfycatURL()
 		}
 	}
 
-	merr := mObj.checkFormatIsAcceptable()
+	merr := media.checkFormatIsAcceptable()
 	if merr != nil {
 		return merr
 	}
@@ -288,48 +288,48 @@ func (mObj *MediaObj) SetSrc(link string) error {
 	return nil
 }
 
-// GetSrc returns the MediaObj's 'Src' attribute (this is what should get
+// GetSrc returns the Media's 'Src' attribute (this is what should get
 // passed to the connected minions).
-func (mObj *MediaObj) GetSrc() string {
-	return mObj.Src
+func (media *Media) GetSrc() string {
+	return media.Src
 }
 
 // GetURL returns the URL that was originally passed to the 'SetSrc()'
 // function.
-func (mObj *MediaObj) GetURL() string {
-	return mObj.url
+func (media *Media) GetURL() string {
+	return media.url
 }
 
-// setFormat sets the 'Format' attribute of the MediaObj. This tells the
+// setFormat sets the 'Format' attribute of the Media. This tells the
 // connected minions what kind of content they should be trying to embed.
-func (mObj *MediaObj) setFormat(header map[string][]string) error {
+func (media *Media) setFormat(header map[string][]string) error {
 	// If it's a YouTube link, check if there's a video ID we can grab.
-	if mObj.isYouTube() {
-		match := reYTVideoID.FindAllStringSubmatch(mObj.Src, -1)
+	if media.isYouTube() {
+		match := reYTVideoID.FindAllStringSubmatch(media.Src, -1)
 		if len(match) > 0 {
-			mObj.Src = match[0][2]
-			mObj.Format = "youtube"
-			mObj.mediaType = "youtube"
+			media.Src = match[0][2]
+			media.Format = "youtube"
+			media.mediaType = "youtube"
 			return nil
 		}
 	}
 
 	// If it's a Vimeo link, check if there's a video ID we can grab.
-	if mObj.isVimeo() {
+	if media.isVimeo() {
 		// Vimeo video IDs are the last element in the URL (represented as an
 		// integer between 6 and 11 digits long) before the query string and/or
-		// fragment. mObj.Src has the query string and fragment stripped off,
+		// fragment. media.Src has the query string and fragment stripped off,
 		// so if this is a link to a Vimeo video, potentialVideoID should be an
 		// integer between 6 and 11 digits long.
-		potentialVideoID := path.Base(mObj.Src)
+		potentialVideoID := path.Base(media.Src)
 		// Check to see if it is between 6 and 11 characters long.
 		if 6 <= len(potentialVideoID) && len(potentialVideoID) <= 11 {
 			// Check to make sure it is a number.
 			if _, err := strconv.Atoi(potentialVideoID); err == nil {
 				// It is a number
-				mObj.Src = potentialVideoID
-				mObj.Format = "vimeo"
-				mObj.mediaType = "vimeo"
+				media.Src = potentialVideoID
+				media.Format = "vimeo"
+				media.mediaType = "vimeo"
 				return nil
 			}
 		}
@@ -337,12 +337,12 @@ func (mObj *MediaObj) setFormat(header map[string][]string) error {
 
 	// If it's a SoundCloud URL, attempt to resolve it and get the link to
 	// embed the song.
-	if mObj.isSoundCloud() {
-		resolveErr := mObj.resolveSoundCloudURL()
+	if media.isSoundCloud() {
+		resolveErr := media.resolveSoundCloudURL()
 		if resolveErr != nil {
 			return resolveErr
 		}
-		if mObj.GetFormat() == "soundcloud" {
+		if media.GetFormat() == "soundcloud" {
 			// The link was to a SoundCloud track.
 			return nil
 		}
@@ -358,8 +358,8 @@ func (mObj *MediaObj) setFormat(header map[string][]string) error {
 			for _, mediaType := range formatMediaTypes {
 				for _, cType := range contentType {
 					if strings.Contains(cType, mediaType) {
-						mObj.Format = format
-						mObj.mediaType = mediaType
+						media.Format = format
+						media.mediaType = mediaType
 						return nil
 					}
 				}
@@ -368,12 +368,12 @@ func (mObj *MediaObj) setFormat(header map[string][]string) error {
 
 		// Fallback to known supported file extensions if content-type isn't
 		// recognized as supported.
-		ext := mObj.GetExt()
+		ext := media.GetExt()
 		for format, formatExtensions := range supportedFormatsAndExtensions {
 			for _, extension := range formatExtensions {
 				if extension == ext {
-					mObj.Format = format
-					mObj.mediaType = ext
+					media.Format = format
+					media.mediaType = ext
 					return nil
 				}
 			}
@@ -390,17 +390,17 @@ func (mObj *MediaObj) setFormat(header map[string][]string) error {
 	return errors.New(errMsg)
 }
 
-// GetFormat returnes the MediaObj's 'Format' attribute. The 'Format'
+// GetFormat returnes the Media's 'Format' attribute. The 'Format'
 // tells the connected minions what kind of content they should be trying to
-// embed when using the MediaObj's 'Src' attribute.
-func (mObj *MediaObj) GetFormat() string {
-	return mObj.Format
+// embed when using the Media's 'Src' attribute.
+func (media *Media) GetFormat() string {
+	return media.Format
 }
 
-// IsOfFormat determines if the MediaObj's Format is contained in the
+// IsOfFormat determines if the Media's Format is contained in the
 // passed string array.
-func (mObj *MediaObj) IsOfFormat(formats []string) bool {
-	format := mObj.GetFormat()
+func (media *Media) IsOfFormat(formats []string) bool {
+	format := media.GetFormat()
 	for _, mt := range formats {
 		if format == mt {
 			return true
@@ -409,16 +409,16 @@ func (mObj *MediaObj) IsOfFormat(formats []string) bool {
 	return false
 }
 
-// GetExt is a convenience function to get the extension of theMediaObj's
+// GetExt is a convenience function to get the extension of theMedia's
 // current Src.
-func (mObj *MediaObj) GetExt() string {
-	return strings.ToLower(path.Ext(mObj.Src))
+func (media *Media) GetExt() string {
+	return strings.ToLower(path.Ext(media.Src))
 }
 
 // isImgur attempts to determine if the desired content is hosted on imgur.
-func (mObj *MediaObj) isImgur() bool {
+func (media *Media) isImgur() bool {
 	for _, d := range imgurHostNames {
-		if mObj.host == d {
+		if media.host == d {
 			return true
 		}
 	}
@@ -426,9 +426,9 @@ func (mObj *MediaObj) isImgur() bool {
 }
 
 // isGfycat attempts to determine if the desired content is hosted on gfycat.
-func (mObj *MediaObj) isGfycat() bool {
+func (media *Media) isGfycat() bool {
 	for _, d := range gfycatHostNames {
-		if mObj.host == d {
+		if media.host == d {
 			return true
 		}
 	}
@@ -437,9 +437,9 @@ func (mObj *MediaObj) isGfycat() bool {
 
 // isYouTube attempts to determine if the desired content is a video hosted on
 // YouTube
-func (mObj *MediaObj) isYouTube() bool {
+func (media *Media) isYouTube() bool {
 	for _, d := range youtubeHostNames {
-		if mObj.host == d {
+		if media.host == d {
 			return true
 		}
 	}
@@ -448,9 +448,9 @@ func (mObj *MediaObj) isYouTube() bool {
 
 // isVimeo attempts to determine if the desired content is a video hosted on
 // Vimeo
-func (mObj *MediaObj) isVimeo() bool {
+func (media *Media) isVimeo() bool {
 	for _, d := range vimeoHostNames {
-		if mObj.host == d {
+		if media.host == d {
 			return true
 		}
 	}
@@ -459,9 +459,9 @@ func (mObj *MediaObj) isVimeo() bool {
 
 // isSoundCloud attempts to determine if the desired content is a song hosted
 // on SoundCloud.
-func (mObj *MediaObj) isSoundCloud() bool {
+func (media *Media) isSoundCloud() bool {
 	for _, d := range soundcloudHostNames {
-		if mObj.host == d {
+		if media.host == d {
 			return true
 		}
 	}
@@ -471,17 +471,17 @@ func (mObj *MediaObj) isSoundCloud() bool {
 // resolveSoundCloudURL attempts to find the track URI of the SoundCloud link
 // that was provided using SoundCloud's API along with the SoundCloudClientID
 // saved in the config file. If it finds a track URI, this is saved as the
-// MediaObj's Src and its Format is set to "soundcloud". If there isn't a track
+// Media's Src and its Format is set to "soundcloud". If there isn't a track
 // URI, this function does not return an error. Instead, it relies on the
-// function calling it to determne whether or not the MediaObj's Format was set
+// function calling it to determne whether or not the Media's Format was set
 // to "soundcloud".
-func (mObj *MediaObj) resolveSoundCloudURL() error {
-	if mObj.srv.Config.SoundCloudClientID == "" {
+func (media *Media) resolveSoundCloudURL() error {
+	if media.srv.Config.SoundCloudClientID == "" {
 		errMsg := "error: SoundCloudClientID is not configured"
 		return errors.New(errMsg)
 	}
-	resolveURL := "http://api.soundcloud.com/resolve?url=" + mObj.Src +
-		"&client_id=" + mObj.srv.Config.SoundCloudClientID
+	resolveURL := "http://api.soundcloud.com/resolve?url=" + media.Src +
+		"&client_id=" + media.srv.Config.SoundCloudClientID
 	// Make the request.
 	res, err := http.Get(resolveURL)
 	if err != nil {
@@ -504,9 +504,9 @@ func (mObj *MediaObj) resolveSoundCloudURL() error {
 	if kind, hasKind := dat["kind"]; hasKind {
 		if kind == "track" {
 			if trackURI, hasTrackURI := dat["uri"]; hasTrackURI {
-				mObj.Src = trackURI.(string)
-				mObj.Format = "soundcloud"
-				mObj.mediaType = "soundcloud"
+				media.Src = trackURI.(string)
+				media.Format = "soundcloud"
+				media.mediaType = "soundcloud"
 				return nil
 			}
 			// If the API response says the kind is 'track', but there
@@ -524,9 +524,9 @@ func (mObj *MediaObj) resolveSoundCloudURL() error {
 // provided Gfycat URL. If there is no webm URL, it falls back to the mp4 URL.
 // If there is no mp4 URL, it then falls back to the gif URL. If the Gfycat API
 // doesn't return any JSON to be parsed, then it isn't a link to a Gfycat
-// image/video, so nothing should be changed in the MediaObj.
-func (mObj *MediaObj) resolveGfycatURL() error {
-	gfyName := path.Base(mObj.Src)
+// image/video, so nothing should be changed in the Media.
+func (media *Media) resolveGfycatURL() error {
+	gfyName := path.Base(media.Src)
 	resolveURL := "http://gfycat.com/cajax/get/" + gfyName
 	// Make the request.
 	res, err := http.Get(resolveURL)
@@ -549,23 +549,23 @@ func (mObj *MediaObj) resolveGfycatURL() error {
 	}
 	if gfyItem, hasGfyItem := dat["gfyItem"]; hasGfyItem {
 		if webmURL, hasWebmURL := gfyItem["webmUrl"]; hasWebmURL {
-			mObj.Src = webmURL.(string)
-			mObj.Format = "video"
-			mObj.mediaType = "video/webm"
+			media.Src = webmURL.(string)
+			media.Format = "video"
+			media.mediaType = "video/webm"
 			return nil
 		} else if mp4URL, hasMp4URL := gfyItem["mp4Url"]; hasMp4URL {
 			// If, for some reason, there isn't a webm URL, fallback to the mp4
 			// URL.
-			mObj.Src = mp4URL.(string)
-			mObj.Format = "video"
-			mObj.mediaType = "video/mp4"
+			media.Src = mp4URL.(string)
+			media.Format = "video"
+			media.mediaType = "video/mp4"
 			return nil
 		} else if gifURL, hasGifURL := gfyItem["gifUrl"]; hasGifURL {
 			// If, for some reason, there isn't an mp4 URL either, fallback to
 			// the gif URL.
-			mObj.Src = gifURL.(string)
-			mObj.Format = "image"
-			mObj.mediaType = "image/gif"
+			media.Src = gifURL.(string)
+			media.Format = "image"
+			media.mediaType = "image/gif"
 			return nil
 		}
 		// If the API response says it has a 'gfyItem', but doesn't provide any
@@ -579,42 +579,42 @@ func (mObj *MediaObj) resolveGfycatURL() error {
 }
 
 // replaceSrcExt is a convenience function to replace the extension of the
-// MediaObj's current Src.
-func (mObj *MediaObj) replaceSrcExt(newExt string) {
-	mObj.Src = mObj.Src[0:len(mObj.Src)-len(mObj.GetExt())] + newExt
+// Media's current Src.
+func (media *Media) replaceSrcExt(newExt string) {
+	media.Src = media.Src[0:len(media.Src)-len(media.GetExt())] + newExt
 }
 
-// Serialize generates and returns the JSON string out of the MediaObj. This
+// Serialize generates and returns the JSON string out of the Media. This
 // JSON string is what should be sent to the connected minions.
-func (mObj *MediaObj) Serialize() string {
+func (media *Media) Serialize() string {
 	serializedJSON, _ := json.Marshal(struct {
-		MediaObj *MediaObj `json:"mediaObj"`
-		Status   string    `json:"status"`
-		Track    string    `json:"track"`
+		Media  *Media `json:"media"`
+		Status string `json:"status"`
+		Track  string `json:"track"`
 	}{
-		Status:   "media",
-		Track:    mObj.track,
-		MediaObj: mObj,
+		Status: "media",
+		Track:  media.track,
+		Media:  media,
 	})
 	return string(serializedJSON)
 }
 
-// NewMediaObj is a convenience function meant to clean up the code of modules.
-// It builds the MediaObj.
-func NewMediaObj(srv *Server, mediaItem map[string]string, track string, muted bool, loop bool, acceptableFormats []string) (*MediaObj, error) {
-	// Parse the mediaItem map into a MediaObj.
-	mObj := new(MediaObj)
-	mObj.srv = srv
-	mObj.End = mediaItem["end"]
-	mObj.Muted = muted
-	mObj.Loop = loop
-	mObj.track = track
-	mObj.acceptableFormats = acceptableFormats
+// NewMedia is a convenience function meant to clean up the code of modules.
+// It builds the Media.
+func NewMedia(srv *Server, mediaItem map[string]string, track string, muted bool, loop bool, acceptableFormats []string) (*Media, error) {
+	// Parse the mediaItem map into a Media.
+	media := new(Media)
+	media.srv = srv
+	media.End = mediaItem["end"]
+	media.Muted = muted
+	media.Loop = loop
+	media.track = track
+	media.acceptableFormats = acceptableFormats
 
-	setSrcErr := mObj.SetSrc(mediaItem["url"])
+	setSrcErr := media.SetSrc(mediaItem["url"])
 	if setSrcErr != nil {
 		return nil, setSrcErr
 	}
 
-	return mObj, nil
+	return media, nil
 }

@@ -73,13 +73,13 @@ function modifyMediaElementPrototypes() {
             }
         }
     };
-    HTMLMediaElement.prototype.loadMediaObj = function() {
-        var e = this.mediaObj.end;
+    HTMLMediaElement.prototype.loadMedia = function() {
+        var e = this.media.end;
         if (e.length > 0) {
             this.endTime = e;
         }
-        this.muted = this.mediaObj.muted;
-        this.src = this.mediaObj.src;
+        this.muted = this.media.muted;
+        this.src = this.media.src;
     };
     HTMLMediaElement.prototype.seekToEnd = function() {
         this.currentTime = this.endTime;
@@ -87,7 +87,7 @@ function modifyMediaElementPrototypes() {
     HTMLMediaElement.prototype.destroy = function() {
         this.parentNode.removeChild(this);
     };
-    HTMLMediaElement.prototype.spawn = function(mediaObj) {
+    HTMLMediaElement.prototype.spawn = function(media) {
         this.ondurationchange = function() {
             this.endTime = this.endTime || this.duration;
             this.hasStarted();
@@ -100,12 +100,12 @@ function modifyMediaElementPrototypes() {
         this.onerror = function(event) {this.hasErrored(event);};
         this.onended =  function() {this.hasEnded();};
         //this.onpause = function() {this.hasEnded();};
-        this.mediaObj = mediaObj;
-        this.soloLoop = mediaObj.loop;
+        this.media = media;
+        this.soloLoop = media.loop;
         this.endTime = false;
         this.didEnd = false;
         this.setVolume(volume * trackVolume);
-        this.loadMediaObj();
+        this.loadMedia();
         this.setAttribute("class", "media");
         this.setAttribute("opacity", 0);
         this.setAttribute("preload", "auto");
@@ -123,8 +123,8 @@ function modifyImgElementPrototype() {
         playerStarted();
         this.setAttribute("opacity", 1);
     };
-    HTMLImageElement.prototype.loadMediaObj = function() {
-        this.src = this.mediaObj.src;
+    HTMLImageElement.prototype.loadMedia = function() {
+        this.src = this.media.src;
     };
     HTMLImageElement.prototype.destroy = function() {
         this.parentNode.removeChild(this);
@@ -136,10 +136,10 @@ function modifyImgElementPrototype() {
     HTMLImageElement.prototype.seekToEnd = function(volumeLevel) {
         return;
     };
-    HTMLImageElement.prototype.spawn = function(mediaObj) {
-        this.mediaObj = mediaObj;
+    HTMLImageElement.prototype.spawn = function(media) {
+        this.media = media;
         this.setAttribute("class", "media");
-        this.loadMediaObj();
+        this.loadMedia();
         document.body.appendChild(this);
         return;
     }
@@ -154,8 +154,8 @@ function modifyIframeElementPrototype() {
         playerStarted();
         this.setAttribute("opacity", 1);
     };
-    HTMLIFrameElement.prototype.loadMediaObj = function() {
-        this.src = this.mediaObj.src;
+    HTMLIFrameElement.prototype.loadMedia = function() {
+        this.src = this.media.src;
     };
     HTMLIFrameElement.prototype.destroy = function() {
         this.parentNode.removeChild(this);
@@ -171,10 +171,10 @@ function modifyIframeElementPrototype() {
     HTMLIFrameElement.prototype.seekToEnd = function(volumeLevel) {
         return;
     };
-    HTMLIFrameElement.prototype.spawn = function(mediaObj) {
-        this.mediaObj = mediaObj;
+    HTMLIFrameElement.prototype.spawn = function(media) {
+        this.media = media;
         this.setAttribute("class", "media");
-        this.loadMediaObj();
+        this.loadMedia();
         document.body.appendChild(this);
         return;
     }
@@ -192,20 +192,20 @@ function modifyYouTubePlayerPrototype() {
         this.setVolume(volume * trackVolume);
         iframe = this.getIframe();
         iframe.player = this;
-        if (this.mediaObj.muted) {
+        if (this.media.muted) {
             this.mute();
         }
         this.isReady = true;
-        // player may have been given a mediaObj before the player was ready,
+        // player may have been given a media before the player was ready,
         // so it should now load the desired video with the specified
         // parameters
-        if (this.mediaObj) {
-            this.loadMediaObj();
+        if (this.media) {
+            this.loadMedia();
         }
     };
-    // player should hold the mediaObj used to create it, so it can be
+    // player should hold the media used to create it, so it can be
     // referenced later
-    YT.Player.prototype.mediaObj = false;
+    YT.Player.prototype.media = false;
     YT.Player.prototype.pause = function() {
         if (this.isReady) {
             this.pauseVideo();
@@ -227,18 +227,18 @@ function modifyYouTubePlayerPrototype() {
         iframe = this.getIframe();
         iframe.destroy();
     };
-    YT.Player.prototype.loadMediaObj = function() {
+    YT.Player.prototype.loadMedia = function() {
         if (this.isReady) {
             // if the player is ready
             params = {
-                "videoId": this.mediaObj.src,
+                "videoId": this.media.src,
             }
-            var end = this.mediaObj.end;
+            var end = this.media.end;
             if (end.length > 0) {
                 params.endSeconds = parseFloat(end);
                 this.endTime = end;
             }
-            this.soloLoop = mediaObj.loop;
+            this.soloLoop = media.loop;
             this.loadVideoById(params);
         }
     };
@@ -253,7 +253,7 @@ function modifyYouTubePlayerPrototype() {
     YT.Player.prototype.soloLoop = false;
 }
 
-function spawnYouTubePlayer(mediaObj) {
+function spawnYouTubePlayer(media) {
     // create a <div> for the YouTube player to replace
     var playerDiv = document.createElement("div");
     // use a unique ID so multiple players can be spawned and referenced
@@ -284,8 +284,8 @@ function spawnYouTubePlayer(mediaObj) {
     }
     var ytPlayer = new YT.Player(containerId, playerParams);
     ytPlayer.containerId = containerId;
-    ytPlayer.mediaObj = mediaObj;
-    ytPlayer.loadMediaObj();
+    ytPlayer.media = media;
+    ytPlayer.loadMedia();
 
     return ytPlayer;
 }
@@ -359,9 +359,9 @@ function onYTPlayerError(event) {
 
 /* --------------------------------- VIMEO --------------------------------- */
 
-var VimeoPlayer = function(mediaObj) {
+var VimeoPlayer = function(media) {
     //constructor for VimeoPlayer object class
-    this.mediaObj = mediaObj;
+    this.media = media;
     this.playerId = "vimeoplayer-" + Math.floor((Math.random() * 100000) + 1).toString();
     this.iframe = null;
     this.isReady = false;
@@ -394,11 +394,11 @@ function modifyVimeoPlayerPrototype() {
         this.iframe.show();
         // get trackID of song URL in order to embed the widget properly
         looping = "";
-        if (this.mediaObj.loop) {
+        if (this.media.loop) {
             looping = "&loop=1";
         }
         this.iframe.src = "http://player.vimeo.com/video/" +
-            this.mediaObj.src + "?player_id=" + this.playerId +
+            this.media.src + "?player_id=" + this.playerId +
             "&api=1&badge=0&byline=0&portrait=0&title=0" + looping;
         document.body.appendChild(this.iframe);
     };
@@ -413,12 +413,12 @@ function modifyVimeoPlayerPrototype() {
     };
     VimeoPlayer.prototype.setReady = function() {
         this.setVolume(volume * trackVolume);
-        if (this.mediaObj.muted) {
+        if (this.media.muted) {
             this.mute();
         }
         this.isReady = true;
-        if (this.mediaObj) {
-            this.loadMediaObj();
+        if (this.media) {
+            this.loadMedia();
         }
         return;
     };
@@ -449,10 +449,10 @@ function modifyVimeoPlayerPrototype() {
     VimeoPlayer.prototype.mute = function() {
         this.post("setVolume", 0.0001);
     };
-    VimeoPlayer.prototype.loadMediaObj = function() {
+    VimeoPlayer.prototype.loadMedia = function() {
         if (this.isReady) {
             // if the player is ready 
-            var end = this.mediaObj.end;
+            var end = this.media.end;
             if (end.length > 0) {
                 this.endTime = end;
             } else if (this.duration) {
@@ -537,8 +537,8 @@ function modifyVimeoPlayerPrototype() {
     }
 }
 
-function spawnVimeoPlayer(mediaObj) {
-    var vimeoplayer = new VimeoPlayer(mediaObj);
+function spawnVimeoPlayer(media) {
+    var vimeoplayer = new VimeoPlayer(media);
 
     vimeoplayer.spawn();
     return vimeoplayer;
@@ -583,9 +583,9 @@ function vimeoPlayerMessageHandler(message) {
 
 /* ------------------------------- SOUNDCLOUD ------------------------------ */
 
-var SoundCloudPlayer = function(mediaObj) {
+var SoundCloudPlayer = function(media) {
     //constructor for SoundCloudPlayer object class
-    this.mediaObj = mediaObj;
+    this.media = media;
     this.playerId = "soundcloudplayer-" + Math.floor((Math.random() * 100000) + 1).toString();
     this.iframe = null;
     this.isReady = false;
@@ -606,15 +606,15 @@ var SoundCloudPlayer = function(mediaObj) {
         // hide it at first so it doesn't block anything before it starts actually
         // playing
         //this.iframe.setAttribute("hidden", "hidden");
-        this.iframe.src = "https://w.soundcloud.com/player/?url=" + this.mediaObj.src;
+        this.iframe.src = "https://w.soundcloud.com/player/?url=" + this.media.src;
         document.body.appendChild(this.iframe);
         scPlayer = SC.Widget(this.playerId);
         this.iframe.player = this;
         this.player = scPlayer;
         modifySoundCloudPlayerPrototype(this.player)
         this.player.containerId = this.playerId;
-        this.player.mediaObj = this.mediaObj;
-        this.player.loadMediaObj();
+        this.player.media = this.media;
+        this.player.loadMedia();
     }
     this.setVolume = function(level) {
         // SoundCloud Widget requires float between 0 and 1
@@ -628,9 +628,9 @@ function modifySoundCloudPlayerPrototype(widget) {
     widget.startTime = 0.0;
     widget.endTime = false;
     widget.didEnd = false;
-    // player should hold the mediaObj used to create it, so it can be
+    // player should hold the media used to create it, so it can be
     // referenced later
-    widget.mediaObj = false;
+    widget.media = false;
     widget.getIframe = function() {
         return document.getElementById(this.containerId);
     };
@@ -638,8 +638,8 @@ function modifySoundCloudPlayerPrototype(widget) {
         // SoundCloud player requires float between 0 and 1 for volume
         this.setVolume(volume * trackVolume * 0.01);
         this.isReady = true;
-        if (this.mediaObj) {
-            this.loadMediaObj();
+        if (this.media) {
+            this.loadMedia();
         }
         return;
     };
@@ -694,10 +694,10 @@ function modifySoundCloudPlayerPrototype(widget) {
         iframe.destroy();
         return;
     };
-    widget.loadMediaObj = function() {
+    widget.loadMedia = function() {
         if (this.isReady) {
             // if the player is ready
-            var end = this.mediaObj.end;
+            var end = this.media.end;
             if (end.length > 0) {
                 this.endTime = end;
             }
@@ -716,8 +716,8 @@ function modifySoundCloudPlayerPrototype(widget) {
     widget.soloLoop = false;
 }
 
-function spawnSoundCloudPlayer(mediaObj) {
-    scPlayer = new SoundCloudPlayer(mediaObj);
+function spawnSoundCloudPlayer(media) {
+    scPlayer = new SoundCloudPlayer(media);
 
     scPlayer.spawn();
 }
@@ -734,50 +734,50 @@ function receiveMessage(event) {
     }
     var message = JSON.parse(event.data);
     if (message.status == "media") {
-        mediaObj = message.mediaObj;
-        spawnMediaObj(mediaObj);
+        media = message.media;
+        spawnMedia(media);
     }
 }
 
-function spawnMediaObj(mediaObj) {
-    switch (mediaObj.format){
+function spawnMedia(media) {
+    switch (media.format){
         case "video":
-            spawnStandardPlayer(mediaObj);
+            spawnStandardPlayer(media);
             break;
         case "audio":
-            spawnStandardPlayer(mediaObj);
+            spawnStandardPlayer(media);
             break;
         case "img":
-            spawnStandardPlayer(mediaObj);
+            spawnStandardPlayer(media);
             break;
         case "web":
-            spawnWeb(mediaObj);
+            spawnWeb(media);
             break;
         case "youtube":
-            spawnYouTubePlayer(mediaObj);
+            spawnYouTubePlayer(media);
             break;
         case "vimeo":
-            spawnVimeoPlayer(mediaObj);
+            spawnVimeoPlayer(media);
             break;
         case "soundcloud":
-            spawnSoundCloudPlayer(mediaObj);
+            spawnSoundCloudPlayer(media);
             break;
         default:
-            reportError("unrecognized format: " + mediaObj.format)
+            reportError("unrecognized format: " + media.format)
     }
 }
 
 // spawns <video>, <audio>, or <img>
-function spawnStandardPlayer(mediaObj) {
-    var player = document.createElement(mediaObj.format);
-    player.spawn(mediaObj);
+function spawnStandardPlayer(media) {
+    var player = document.createElement(media.format);
+    player.spawn(media);
     return player;
 }
 
 // spawns iframe to show webpage
-function spawnWeb(mediaObj) {
+function spawnWeb(media) {
     var web = document.createElement("iframe");
-    web.spawn(mediaObj);
+    web.spawn(media);
     return web;
 }
 
