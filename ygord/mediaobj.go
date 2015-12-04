@@ -481,13 +481,12 @@ func (mObj *MediaObj) resolveSoundCloudURL() error {
 				mObj.Format = "soundcloud"
 				mObj.mediaType = "soundcloud"
 				return nil
-			} else {
-				// If the API response says the kind is 'track', but there
-				// is no uri, return an error.
-				errMsg := "error: malformed SoundCloud API response " +
-					"(no track uri)"
-				return errors.New(errMsg)
 			}
+			// If the API response says the kind is 'track', but there
+			// is no uri, return an error.
+			errMsg := "error: malformed SoundCloud API response " +
+				"(no track uri)"
+			return errors.New(errMsg)
 		}
 	}
 	// If it hasn't returned by now, it isn't a link to a SoundCloud track.
