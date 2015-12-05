@@ -22,25 +22,18 @@ func main() {
 	srv.RegisterModule(&CommandsModule{})
 	srv.RegisterModule(&ImageModule{})
 	srv.RegisterModule(&RebootModule{})
-	srv.RegisterModule(&MinionsModule{})
 	srv.RegisterModule(&NopModule{})
 	srv.RegisterModule(&PingModule{})
 	srv.RegisterModule(&PlayModule{})
 	srv.RegisterModule(&SayModule{})
 	srv.RegisterModule(&SkipModule{})
 	srv.RegisterModule(&ShutUpModule{})
-	srv.RegisterModule(&TurretModule{})
 	srv.RegisterModule(&VolumeModule{})
 
 	log.Printf("starting i/o adapters")
 	minionerrch, err := srv.StartAdapters()
 	if err != nil {
 		log.Fatal("failed to start adapters: ", err.Error())
-	}
-
-	client, err := srv.GetSQSClient()
-	if err != nil {
-		log.Fatal("failed to setup SQS: ", err.Error())
 	}
 
 	go waitForTraceRequest()
@@ -56,8 +49,6 @@ func main() {
 				srv.IRCMessageHandler(msg)
 			case MsgTypeIRCPrivate:
 				srv.IRCMessageHandler(msg)
-			case MsgTypeMinion:
-				srv.MinionMessageHandler(msg)
 			case MsgTypeExit:
 				log.Printf("terminating: %s", msg.Body)
 				os.Exit(0)
@@ -73,11 +64,6 @@ func main() {
 				conn.Privmsg(msg.Channel, msg.Body)
 			case OutMsgTypeAction:
 				conn.Action(msg.Channel, msg.Body)
-			case OutMsgTypeMinion:
-				err = client.SendMessage(msg.QueueURL, msg.Body)
-				if err != nil {
-					log.Printf("error sending to minion: %s", err.Error())
-				}
 			default:
 				log.Printf("outmsg handler error: un-handled type"+
 					" '%d'", msg.Type)

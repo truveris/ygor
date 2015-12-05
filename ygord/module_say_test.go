@@ -38,23 +38,3 @@ func TestModuleSayNoConfig(t *testing.T) {
 	AssertStringEquals(t, msgs[0].Channel, "#test")
 	AssertStringEquals(t, msgs[0].Body, "error: SaydURL is not configured")
 }
-
-func TestModuleSayNormal(t *testing.T) {
-	srv := CreateTestServerWithTwoMinions(t)
-
-	srv.Config.SaydURL = "http://localhost:666/"
-
-	m := &SayModule{}
-	m.Init(srv)
-	m.PrivMsg(srv, &Message{
-		ReplyTo: "#test",
-		Args:    []string{"hello"},
-	})
-
-	msgs := srv.FlushOutputQueue()
-	AssertIntEquals(t, len(msgs), 2)
-	AssertStringEquals(t, msgs[0].QueueURL, "http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1")
-	AssertStringEquals(t, msgs[0].Body, "play http://localhost:666/bruce?hello")
-	AssertStringEquals(t, msgs[1].QueueURL, "http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2")
-	AssertStringEquals(t, msgs[1].Body, "play http://localhost:666/bruce?hello")
-}

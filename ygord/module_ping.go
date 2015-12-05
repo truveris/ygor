@@ -7,9 +7,6 @@
 package main
 
 import (
-	"fmt"
-	"log"
-	"strconv"
 	"time"
 )
 
@@ -29,26 +26,29 @@ type PingModule struct {
 // timestamp.  This timestamp will be used to validated incoming ping
 // responses.
 func (module *PingModule) PrivMsg(srv *Server, msg *Message) {
-	if len(module.PingStartTimes) > 0 {
-		srv.IRCPrivMsg(msg.ReplyTo, "error: previous ping still running")
-		return
-	}
+	srv.IRCPrivMsg(msg.ReplyTo, "error: not implemented")
+	return
 
-	module.PingReplyTo = msg.ReplyTo
-
-	for _, minion := range srv.GetMinionsByChannel(msg.ReplyTo) {
-		now := time.Now()
-		module.PingStartTimes[minion.UserID] = now
-		body := fmt.Sprintf("ping %d", now.UnixNano())
-		srv.SendToQueue(minion.QueueURL, body)
-		log.Printf("sent to %s: %s", minion.Name, body)
-	}
-
-	// After 10 seconds, give up.
-	go func() {
-		time.Sleep(10 * time.Second)
-		module.PingReset()
-	}()
+	//	if len(module.PingStartTimes) > 0 {
+	//		srv.IRCPrivMsg(msg.ReplyTo, "error: previous ping still running")
+	//		return
+	//	}
+	//
+	//	module.PingReplyTo = msg.ReplyTo
+	//
+	//	for _, minion := range srv.GetMinionsByChannel(msg.ReplyTo) {
+	//		now := time.Now()
+	//		module.PingStartTimes[minion.UserID] = now
+	//		body := fmt.Sprintf("ping %d", now.UnixNano())
+	//		srv.SendToQueue(minion.QueueURL, body)
+	//		log.Printf("sent to %s: %s", minion.Name, body)
+	//	}
+	//
+	//	// After 10 seconds, give up.
+	//	go func() {
+	//		time.Sleep(10 * time.Second)
+	//		module.PingReset()
+	//	}()
 }
 
 // PingReset resets all the ping internal variables.  This is used at the end
@@ -60,41 +60,42 @@ func (module *PingModule) PingReset() {
 
 // MinionMsg is the handler for minion responses.
 func (module *PingModule) MinionMsg(srv *Server, msg *Message) {
-	if len(msg.Args) != 1 {
-		log.Printf("pong: usage error")
-		return
-	}
-
-	timestamp, err := strconv.ParseInt(msg.Args[0], 10, 0)
-	if err != nil {
-		log.Printf("pong: invalid timestamp: %s", err.Error())
-		return
-	}
-
-	start, ok := module.PingStartTimes[msg.UserID]
-	if !ok {
-		log.Printf("pong: unknown minion: %s", msg.UserID)
-		return
-	}
-	delete(module.PingStartTimes, msg.UserID)
-
-	if timestamp != start.UnixNano() {
-		log.Printf("pong: got old ping response (%d)", timestamp)
-		return
-	}
-
-	duration := time.Since(start)
-
-	var name string
-	minion, err := srv.Minions.GetByUserID(msg.UserID)
-	if err != nil {
-		name = "no name (" + msg.UserID + ")"
-	} else {
-		name = minion.Name
-	}
-
-	reply := fmt.Sprintf("delay with %s: %s", name, duration)
-	srv.IRCPrivMsg(module.PingReplyTo, reply)
+	return
+	//	if len(msg.Args) != 1 {
+	//		log.Printf("pong: usage error")
+	//		return
+	//	}
+	//
+	//	timestamp, err := strconv.ParseInt(msg.Args[0], 10, 0)
+	//	if err != nil {
+	//		log.Printf("pong: invalid timestamp: %s", err.Error())
+	//		return
+	//	}
+	//
+	//	start, ok := module.PingStartTimes[msg.UserID]
+	//	if !ok {
+	//		log.Printf("pong: unknown minion: %s", msg.UserID)
+	//		return
+	//	}
+	//	delete(module.PingStartTimes, msg.UserID)
+	//
+	//	if timestamp != start.UnixNano() {
+	//		log.Printf("pong: got old ping response (%d)", timestamp)
+	//		return
+	//	}
+	//
+	//	duration := time.Since(start)
+	//
+	//	var name string
+	//	minion, err := srv.Minions.GetByUserID(msg.UserID)
+	//	if err != nil {
+	//		name = "no name (" + msg.UserID + ")"
+	//	} else {
+	//		name = minion.Name
+	//	}
+	//
+	//	reply := fmt.Sprintf("delay with %s: %s", name, duration)
+	//	srv.IRCPrivMsg(module.PingReplyTo, reply)
 }
 
 // Init registers all the commands for this module.

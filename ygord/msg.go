@@ -3,10 +3,6 @@
 
 package main
 
-import (
-	"github.com/truveris/sqs"
-)
-
 // MsgType is used to categorize the message type constants below.
 type MsgType int
 
@@ -43,11 +39,10 @@ type OutputMessage struct {
 // Message is a representation of a message passed through ygord, be it IRC,
 // minion, etc.
 type Message struct {
-	Type       MsgType
-	SQSMessage *sqs.Message
-	UserID     string
-	Command    string
-	Body       string
+	Type    MsgType
+	UserID  string
+	Command string
+	Body    string
 	// In the case of an IRC message, this is a nickname or a channel.
 	ReplyTo string
 	Args    []string

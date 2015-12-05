@@ -4,10 +4,7 @@
 package main
 
 import (
-	"fmt"
-	"log"
 	"regexp"
-	"strings"
 )
 
 var (
@@ -52,32 +49,14 @@ func (module VolumeModule) PrivMsgMinusMinus(srv *Server, msg *Message) {
 	srv.SendToChannelMinions(msg.ReplyTo, "volume 1dB-")
 }
 
-// MinionMsg is the message handler for all the minion responses for 'volume'
-// requests.
-func (module VolumeModule) MinionMsg(srv *Server, msg *Message) {
-	if msg.Args[0] != "ok" {
-		minion, err := srv.Minions.GetByUserID(msg.UserID)
-		if err != nil {
-			log.Printf("volume: can't find minion for %s", msg.UserID)
-			return
-		}
-		channels := srv.Config.GetChannelsByMinion(minion.Name)
-		for _, channel := range channels {
-			s := fmt.Sprintf("volume@%s: %s", minion.Name, strings.Join(msg.Args, " "))
-			srv.IRCPrivMsg(channel, s)
-		}
-	}
-}
-
 // Init registers all the commands for this module.
 func (module VolumeModule) Init(srv *Server) {
 	srv.RegisterCommand(Command{
-		Name:              "volume",
-		PrivMsgFunction:   module.PrivMsg,
-		MinionMsgFunction: module.MinionMsg,
-		Addressed:         true,
-		AllowPrivate:      false,
-		AllowChannel:      true,
+		Name:            "volume",
+		PrivMsgFunction: module.PrivMsg,
+		Addressed:       true,
+		AllowPrivate:    false,
+		AllowChannel:    true,
 	})
 
 	srv.RegisterCommand(Command{

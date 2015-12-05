@@ -23,46 +23,6 @@ func TestModuleVolume_UsageNoParams(t *testing.T) {
 	AssertStringEquals(t, msgs[0].Body, "usage: volume percent")
 }
 
-func TestModuleVolume_GoodValue(t *testing.T) {
-	srv := CreateTestServerWithTwoMinions(t)
-
-	m := &VolumeModule{}
-	m.Init(srv)
-
-	m.PrivMsg(srv, &Message{
-		ReplyTo: "#test",
-		Args:    []string{"0%"},
-	})
-	msgs := srv.FlushOutputQueue()
-	AssertIntEquals(t, len(msgs), 2)
-	AssertStringEquals(t, msgs[0].QueueURL, "http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1")
-	AssertStringEquals(t, msgs[0].Body, "volume 0%")
-	AssertStringEquals(t, msgs[1].QueueURL, "http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2")
-	AssertStringEquals(t, msgs[1].Body, "volume 0%")
-
-	m.PrivMsg(srv, &Message{
-		ReplyTo: "#test",
-		Args:    []string{"50%"},
-	})
-	msgs = srv.FlushOutputQueue()
-	AssertIntEquals(t, len(msgs), 2)
-	AssertStringEquals(t, msgs[0].QueueURL, "http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1")
-	AssertStringEquals(t, msgs[0].Body, "volume 50%")
-	AssertStringEquals(t, msgs[1].QueueURL, "http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2")
-	AssertStringEquals(t, msgs[1].Body, "volume 50%")
-
-	m.PrivMsg(srv, &Message{
-		ReplyTo: "#test",
-		Args:    []string{"100%"},
-	})
-	msgs = srv.FlushOutputQueue()
-	AssertIntEquals(t, len(msgs), 2)
-	AssertStringEquals(t, msgs[0].QueueURL, "http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi1")
-	AssertStringEquals(t, msgs[0].Body, "volume 100%")
-	AssertStringEquals(t, msgs[1].QueueURL, "http://sqs.us-east-1.amazonaws.com/000000000000/minion-pi2")
-	AssertStringEquals(t, msgs[1].Body, "volume 100%")
-}
-
 func TestModuleVolume_BadValues(t *testing.T) {
 	srv := CreateTestServerWithTwoMinions(t)
 

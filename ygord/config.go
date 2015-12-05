@@ -6,7 +6,6 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	"log"
 	"os"
 
 	"github.com/jessevdk/go-flags"
@@ -103,17 +102,6 @@ func (cfg *Config) GetChannelsByMinion(name string) []string {
 	}
 
 	return channels
-}
-
-// GetChannelMinions returns all the minions configured for that channel.
-func (cfg *Config) GetMinionsByChannel(channel string) []string {
-	channelCfg, exists := cfg.Channels[channel]
-	if !exists {
-		log.Printf("error: %s has no queue(s) configured", channel)
-		return nil
-	}
-
-	return channelCfg.Minions
 }
 
 // ParseConfigFile reads our JSON config file and validates its values, also
