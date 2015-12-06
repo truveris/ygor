@@ -78,7 +78,7 @@ func jsonHandler(w http.ResponseWriter, obj interface{}) {
 }
 
 // HTTPServer starts an HTTP server at the given address.  This is started as a
-// go routine by StartHTTPAdapter.
+// go routine by StartHTTPServer.
 func HTTPServer(srv *Server, address string) {
 	log.Printf("starting http server on %s", address)
 
@@ -94,8 +94,8 @@ func HTTPServer(srv *Server, address string) {
 	}
 }
 
-// StartHTTPAdapter starts an HTTP server routine if an address is configured.
-func (srv *Server) StartHTTPAdapter(address string) error {
+// StartHTTPServer starts an HTTP server routine if an address is configured.
+func (srv *Server) StartHTTPServer(address string) error {
 	if address != "" {
 		go HTTPServer(srv, address)
 	}

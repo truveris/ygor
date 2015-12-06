@@ -5,7 +5,6 @@ package main
 
 import (
 	"crypto/rand"
-	"errors"
 	"io"
 	"log"
 
@@ -32,8 +31,6 @@ func CreateServer(config *Config) *Server {
 	var err error
 	srv := &Server{Config: config}
 
-	// We have global alias and minions files available to everyone. The
-	// alias module and irc io adapter use aliases and everything uses minions.
 	srv.Aliases, err = alias.Open(config.AliasFilePath)
 	if err != nil {
 		log.Fatal("alias file error: ", err.Error())
@@ -54,30 +51,12 @@ func CreateServer(config *Config) *Server {
 	return srv
 }
 
-// StartAdapters starts all the IO adapters (IRC, Stdin/Stdout, Minions, API)
-func (srv *Server) StartAdapters() error {
-	cfg := srv.Config
-	err := srv.StartHTTPAdapter(cfg.HTTPServerAddress)
-	if err != nil {
-		return errors.New("error starting http adapter: " +
-			err.Error())
-	}
-
-	err = srv.StartIRCAdapter()
-	if err != nil {
-		return errors.New("error starting IRC adapter: " +
-			err.Error())
-	}
-
-	return nil
-}
-
 // SendToChannelMinions sends a message to all the minions of the given
 // channel.
-func (srv *Server) SendToChannelMinions(channel, msg string) {
+func (srv *Server) SendToChannelMinions(channel string, cmd ClientCommand) {
 	for _, client := range srv.GetClientsByChannel(channel) {
 		if client.IsAlive() {
-			client.Queue <- msg
+			client.Queue <- cmd
 		} else {
 			srv.UnregisterClient(client)
 		}

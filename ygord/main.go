@@ -29,10 +29,14 @@ func main() {
 	srv.RegisterModule(&ShutUpModule{})
 	srv.RegisterModule(&VolumeModule{})
 
-	log.Printf("starting i/o adapters")
-	err = srv.StartAdapters()
+	err = srv.StartHTTPServer(cfg.HTTPServerAddress)
 	if err != nil {
-		log.Fatal("failed to start adapters: ", err.Error())
+		log.Fatal("failed to start http server: ", err.Error())
+	}
+
+	err = srv.StartIRCClient()
+	if err != nil {
+		log.Fatal("failed to start IRC client: ", err.Error())
 	}
 
 	go waitForTraceRequest()

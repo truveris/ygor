@@ -159,8 +159,8 @@ func (srv *Server) IRCPrivAction(channel, msg string) {
 	srv.IRCOutputQueue <- outmsg
 }
 
-// StartIRCAdapter connects the server to the IRC server.
-func (srv *Server) StartIRCAdapter() error {
+// StartIRCClient connects the server to the IRC server.
+func (srv *Server) StartIRCClient() error {
 	cfg := srv.Config
 	conn = irc.IRC(cfg.IRCNickname, cfg.IRCNickname)
 	//conn.VerboseCallbackHandler = true
