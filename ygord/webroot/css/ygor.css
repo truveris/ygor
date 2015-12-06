@@ -1,6 +1,9 @@
 /* Overlay style */
-html {
-	font-size: 100%;
+#modal h1 {
+	font-size: 400%;
+}
+#modal p {
+	font-size: 150%;
 }
 .overlay {
 	position: fixed;
