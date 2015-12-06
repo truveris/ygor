@@ -38,10 +38,10 @@ func (module *SayModule) PrivMsg(srv *Server, msg *IRCInputMessage) {
 	mediaItem := make(map[string]string)
 	mediaItem["url"] = sayURL
 
-	media, parseMObjErr := NewMedia(srv, mediaItem, "playTrack", false, false,
+	media, err := NewMedia(srv, mediaItem, "playTrack", false, false,
 		[]string{})
-	if parseMObjErr != nil {
-		srv.IRCPrivMsg(msg.ReplyTo, parseMObjErr.Error())
+	if err != nil {
+		srv.IRCPrivMsg(msg.ReplyTo, err.Error())
 		return
 	}
 

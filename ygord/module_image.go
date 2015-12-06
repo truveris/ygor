@@ -14,13 +14,13 @@ func (module *ImageModule) PrivMsg(srv *Server, msg *IRCInputMessage) {
 
 	// Validate the command's usage, and get back a map representing the media
 	// item that was passed, along with it's start and end bounds.
-	mediaItem, parseArgErr := parseArgList(msg.Args)
-	if parseArgErr != nil {
+	mediaItem, err := parseArgList(msg.Args)
+	if err != nil {
 		srv.IRCPrivMsg(msg.ReplyTo, usage)
 		return
 	}
 
-	media, parseMObjErr := NewMedia(srv, mediaItem, "imageTrack", true, true,
+	media, err := NewMedia(srv, mediaItem, "imageTrack", true, true,
 		[]string{
 			"vimeo",
 			"youtube",
@@ -28,8 +28,8 @@ func (module *ImageModule) PrivMsg(srv *Server, msg *IRCInputMessage) {
 			"img",
 			"web",
 		})
-	if parseMObjErr != nil {
-		srv.IRCPrivMsg(msg.ReplyTo, parseMObjErr.Error())
+	if err != nil {
+		srv.IRCPrivMsg(msg.ReplyTo, err.Error())
 		return
 	}
 
