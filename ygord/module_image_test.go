@@ -5,10 +5,13 @@ package main
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestModuleImage_Usage(t *testing.T) {
-	srv := CreateTestServer(t)
+	srv := CreateTestServer()
+	client := srv.GetClientFromID(srv.RegisterClient("dummy", "#test"))
 
 	m := &ImageModule{}
 	m.Init(srv)
@@ -17,8 +20,11 @@ func TestModuleImage_Usage(t *testing.T) {
 		Args:    []string{},
 	})
 
-	//	msgs := srv.FlushOutputQueue()
-	//	AssertIntEquals(t, len(msgs), 1)
-	//	AssertStringEquals(t, msgs[0].Channel, "#test")
-	//	AssertStringEquals(t, msgs[0].Body, "usage: image url")
+	msgs := srv.FlushIRCOutputQueue()
+	if assert.Len(t, msgs, 1) {
+		assert.Equal(t, "#test", msgs[0].Channel)
+		assert.Equal(t, "usage: image url [end]", msgs[0].Body)
+	}
+
+	assert.Empty(t, client.FlushQueue())
 }

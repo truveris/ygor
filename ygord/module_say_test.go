@@ -5,10 +5,13 @@ package main
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestModuleSayUsageOnNoParams(t *testing.T) {
-	srv := CreateTestServer(t)
+	srv := CreateTestServer()
+	client := srv.GetClientFromID(srv.RegisterClient("dummy", "#test"))
 
 	m := &SayModule{}
 	m.Init(srv)
@@ -17,14 +20,18 @@ func TestModuleSayUsageOnNoParams(t *testing.T) {
 		Args:    []string{},
 	})
 
-	// msgs := srv.FlushOutputQueue()
-	// AssertIntEquals(t, len(msgs), 1)
-	// AssertStringEquals(t, msgs[0].Channel, "#test")
-	// AssertStringEquals(t, msgs[0].Body, "usage: say [-v voice] sentence")
+	msgs := srv.FlushIRCOutputQueue()
+	if assert.Len(t, msgs, 1) {
+		assert.Equal(t, "#test", msgs[0].Channel)
+		assert.Equal(t, "usage: say [-v voice] sentence", msgs[0].Body)
+	}
+
+	assert.Empty(t, client.FlushQueue())
 }
 
 func TestModuleSayNoConfig(t *testing.T) {
-	srv := CreateTestServer(t)
+	srv := CreateTestServer()
+	client := srv.GetClientFromID(srv.RegisterClient("dummy", "#test"))
 
 	m := &SayModule{}
 	m.Init(srv)
@@ -33,8 +40,11 @@ func TestModuleSayNoConfig(t *testing.T) {
 		Args:    []string{"hello"},
 	})
 
-	// msgs := srv.FlushOutputQueue()
-	// AssertIntEquals(t, len(msgs), 1)
-	// AssertStringEquals(t, msgs[0].Channel, "#test")
-	// AssertStringEquals(t, msgs[0].Body, "error: SaydURL is not configured")
+	msgs := srv.FlushIRCOutputQueue()
+	if assert.Len(t, msgs, 1) {
+		assert.Equal(t, "#test", msgs[0].Channel)
+		assert.Equal(t, "error: SaydURL is not configured", msgs[0].Body)
+	}
+
+	assert.Empty(t, client.FlushQueue())
 }

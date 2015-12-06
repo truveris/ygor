@@ -5,10 +5,13 @@ package main
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestModuleVolume_UsageNoParams(t *testing.T) {
-	srv := CreateTestServer(t)
+	srv := CreateTestServer()
+	client := srv.GetClientFromID(srv.RegisterClient("dummy", "#test"))
 
 	m := &VolumeModule{}
 	m.Init(srv)
@@ -17,14 +20,18 @@ func TestModuleVolume_UsageNoParams(t *testing.T) {
 		Args:    []string{},
 	})
 
-	// msgs := srv.FlushOutputQueue()
-	// AssertIntEquals(t, len(msgs), 1)
-	// AssertStringEquals(t, msgs[0].Channel, "#test")
-	// AssertStringEquals(t, msgs[0].Body, "usage: volume percent")
+	msgs := srv.FlushIRCOutputQueue()
+	if assert.Len(t, msgs, 1) {
+		assert.Equal(t, "#test", msgs[0].Channel)
+		assert.Equal(t, "usage: volume percent", msgs[0].Body)
+	}
+
+	assert.Empty(t, client.FlushQueue())
 }
 
 func TestModuleVolume_BadValues(t *testing.T) {
-	srv := CreateTestServer(t)
+	srv := CreateTestServer()
+	client := srv.GetClientFromID(srv.RegisterClient("dummy", "#test"))
 
 	m := &VolumeModule{}
 	m.Init(srv)
@@ -33,34 +40,23 @@ func TestModuleVolume_BadValues(t *testing.T) {
 		ReplyTo: "#test",
 		Args:    []string{"-10%"},
 	})
-	// msgs := srv.FlushOutputQueue()
-	// AssertIntEquals(t, len(msgs), 1)
-	// AssertStringEquals(t, msgs[0].Channel, "#test")
-	// AssertStringEquals(t, msgs[0].Body, "error: bad input, must be absolute rounded percent value (e.g. 42%)")
+
+	msgs := srv.FlushIRCOutputQueue()
+	if assert.Len(t, msgs, 1) {
+		assert.Equal(t, "#test", msgs[0].Channel)
+		assert.Equal(t, "error: bad input, must be absolute rounded percent value (e.g. 42%)", msgs[0].Body)
+	}
+	assert.Empty(t, client.FlushQueue())
 
 	m.PrivMsg(srv, &IRCInputMessage{
 		ReplyTo: "#test",
 		Args:    []string{"wat"},
 	})
-	// msgs = srv.FlushOutputQueue()
-	// AssertIntEquals(t, len(msgs), 1)
-	// AssertStringEquals(t, msgs[0].Channel, "#test")
-	// AssertStringEquals(t, msgs[0].Body, "error: bad input, must be absolute rounded percent value (e.g. 42%)")
-}
 
-// func TestModuleVolume_MinionError(t *testing.T) {
-// 	srv := CreateTestServer(t)
-//
-// 	m := &VolumeModule{}
-// 	m.Init(srv)
-//
-// 	m.MinionMsg(srv, &IRCInputMessage{
-// 		UserID: "UserID-pi1",
-// 		Args:   []string{"error", "things"},
-// 	})
-//
-// 	msgs := srv.FlushOutputQueue()
-// 	AssertIntEquals(t, len(msgs), 1)
-// 	AssertStringEquals(t, msgs[0].Channel, "#test")
-// 	AssertStringEquals(t, msgs[0].Body, "volume@pi1: error things")
-// }
+	msgs = srv.FlushIRCOutputQueue()
+	if assert.Len(t, msgs, 1) {
+		assert.Equal(t, "#test", msgs[0].Channel)
+		assert.Equal(t, "error: bad input, must be absolute rounded percent value (e.g. 42%)", msgs[0].Body)
+	}
+	assert.Empty(t, client.FlushQueue())
+}

@@ -12,11 +12,11 @@
 package main
 
 import (
-	"github.com/thoj/go-ircevent"
 	"log"
 	"regexp"
 	"strings"
 
+	"github.com/thoj/go-ircevent"
 	"github.com/truveris/ygor/ygord/lexer"
 )
 
@@ -47,7 +47,7 @@ func (srv *Server) NewMessagesFromBody(body string, recursion int) ([]*IRCInputM
 		}
 
 		msg := NewIRCInputMessage()
-		msg.Recursion = recursion
+		msg.Recursion = recursion + 1
 		msg.Body = strings.Join(words, " ")
 		msg.Command = words[0]
 

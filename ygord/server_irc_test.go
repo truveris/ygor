@@ -4,14 +4,14 @@
 package main
 
 import (
-	"fmt"
-	"github.com/thoj/go-ircevent"
 	"testing"
-	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/thoj/go-ircevent"
 )
 
 func TestServerIRCAddressedWithoutSpace(t *testing.T) {
-	srv := CreateTestServer(t)
+	srv := CreateTestServer()
 
 	msgs := srv.NewMessagesFromIRCEvent(&irc.Event{
 		Code:      "PRIVMSG",
@@ -19,12 +19,14 @@ func TestServerIRCAddressedWithoutSpace(t *testing.T) {
 		Arguments: []string{"#test", "whygore:minions"},
 	})
 
-	AssertIntEquals(t, len(msgs), 1)
-	AssertStringEquals(t, msgs[0].Body, "minions")
+	if assert.Len(t, msgs, 1) {
+		assert.Equal(t, "#test", msgs[0].ReplyTo)
+		assert.Equal(t, "minions", msgs[0].Body)
+	}
 }
 
 func TestServerIRCAddressedWithoutColon(t *testing.T) {
-	srv := CreateTestServer(t)
+	srv := CreateTestServer()
 
 	msgs := srv.NewMessagesFromIRCEvent(&irc.Event{
 		Code:      "PRIVMSG",
@@ -32,12 +34,14 @@ func TestServerIRCAddressedWithoutColon(t *testing.T) {
 		Arguments: []string{"#test", "whygore minions"},
 	})
 
-	AssertIntEquals(t, len(msgs), 1)
-	AssertStringEquals(t, msgs[0].Body, "minions")
+	if assert.Len(t, msgs, 1) {
+		assert.Equal(t, "#test", msgs[0].ReplyTo)
+		assert.Equal(t, "minions", msgs[0].Body)
+	}
 }
 
 func TestServerIRCAddressedSpacesEverywhere(t *testing.T) {
-	srv := CreateTestServer(t)
+	srv := CreateTestServer()
 
 	msgs := srv.NewMessagesFromIRCEvent(&irc.Event{
 		Code:      "PRIVMSG",
@@ -45,14 +49,15 @@ func TestServerIRCAddressedSpacesEverywhere(t *testing.T) {
 		Arguments: []string{"#test", "  whygore   minions  "},
 	})
 
-	AssertIntEquals(t, len(msgs), 1)
-	AssertStringEquals(t, msgs[0].Body, "minions")
+	if assert.Len(t, msgs, 1) {
+		assert.Equal(t, "#test", msgs[0].ReplyTo)
+		assert.Equal(t, "minions", msgs[0].Body)
+	}
 }
 
 func TestServerIRCResolveAlias(t *testing.T) {
-	now := time.Date(1982, 10, 20, 16, 0, 0, 0, time.UTC)
-	srv := CreateTestServer(t)
-	srv.Aliases.Add("coffee", "play freshpots.mp3", "human", now)
+	srv := CreateTestServer()
+	srv.Aliases.Add("coffee", "play freshpots.mp3", "human", fakeNow)
 
 	msgs := srv.NewMessagesFromIRCEvent(&irc.Event{
 		Code:      "PRIVMSG",
@@ -60,12 +65,14 @@ func TestServerIRCResolveAlias(t *testing.T) {
 		Arguments: []string{"#test", "whygore: coffee"},
 	})
 
-	AssertIntEquals(t, len(msgs), 1)
-	AssertStringEquals(t, msgs[0].Body, "play freshpots.mp3")
+	if assert.Len(t, msgs, 1) {
+		assert.Equal(t, "#test", msgs[0].ReplyTo)
+		assert.Equal(t, "play freshpots.mp3", msgs[0].Body)
+	}
 }
 
 func TestServerIRCSeparateStatements(t *testing.T) {
-	srv := CreateTestServer(t)
+	srv := CreateTestServer()
 
 	msgs := srv.NewMessagesFromIRCEvent(&irc.Event{
 		Code:      "PRIVMSG",
@@ -73,15 +80,17 @@ func TestServerIRCSeparateStatements(t *testing.T) {
 		Arguments: []string{"#test", "whygore: play freshpots.mp3; image freshpots.gif"},
 	})
 
-	AssertIntEquals(t, len(msgs), 2)
-	AssertStringEquals(t, msgs[0].Body, "play freshpots.mp3")
-	AssertStringEquals(t, msgs[1].Body, "image freshpots.gif")
+	if assert.Len(t, msgs, 2) {
+		assert.Equal(t, "#test", msgs[0].ReplyTo)
+		assert.Equal(t, "play freshpots.mp3", msgs[0].Body)
+		assert.Equal(t, "#test", msgs[1].ReplyTo)
+		assert.Equal(t, "image freshpots.gif", msgs[1].Body)
+	}
 }
 
 func TestServerIRCSeparateStatementsInAlias(t *testing.T) {
-	now := time.Date(1982, 10, 20, 16, 0, 0, 0, time.UTC)
-	srv := CreateTestServer(t)
-	srv.Aliases.Add("coffee", "play freshpots.mp3; image freshpots.gif", "human", now)
+	srv := CreateTestServer()
+	srv.Aliases.Add("coffee", "play freshpots.mp3; image freshpots.gif", "human", fakeNow)
 
 	msgs := srv.NewMessagesFromIRCEvent(&irc.Event{
 		Code:      "PRIVMSG",
@@ -89,17 +98,19 @@ func TestServerIRCSeparateStatementsInAlias(t *testing.T) {
 		Arguments: []string{"#test", "whygore: coffee"},
 	})
 
-	AssertIntEquals(t, len(msgs), 2)
-	AssertStringEquals(t, msgs[0].Body, "play freshpots.mp3")
-	AssertStringEquals(t, msgs[1].Body, "image freshpots.gif")
+	if assert.Len(t, msgs, 2) {
+		assert.Equal(t, "#test", msgs[0].ReplyTo)
+		assert.Equal(t, "play freshpots.mp3", msgs[0].Body)
+		assert.Equal(t, "#test", msgs[1].ReplyTo)
+		assert.Equal(t, "image freshpots.gif", msgs[1].Body)
+	}
 }
 
 func TestServerIRCSeparateStatementsInNestedAlias(t *testing.T) {
-	now := time.Date(1982, 10, 20, 16, 0, 0, 0, time.UTC)
-	srv := CreateTestServer(t)
-	srv.Aliases.Add("coffee.mp3", "play freshpots.mp3; nop", "human", now)
-	srv.Aliases.Add("coffee.gif", "image freshpots.gif; nop", "human", now)
-	srv.Aliases.Add("coffee", "coffee.mp3; coffee.gif", "human", now)
+	srv := CreateTestServer()
+	srv.Aliases.Add("coffee.mp3", "play freshpots.mp3; nop", "human", fakeNow)
+	srv.Aliases.Add("coffee.gif", "image freshpots.gif; nop", "human", fakeNow)
+	srv.Aliases.Add("coffee", "coffee.mp3; coffee.gif", "human", fakeNow)
 
 	msgs := srv.NewMessagesFromIRCEvent(&irc.Event{
 		Code:      "PRIVMSG",
@@ -107,21 +118,22 @@ func TestServerIRCSeparateStatementsInNestedAlias(t *testing.T) {
 		Arguments: []string{"#test", "whygore: coffee"},
 	})
 
-	if len(msgs) != 4 {
-		t.Error(fmt.Sprintf("wrong number of messages %d != 4", len(msgs)))
-		// return
+	if assert.Len(t, msgs, 4) {
+		assert.Equal(t, "#test", msgs[0].ReplyTo)
+		assert.Equal(t, "play freshpots.mp3", msgs[0].Body)
+		assert.Equal(t, "#test", msgs[1].ReplyTo)
+		assert.Equal(t, "nop", msgs[1].Body)
+		assert.Equal(t, "#test", msgs[2].ReplyTo)
+		assert.Equal(t, "image freshpots.gif", msgs[2].Body)
+		assert.Equal(t, "#test", msgs[3].ReplyTo)
+		assert.Equal(t, "nop", msgs[3].Body)
 	}
-	AssertStringEquals(t, msgs[0].Body, "play freshpots.mp3")
-	AssertStringEquals(t, msgs[1].Body, "nop")
-	AssertStringEquals(t, msgs[2].Body, "image freshpots.gif")
-	AssertStringEquals(t, msgs[3].Body, "nop")
 }
 
 func TestServerIRCMaxRecursionAlias(t *testing.T) {
-	now := time.Date(1982, 10, 20, 16, 0, 0, 0, time.UTC)
-	srv := CreateTestServer(t)
-	srv.Aliases.Add("coffee", "bean", "human", now)
-	srv.Aliases.Add("bean", "coffee", "human", now)
+	srv := CreateTestServer()
+	srv.Aliases.Add("coffee", "bean", "human", fakeNow)
+	srv.Aliases.Add("bean", "coffee", "human", fakeNow)
 
 	msgs := srv.NewMessagesFromIRCEvent(&irc.Event{
 		Code:      "PRIVMSG",
@@ -129,31 +141,30 @@ func TestServerIRCMaxRecursionAlias(t *testing.T) {
 		Arguments: []string{"#test", "whygore: coffee"},
 	})
 
-	AssertIntEquals(t, len(msgs), 0)
+	assert.Empty(t, msgs)
 
-	// omsgs := srv.FlushOutputQueue()
-	// AssertIntEquals(t, len(omsgs), 1)
-	// AssertStringEquals(t, omsgs[0].Channel, "#test")
-	// AssertStringEquals(t, omsgs[0].Body, "lexer/expand error: max recursion reached")
+	omsgs := srv.FlushIRCOutputQueue()
+	if assert.Len(t, omsgs, 1) {
+		assert.Equal(t, "#test", omsgs[0].Channel)
+		assert.Equal(t, "lexer/expand error: max recursion reached", omsgs[0].Body)
+	}
 }
 
-// func TestServerIRCMaxRecursionRandom(t *testing.T) {
-// 	now := time.Date(1982, 10, 20, 16, 0, 0, 0, time.UTC)
-// 	srv := CreateTestServer(t)
-// 	srv.Aliases.Add("coffee", "bean", "human", now)
-// 	srv.Aliases.Add("bean", "random coffee", "human", now)
-//
-// 	msgs := srv.NewMessagesFromIRCEvent(&irc.Event{
-// 		Code:      "PRIVMSG",
-// 		Nick:      "foobar",
-// 		Arguments: []string{"#test", "whygore: coffee"},
-// 	})
-//
-// 	if len(msgs) != 1 {
-// 		t.Error(fmt.Sprintf("wrong number of messages %d != 1", len(msgs)))
-// 		return
-// 	}
-//
-// 	AssertStringEquals(t, msgs[0].Body, "random coffee")
-// 	AssertIntEquals(t, msgs[0].Recursion, 1)
-// }
+func TestServerIRCMaxRecursionRandom(t *testing.T) {
+	srv := CreateTestServer()
+	srv.Aliases.Add("coffee", "bean", "human", fakeNow)
+	srv.Aliases.Add("bean", "random coffee", "human", fakeNow)
+
+	msgs := srv.NewMessagesFromIRCEvent(&irc.Event{
+		Code:      "PRIVMSG",
+		Nick:      "foobar",
+		Arguments: []string{"#test", "whygore: coffee"},
+	})
+
+	if assert.Len(t, msgs, 1) {
+		assert.Equal(t, "#test", msgs[0].ReplyTo)
+		assert.Equal(t, "random coffee", msgs[0].Body)
+		assert.Equal(t, 1, msgs[0].Recursion)
+	}
+
+}

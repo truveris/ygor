@@ -4,12 +4,13 @@
 package main
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestModuleNop(t *testing.T) {
-	srv := CreateTestServer(t)
+	srv := CreateTestServer()
 	client := srv.GetClientFromID(srv.RegisterClient("dummy", "#test"))
 
 	m := &NopModule{}
