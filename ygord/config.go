@@ -18,25 +18,13 @@ type CmdLine struct {
 
 // ChannelCfg represents a per-channel grouping of minions.
 type ChannelCfg struct {
-	Minions []string
 }
 
 // Config is a singleton used to store the file configuration.
 type Config struct {
-	// AWS Region to use for SQS access (e.g. us-east-1).
-	AWSRegionCode string
-
-	// AWS access key id
-	AWSAccessKeyID string
-	// AWS secret access key
-	AWSSecretAccessKey string
-
 	// All the configured channels. ygord will JOIN every single one of
 	// them and will push commands to the configured associated minions.
 	Channels map[string]ChannelCfg
-
-	// Queue used by ygord to receive feedback from the minions.
-	QueueName string
 
 	// Hostname and port to use to connect to the IRC server.
 	IRCServer string
@@ -56,9 +44,6 @@ type Config struct {
 
 	// Where to find the web files (static folder).
 	WebRoot string
-
-	// Where to find the minions file.
-	MinionsFilePath string
 
 	// If defined, start a web server to list the aliases (e.g. :8989)
 	HTTPServerAddress string
@@ -88,22 +73,6 @@ func (cfg *Config) GetAutoJoinChannels() []string {
 	return channels.Array()
 }
 
-// GetChannelsByMinion returns a list of channels given a minion name.
-func (cfg *Config) GetChannelsByMinion(name string) []string {
-	var channels []string
-
-	for channelName, channelCfg := range cfg.Channels {
-		for _, minionName := range channelCfg.Minions {
-			if minionName == name {
-				channels = append(channels, channelName)
-				break
-			}
-		}
-	}
-
-	return channels
-}
-
 // ParseConfigFile reads our JSON config file and validates its values, also
 // populating defaults when possible.
 func ParseConfigFile(cmd *CmdLine) (*Config, error) {
@@ -119,10 +88,6 @@ func ParseConfigFile(cmd *CmdLine) (*Config, error) {
 		return nil, err
 	}
 
-	if cfg.QueueName == "" {
-		return cfg, errors.New("'QueueName' is not defined")
-	}
-
 	if cfg.IRCServer == "" {
 		return cfg, errors.New("'IRCServer' is not defined")
 	}
@@ -131,24 +96,8 @@ func ParseConfigFile(cmd *CmdLine) (*Config, error) {
 		return cfg, errors.New("'IRCNickname' is not defined")
 	}
 
-	if cfg.AWSRegionCode == "" {
-		return cfg, errors.New("'AWSRegionCode' is not defined")
-	}
-
-	if cfg.AWSAccessKeyID == "" {
-		return cfg, errors.New("'AWSAccessKeyID' is not defined")
-	}
-
-	if cfg.AWSSecretAccessKey == "" {
-		return cfg, errors.New("'AWSSecretAccessKey' is not defined")
-	}
-
 	if cfg.AliasFilePath == "" {
 		cfg.AliasFilePath = "aliases.cfg"
-	}
-
-	if cfg.MinionsFilePath == "" {
-		cfg.MinionsFilePath = "minions.cfg"
 	}
 
 	// If a web server is started, make sure we configure a web root.
