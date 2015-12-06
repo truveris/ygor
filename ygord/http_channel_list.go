@@ -9,17 +9,19 @@ import (
 	"strings"
 )
 
+// ChannelListHandler is an HTTP handler returning a JSON document with a list
+// of all the registered channels to date.
 type ChannelListHandler struct {
 	*Server
 }
 
-type Channel struct {
-	Id   string
+type channel struct {
+	ID   string
 	Name string
 }
 
-type ChannelListResponse struct {
-	Channels []Channel
+type channelListResponse struct {
+	Channels []channel
 }
 
 func (handler *ChannelListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -29,13 +31,13 @@ func (handler *ChannelListHandler) ServeHTTP(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	response := ChannelListResponse{}
+	response := channelListResponse{}
 
 	// Strip the '#' from the channel, that identifier is given to the
 	// tune-in handler.
-	for name, _ := range handler.Server.Config.Channels {
-		response.Channels = append(response.Channels, Channel{
-			Id:   strings.TrimPrefix(name, "#"),
+	for name := range handler.Server.Config.Channels {
+		response.Channels = append(response.Channels, channel{
+			ID:   strings.TrimPrefix(name, "#"),
 			Name: name,
 		})
 	}

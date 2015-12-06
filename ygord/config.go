@@ -11,7 +11,7 @@ import (
 	"github.com/jessevdk/go-flags"
 )
 
-// Cmd is a singleton used to store the command-line parameters.
+// CmdLine is a singleton used to store the command-line parameters.
 type CmdLine struct {
 	ConfigFile string `short:"c" description:"Configuration file" default:"/etc/ygord.conf"`
 }
@@ -88,7 +88,7 @@ func (cfg *Config) GetAutoJoinChannels() []string {
 	return channels.Array()
 }
 
-// GetChannelsByMinionName returns a list of channels given a minion name.
+// GetChannelsByMinion returns a list of channels given a minion name.
 func (cfg *Config) GetChannelsByMinion(name string) []string {
 	var channels []string
 

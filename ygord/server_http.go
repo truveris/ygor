@@ -68,7 +68,7 @@ func errorHandler(w http.ResponseWriter, msg string, err error) {
 	http.Error(w, msg, 500)
 }
 
-func JSONHandler(w http.ResponseWriter, obj interface{}) {
+func jsonHandler(w http.ResponseWriter, obj interface{}) {
 	encoder := json.NewEncoder(w)
 	err := encoder.Encode(obj)
 	if err != nil {

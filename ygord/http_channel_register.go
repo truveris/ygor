@@ -9,15 +9,17 @@ import (
 	"time"
 )
 
+// ChannelRegisterHandler is the HTTP handler for clients to register to a
+// channel.
 type ChannelRegisterHandler struct {
 	*Server
 }
 
-type ChannelRegisterRequest struct {
+type channelRegisterRequest struct {
 	ChannelID string
 }
 
-type ChannelRegisterResponse struct {
+type channelRegisterResponse struct {
 	ClientID string
 }
 
@@ -29,7 +31,7 @@ func (handler *ChannelRegisterHandler) ServeHTTP(w http.ResponseWriter, r *http.
 	}
 
 	decoder := json.NewDecoder(r.Body)
-	input := &ChannelRegisterRequest{}
+	input := &channelRegisterRequest{}
 	err = decoder.Decode(input)
 	if err != nil {
 		errorHandler(w, "Failed to decode input JSON", err)
@@ -44,5 +46,5 @@ func (handler *ChannelRegisterHandler) ServeHTTP(w http.ResponseWriter, r *http.
 	case <-time.After(time.Second * 2):
 	}
 
-	JSONHandler(w, ChannelRegisterResponse{ClientID: clientID})
+	jsonHandler(w, channelRegisterResponse{ClientID: clientID})
 }

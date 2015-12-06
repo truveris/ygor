@@ -12,6 +12,9 @@ import (
 	"github.com/truveris/ygor/ygord/alias"
 )
 
+// Server is the main internal struct representing ygord.  This struct is a
+// singleton and is available in most sub-system to access the current state
+// or the configuration struct.
 type Server struct {
 	Aliases            *alias.File
 	ClientRegistry     map[string]*Client
@@ -23,6 +26,8 @@ type Server struct {
 	*Config
 }
 
+// CreateServer produces the Server singleton with all its attributes set to
+// proper defaults and all the channels initialized.
 func CreateServer(config *Config) *Server {
 	var err error
 	srv := &Server{Config: config}
@@ -76,7 +81,7 @@ func (srv *Server) SendToChannelMinions(channel, msg string) {
 		if client.IsAlive() {
 			client.Queue <- msg
 		} else {
-			srv.PurgeClient(client)
+			srv.UnregisterClient(client)
 		}
 	}
 }

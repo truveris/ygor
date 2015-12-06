@@ -27,7 +27,7 @@ const (
 	OutMsgTypeMinion  OutMsgType = iota
 )
 
-// OutgoingMessage is a representation of a message passed through ygord, be it IRC,
+// OutputMessage is a representation of a message passed through ygord, be it IRC,
 // minion, etc.
 type OutputMessage struct {
 	Type     OutMsgType

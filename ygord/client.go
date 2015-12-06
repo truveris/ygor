@@ -15,6 +15,8 @@ import (
 )
 
 const (
+	// MaxQueueLength defines the maximum number of messages we will store
+	// for a client before considering it dead.
 	MaxQueueLength = 1024
 )
 
@@ -40,6 +42,7 @@ func (c *Client) IsAlive() bool {
 	return true
 }
 
+// KeepAlive resets the LastSeen timestamp of its client.
 func (c *Client) KeepAlive() {
 	c.LastSeen = time.Now()
 }
@@ -64,6 +67,7 @@ func (srv *Server) RegisterClient(username, channel string) string {
 	return ID
 }
 
+// GetClientFromID returns a client struct from its registered unique ID.
 func (srv *Server) GetClientFromID(ID string) *Client {
 	client, ok := srv.ClientRegistry[ID]
 	if !ok {
@@ -73,6 +77,7 @@ func (srv *Server) GetClientFromID(ID string) *Client {
 	return client
 }
 
+// GetClientsByChannel returns a list of client structs based on a channel.
 func (srv *Server) GetClientsByChannel(channel string) []*Client {
 	var clients []*Client
 
@@ -85,5 +90,8 @@ func (srv *Server) GetClientsByChannel(channel string) []*Client {
 	return clients
 }
 
-func (srv *Server) PurgeClient(client *Client) {
+// UnregisterClient removes a client struct from the registry and remove all
+// reference to it so that it gets garbage collected.
+func (srv *Server) UnregisterClient(client *Client) {
+	delete(srv.ClientRegistry, client.ID)
 }

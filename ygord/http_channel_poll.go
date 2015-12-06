@@ -9,15 +9,18 @@ import (
 	"time"
 )
 
+// ChannelPollHandler is the HTTP handler user by clients to wait on content
+// from the ygor server.  Client post a JSON object containing their ClientID
+// and receive the array of commands to execute.
 type ChannelPollHandler struct {
 	*Server
 }
 
-type ChannelPollRequest struct {
+type channelPollRequest struct {
 	ClientID string
 }
 
-type ChannelPollResponse struct {
+type channelPollResponse struct {
 	Status   string
 	Commands []string
 }
@@ -30,7 +33,7 @@ func (handler *ChannelPollHandler) ServeHTTP(w http.ResponseWriter, r *http.Requ
 	}
 
 	decoder := json.NewDecoder(r.Body)
-	input := &ChannelPollRequest{}
+	input := &channelPollRequest{}
 	err = decoder.Decode(input)
 	if err != nil {
 		errorHandler(w, "Failed to decode input JSON", err)
@@ -39,13 +42,13 @@ func (handler *ChannelPollHandler) ServeHTTP(w http.ResponseWriter, r *http.Requ
 
 	client := handler.Server.GetClientFromID(input.ClientID)
 	if client == nil {
-		JSONHandler(w, ChannelPollResponse{Status: "unknown-client"})
+		jsonHandler(w, channelPollResponse{Status: "unknown-client"})
 		return
 	}
 
 	client.KeepAlive()
 
-	response := ChannelPollResponse{}
+	response := channelPollResponse{}
 
 	// First try to get all the commands in the queue.
 pullChan:

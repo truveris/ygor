@@ -160,6 +160,7 @@ func (srv *Server) IRCPrivAction(channel, msg string) {
 	srv.OutputQueue <- outmsg
 }
 
+// StartIRCAdapter connects the server to the IRC server.
 func (srv *Server) StartIRCAdapter() error {
 	cfg := srv.Config
 	conn = irc.IRC(cfg.IRCNickname, cfg.IRCNickname)
