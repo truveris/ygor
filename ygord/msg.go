@@ -3,47 +3,39 @@
 
 package main
 
-// MsgType is used to categorize the message type constants below.
-type MsgType int
+// IRCInputMsgType is used to categorize the message type constants below.
+type IRCInputMsgType int
 
-// OutMsgType is used to categorize the outgoing message type constants below.
-type OutMsgType int
+// IRCOutMsgType is used to categorize the outgoing message type constants below.
+type IRCOutMsgType int
 
 // Types of messages received from any various source (IRC, minions, etc.).
 // The first types are used for communication between the different components.
 // The Exit and Fatal types are used for flow control and are mostly triggered
 // internally (e.g. IO error).
 const (
-	MsgTypeUnknown    MsgType = iota
-	MsgTypeIRCChannel MsgType = iota
-	MsgTypeIRCPrivate MsgType = iota
-	MsgTypeAPI        MsgType = iota
-	MsgTypeMinion     MsgType = iota
-	MsgTypeExit       MsgType = iota
-	MsgTypeFatal      MsgType = iota
+	IRCInputMsgTypeUnknown    IRCInputMsgType = iota
+	IRCInputMsgTypeIRCChannel IRCInputMsgType = iota
+	IRCInputMsgTypeIRCPrivate IRCInputMsgType = iota
 
-	OutMsgTypePrivMsg OutMsgType = iota
-	OutMsgTypeAction  OutMsgType = iota
-	OutMsgTypeMinion  OutMsgType = iota
+	IRCOutMsgTypePrivMsg IRCOutMsgType = iota
+	IRCOutMsgTypeAction  IRCOutMsgType = iota
 )
 
-// OutputMessage is a representation of a message passed through ygord, be it IRC,
-// minion, etc.
-type OutputMessage struct {
-	Type     OutMsgType
-	Channel  string
-	QueueURL string
-	Body     string
+// IRCOutputMessage is the representation of an outbound IRC message.
+type IRCOutputMessage struct {
+	Type    IRCOutMsgType
+	Channel string
+	Body    string
 }
 
-// Message is a representation of a message passed through ygord, be it IRC,
-// minion, etc.
-type Message struct {
-	Type    MsgType
-	UserID  string
-	Command string
-	Body    string
-	// In the case of an IRC message, this is a nickname or a channel.
+// IRCInputMessage is a representation of an incoming IRC message
+type IRCInputMessage struct {
+	Type     IRCInputMsgType
+	Nickname string
+	Command  string
+	Body     string
+	// ReplyTo could be a nickname or a channel.
 	ReplyTo string
 	Args    []string
 
@@ -54,25 +46,9 @@ type Message struct {
 	Recursion int
 }
 
-// NewMessage allocates a new message without type.
-func NewMessage() *Message {
-	msg := &Message{}
-	msg.Type = MsgTypeUnknown
-	return msg
-}
-
-// NewExitMessage allocates a new message of type Exit.
-func NewExitMessage(body string) *Message {
-	msg := NewMessage()
-	msg.Type = MsgTypeExit
-	msg.Body = body
-	return msg
-}
-
-// NewFatalMessage allocates a new message of type Fatal.
-func NewFatalMessage(body string) *Message {
-	msg := NewMessage()
-	msg.Type = MsgTypeFatal
-	msg.Body = body
+// NewIRCInputMessage allocates a new message without type.
+func NewIRCInputMessage() *IRCInputMessage {
+	msg := &IRCInputMessage{}
+	msg.Type = IRCInputMsgTypeUnknown
 	return msg
 }

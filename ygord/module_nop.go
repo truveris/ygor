@@ -9,7 +9,7 @@ package main
 type NopModule struct{}
 
 // PrivMsg is the message handler for 'nop' requests.
-func (module *NopModule) PrivMsg(srv *Server, msg *Message) {
+func (module *NopModule) PrivMsg(srv *Server, msg *IRCInputMessage) {
 }
 
 // Init registers all the commands for this module.

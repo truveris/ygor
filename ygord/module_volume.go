@@ -15,7 +15,7 @@ var (
 type VolumeModule struct{}
 
 // PrivMsg is the message handler for user 'volume' requests.
-func (module VolumeModule) PrivMsg(srv *Server, msg *Message) {
+func (module VolumeModule) PrivMsg(srv *Server, msg *IRCInputMessage) {
 	if len(msg.Args) != 1 {
 		srv.IRCPrivMsg(msg.ReplyTo, "usage: volume percent")
 		return
@@ -31,7 +31,7 @@ func (module VolumeModule) PrivMsg(srv *Server, msg *Message) {
 
 // PrivMsgPlusPlus is the message handler for user 'volume++' requests, it
 // increments the volume by 1dB.
-func (module VolumeModule) PrivMsgPlusPlus(srv *Server, msg *Message) {
+func (module VolumeModule) PrivMsgPlusPlus(srv *Server, msg *IRCInputMessage) {
 	if len(msg.Args) != 0 {
 		srv.IRCPrivMsg(msg.ReplyTo, "usage: volume++")
 		return
@@ -41,7 +41,7 @@ func (module VolumeModule) PrivMsgPlusPlus(srv *Server, msg *Message) {
 
 // PrivMsgMinusMinus is the message handler for user 'volume--' requests, it
 // decrements the volume by 1dB.
-func (module VolumeModule) PrivMsgMinusMinus(srv *Server, msg *Message) {
+func (module VolumeModule) PrivMsgMinusMinus(srv *Server, msg *IRCInputMessage) {
 	if len(msg.Args) != 0 {
 		srv.IRCPrivMsg(msg.ReplyTo, "usage: volume--")
 		return

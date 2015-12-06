@@ -15,7 +15,7 @@ import (
 type CommandsModule struct{}
 
 // PrivMsg is the message handler for user 'commands' requests.
-func (module *CommandsModule) PrivMsg(srv *Server, msg *Message) {
+func (module *CommandsModule) PrivMsg(srv *Server, msg *IRCInputMessage) {
 	var names []string
 
 	for name, cmd := range srv.RegisteredCommands {

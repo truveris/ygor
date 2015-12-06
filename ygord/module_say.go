@@ -19,7 +19,7 @@ type SayCmdLine struct {
 type SayModule struct{}
 
 // PrivMsg is the message handler for user requests.
-func (module *SayModule) PrivMsg(srv *Server, msg *Message) {
+func (module *SayModule) PrivMsg(srv *Server, msg *IRCInputMessage) {
 	cmd := SayCmdLine{}
 
 	flagParser := flags.NewParser(&cmd, flags.PassDoubleDash)

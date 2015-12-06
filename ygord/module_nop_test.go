@@ -4,21 +4,18 @@
 package main
 
 import (
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestModuleNop(t *testing.T) {
-	srv := CreateServer(&Config{
-		AliasFilePath:   "/dev/null",
-		MinionsFilePath: "/dev/null",
-	})
+	srv := CreateTestServer(t)
+	client := srv.GetClientFromID(srv.RegisterClient("dummy", "#test"))
 
 	m := &NopModule{}
 	m.Init(srv)
-	m.PrivMsg(srv, &Message{})
+	m.PrivMsg(srv, &IRCInputMessage{ReplyTo: "#test"})
 
-	msgs := srv.FlushOutputQueue()
-	if len(msgs) != 0 {
-		t.Error("Outgoing message queue should be empty: ", len(msgs))
-	}
+	assert.Empty(t, srv.FlushIRCOutputQueue())
+	assert.Empty(t, client.FlushQueue())
 }

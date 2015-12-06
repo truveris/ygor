@@ -26,8 +26,8 @@ var (
 )
 
 // NewMessagesFromBody creates a new ygor message from a plain string.
-func (srv *Server) NewMessagesFromBody(body string, recursion int) ([]*Message, error) {
-	var msgs []*Message
+func (srv *Server) NewMessagesFromBody(body string, recursion int) ([]*IRCInputMessage, error) {
+	var msgs []*IRCInputMessage
 
 	sentences, err := lexer.Split(body)
 	if err != nil {
@@ -46,8 +46,7 @@ func (srv *Server) NewMessagesFromBody(body string, recursion int) ([]*Message, 
 			continue
 		}
 
-		msg := NewMessage()
-
+		msg := NewIRCInputMessage()
 		msg.Recursion = recursion
 		msg.Body = strings.Join(words, " ")
 		msg.Command = words[0]
@@ -62,8 +61,8 @@ func (srv *Server) NewMessagesFromBody(body string, recursion int) ([]*Message, 
 	return msgs, nil
 }
 
-// NewMessagesFromEvent creates a new array of messages based on a PRIVMSG event.
-func (srv *Server) NewMessagesFromEvent(e *irc.Event) []*Message {
+// NewMessagesFromIRCEvent creates a new array of messages based on a PRIVMSG event.
+func (srv *Server) NewMessagesFromIRCEvent(e *irc.Event) []*IRCInputMessage {
 	cfg := srv.Config
 
 	// Check if we should ignore this message.
@@ -97,8 +96,8 @@ func (srv *Server) NewMessagesFromEvent(e *irc.Event) []*Message {
 	}
 
 	for _, msg := range msgs {
-		msg.Type = MsgTypeIRCChannel
-		msg.UserID = e.Nick
+		msg.Type = IRCInputMsgTypeIRCChannel
+		msg.Nickname = e.Nick
 		msg.ReplyTo = target
 	}
 
@@ -107,7 +106,7 @@ func (srv *Server) NewMessagesFromEvent(e *irc.Event) []*Message {
 
 // IRCMessageHandler loops through the command registry to find a matching
 // command and executes it.
-func (srv *Server) IRCMessageHandler(msg *Message) {
+func (srv *Server) IRCMessageHandler(msg *IRCInputMessage) {
 	for _, cmd := range srv.RegisteredCommands {
 		if !cmd.IRCMessageMatches(srv, msg) {
 			continue
@@ -140,24 +139,24 @@ func (srv *Server) IRCPrivMsg(channel, msg string) {
 		if lines[i] == "" {
 			continue
 		}
-		outmsg := &OutputMessage{
-			Type:    OutMsgTypePrivMsg,
+		outmsg := &IRCOutputMessage{
+			Type:    IRCOutMsgTypePrivMsg,
 			Channel: channel,
 			Body:    lines[i],
 		}
-		srv.OutputQueue <- outmsg
+		srv.IRCOutputQueue <- outmsg
 	}
 }
 
 // IRCPrivAction sends an action message to a channel.  This function is the
 // equivalent of using the /ME command in a normal IRC client.
 func (srv *Server) IRCPrivAction(channel, msg string) {
-	outmsg := &OutputMessage{
-		Type:    OutMsgTypeAction,
+	outmsg := &IRCOutputMessage{
+		Type:    IRCOutMsgTypeAction,
 		Channel: channel,
 		Body:    msg,
 	}
-	srv.OutputQueue <- outmsg
+	srv.IRCOutputQueue <- outmsg
 }
 
 // StartIRCAdapter connects the server to the IRC server.
@@ -179,9 +178,9 @@ func (srv *Server) StartIRCAdapter() error {
 	})
 
 	conn.AddCallback("PRIVMSG", func(e *irc.Event) {
-		msgs := srv.NewMessagesFromEvent(e)
+		msgs := srv.NewMessagesFromIRCEvent(e)
 		for _, msg := range msgs {
-			srv.InputQueue <- msg
+			srv.IRCInputQueue <- msg
 		}
 	})
 

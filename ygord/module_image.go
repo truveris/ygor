@@ -9,7 +9,7 @@ type ImageModule struct {
 }
 
 // PrivMsg is the message handler for user 'image' requests.
-func (module *ImageModule) PrivMsg(srv *Server, msg *Message) {
+func (module *ImageModule) PrivMsg(srv *Server, msg *IRCInputMessage) {
 	usage := "usage: image url [end]"
 
 	// Validate the command's usage, and get back a map representing the media

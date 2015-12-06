@@ -3,14 +3,13 @@
 
 package main
 
-// MessageFunction is used as a type of function that receives a Message either
-// from IRC or from a minion.
-type MessageFunction func(*Server, *Message)
+// IRCMessageFunction is used as a type of function that receives a message from IRC
+type IRCMessageFunction func(*Server, *IRCInputMessage)
 
 // ToggleFunction is a type of function that is used to check if a module
 // should be executed based on the provided Message.  It should return a
 // boolean.
-type ToggleFunction func(*Server, *Message) bool
+type ToggleFunction func(*Server, *IRCInputMessage) bool
 
 // Command is the definition of a command to be executed either when a message
 // is received from users (IRC) or from minions.
@@ -22,10 +21,7 @@ type Command struct {
 	ToggleFunction ToggleFunction
 
 	// Function executed when the command is called from IRC.
-	PrivMsgFunction MessageFunction
-
-	// Function executed when the command is called from a minion.
-	MinionMsgFunction MessageFunction
+	PrivMsgFunction IRCMessageFunction
 
 	// Define whether we expect this command to be run with the nickname as
 	// prefix or without. E.g. "ygor: hello" vs just "hello".
@@ -39,7 +35,7 @@ type Command struct {
 }
 
 // IRCMessageMatches checks if the given Message matches the command.
-func (cmd Command) IRCMessageMatches(srv *Server, msg *Message) bool {
+func (cmd Command) IRCMessageMatches(srv *Server, msg *IRCInputMessage) bool {
 	// Not even the right command.
 	if cmd.ToggleFunction != nil {
 		if !cmd.ToggleFunction(srv, msg) {
@@ -50,18 +46,7 @@ func (cmd Command) IRCMessageMatches(srv *Server, msg *Message) bool {
 	}
 
 	// Check if the command forbids private messages.
-	if !cmd.AllowPrivate && msg.Type == MsgTypeIRCPrivate {
-		return false
-	}
-
-	return true
-}
-
-// MinionMessageMatches check if the given Message matches the command. We do
-// not bother with ToggleFunction in this case. There is no reason to be broad
-// since machines are producing the messages.
-func (cmd Command) MinionMessageMatches(msg *Message) bool {
-	if cmd.Name != msg.Command {
+	if !cmd.AllowPrivate && msg.Type == IRCInputMsgTypeIRCPrivate {
 		return false
 	}
 

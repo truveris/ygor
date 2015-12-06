@@ -47,6 +47,24 @@ func (c *Client) KeepAlive() {
 	c.LastSeen = time.Now()
 }
 
+// FlushQueue is a debugging function used to dump the content of the client
+// queue.
+func (c *Client) FlushQueue() []string {
+	var msgs []string
+
+	for {
+		select {
+		case msg := <-c.Queue:
+			msgs = append(msgs, msg)
+		default:
+			goto end
+		}
+	}
+
+end:
+	return msgs
+}
+
 // RegisterClient generates a new ID for this client, using the server salt and
 // the current time baked into a SHA512 in an attempt to make this identified
 // hard to predict.

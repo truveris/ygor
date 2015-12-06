@@ -5,7 +5,6 @@ package main
 
 import (
 	"log"
-	"os"
 )
 
 func main() {
@@ -31,41 +30,36 @@ func main() {
 	srv.RegisterModule(&VolumeModule{})
 
 	log.Printf("starting i/o adapters")
-	minionerrch, err := srv.StartAdapters()
+	err = srv.StartAdapters()
 	if err != nil {
 		log.Fatal("failed to start adapters: ", err.Error())
 	}
 
 	go waitForTraceRequest()
 
-	log.Printf("ready")
+	log.Printf("ready, entering main loop")
 	for {
 		select {
-		case err := <-minionerrch:
-			log.Printf("minion handler error: %s", err.Error())
-		case msg := <-srv.InputQueue:
+		case msg := <-srv.IRCInputQueue:
 			switch msg.Type {
-			case MsgTypeIRCChannel:
+			case IRCInputMsgTypeIRCChannel:
 				srv.IRCMessageHandler(msg)
-			case MsgTypeIRCPrivate:
+			case IRCInputMsgTypeIRCPrivate:
 				srv.IRCMessageHandler(msg)
-			case MsgTypeExit:
-				log.Printf("terminating: %s", msg.Body)
-				os.Exit(0)
-			case MsgTypeFatal:
-				log.Fatal("fatal error: " + msg.Body)
 			default:
-				log.Printf("msg handler error: un-handled type"+
+				log.Printf("main loop: un-handled "+
+					"IRC input message type"+
 					" '%d'", msg.Type)
 			}
-		case msg := <-srv.OutputQueue:
+		case msg := <-srv.IRCOutputQueue:
 			switch msg.Type {
-			case OutMsgTypePrivMsg:
+			case IRCOutMsgTypePrivMsg:
 				conn.Privmsg(msg.Channel, msg.Body)
-			case OutMsgTypeAction:
+			case IRCOutMsgTypeAction:
 				conn.Action(msg.Channel, msg.Body)
 			default:
-				log.Printf("outmsg handler error: un-handled type"+
+				log.Printf("main loop: un-handled "+
+					"IRC output message type"+
 					" '%d'", msg.Type)
 			}
 		}

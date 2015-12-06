@@ -25,7 +25,7 @@ type PingModule struct {
 // is issued, a ping command is issued to all the minion with a unique
 // timestamp.  This timestamp will be used to validated incoming ping
 // responses.
-func (module *PingModule) PrivMsg(srv *Server, msg *Message) {
+func (module *PingModule) PrivMsg(srv *Server, msg *IRCInputMessage) {
 	srv.IRCPrivMsg(msg.ReplyTo, "error: not implemented")
 	return
 
@@ -59,7 +59,7 @@ func (module *PingModule) PingReset() {
 }
 
 // MinionMsg is the handler for minion responses.
-func (module *PingModule) MinionMsg(srv *Server, msg *Message) {
+func (module *PingModule) MinionMsg(srv *Server, msg *IRCInputMessage) {
 	return
 	//	if len(msg.Args) != 1 {
 	//		log.Printf("pong: usage error")
@@ -110,11 +110,11 @@ func (module *PingModule) Init(srv *Server) {
 		AllowPrivate:    true,
 		AllowChannel:    true,
 	})
-	srv.RegisterCommand(Command{
-		Name:              "pong",
-		MinionMsgFunction: module.MinionMsg,
-		Addressed:         true,
-		AllowPrivate:      true,
-		AllowChannel:      true,
-	})
+	// srv.RegisterCommand(Command{
+	// 	Name:              "pong",
+	// 	MinionMsgFunction: module.MinionMsg,
+	// 	Addressed:         true,
+	// 	AllowPrivate:      true,
+	// 	AllowChannel:      true,
+	// })
 }

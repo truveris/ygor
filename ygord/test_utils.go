@@ -37,16 +37,13 @@ func AssertIntEquals(t *testing.T, a, b int) {
 	}
 }
 
-// CreateTestServerWithTwoMinions creates an ygor server for testing.
-func CreateTestServerWithTwoMinions(t *testing.T) *Server {
+// CreateTestServer creates an ygor server for testing.
+func CreateTestServer(t *testing.T) *Server {
 	srv := CreateServer(&Config{
-		IRCNickname:     "whygore",
-		AliasFilePath:   ":memory:",
-		MinionsFilePath: ":memory:",
+		IRCNickname:   "whygore",
+		AliasFilePath: ":memory:",
 		Channels: map[string]ChannelCfg{
-			"#test": ChannelCfg{
-				Minions: []string{"pi1", "pi2"},
-			},
+			"#test": ChannelCfg{},
 		},
 	})
 

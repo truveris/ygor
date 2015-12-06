@@ -18,8 +18,8 @@ import (
 type Server struct {
 	Aliases            *alias.File
 	ClientRegistry     map[string]*Client
-	InputQueue         chan *Message
-	OutputQueue        chan *OutputMessage
+	IRCInputQueue      chan *IRCInputMessage
+	IRCOutputQueue     chan *IRCOutputMessage
 	Modules            []Module
 	RegisteredCommands map[string]Command
 	Salt               []byte
@@ -40,8 +40,8 @@ func CreateServer(config *Config) *Server {
 	}
 
 	srv.RegisteredCommands = make(map[string]Command)
-	srv.InputQueue = make(chan *Message, 128)
-	srv.OutputQueue = make(chan *OutputMessage, 128)
+	srv.IRCInputQueue = make(chan *IRCInputMessage, 128)
+	srv.IRCOutputQueue = make(chan *IRCOutputMessage, 128)
 
 	srv.ClientRegistry = make(map[string]*Client)
 
@@ -55,23 +55,21 @@ func CreateServer(config *Config) *Server {
 }
 
 // StartAdapters starts all the IO adapters (IRC, Stdin/Stdout, Minions, API)
-func (srv *Server) StartAdapters() (<-chan error, error) {
+func (srv *Server) StartAdapters() error {
 	cfg := srv.Config
 	err := srv.StartHTTPAdapter(cfg.HTTPServerAddress)
 	if err != nil {
-		return nil, errors.New("error starting http adapter: " +
+		return errors.New("error starting http adapter: " +
 			err.Error())
 	}
 
 	err = srv.StartIRCAdapter()
 	if err != nil {
-		return nil, errors.New("error starting IRC adapter: " +
+		return errors.New("error starting IRC adapter: " +
 			err.Error())
 	}
 
-	minionerrch := make(chan error, 0)
-
-	return minionerrch, nil
+	return nil
 }
 
 // SendToChannelMinions sends a message to all the minions of the given
@@ -107,14 +105,14 @@ func (srv *Server) GetCommand(name string) *Command {
 	return nil
 }
 
-// FlushOutputQueue removes every single messages from the OutputQueue and
-// returns them in the form of an array.
-func (srv *Server) FlushOutputQueue() []*OutputMessage {
-	var msgs []*OutputMessage
+// FlushIRCOutputQueue removes every single messages from the
+// IRCOutputQueue and returns them in the form of an array.
+func (srv *Server) FlushIRCOutputQueue() []*IRCOutputMessage {
+	var msgs []*IRCOutputMessage
 
 	for {
 		select {
-		case msg := <-srv.OutputQueue:
+		case msg := <-srv.IRCOutputQueue:
 			msgs = append(msgs, msg)
 		default:
 			goto end
@@ -125,14 +123,14 @@ end:
 	return msgs
 }
 
-// FlushInputQueue removes every single messages from the InputQueue and
+// FlushIRCInputQueue removes every single messages from the InputQueue and
 // returns them in the form of an array.
-func (srv *Server) FlushInputQueue() []*Message {
-	var msgs []*Message
+func (srv *Server) FlushIRCInputQueue() []*IRCInputMessage {
+	var msgs []*IRCInputMessage
 
 	for {
 		select {
-		case msg := <-srv.InputQueue:
+		case msg := <-srv.IRCInputQueue:
 			msgs = append(msgs, msg)
 		default:
 			goto end

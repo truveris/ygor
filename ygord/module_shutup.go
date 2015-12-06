@@ -17,7 +17,7 @@ var (
 type ShutUpModule struct{}
 
 // Toggle determines whether the given message triggered this command.
-func (module *ShutUpModule) Toggle(srv *Server, msg *Message) bool {
+func (module *ShutUpModule) Toggle(srv *Server, msg *IRCInputMessage) bool {
 	body := strings.ToLower(msg.Body)
 	if reStop.MatchString(body) {
 		return true
@@ -32,7 +32,7 @@ func (module *ShutUpModule) Toggle(srv *Server, msg *Message) bool {
 }
 
 // PrivMsg is the message handler for user requests.
-func (module *ShutUpModule) PrivMsg(srv *Server, msg *Message) {
+func (module *ShutUpModule) PrivMsg(srv *Server, msg *IRCInputMessage) {
 	srv.SendToChannelMinions(msg.ReplyTo, "shutup")
 	srv.IRCPrivMsg(msg.ReplyTo, "ok...")
 }

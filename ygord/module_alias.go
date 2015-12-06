@@ -27,7 +27,7 @@ const (
 type AliasModule struct{}
 
 // AliasPrivMsg is the message handler for user 'alias' requests.
-func (module *AliasModule) AliasPrivMsg(srv *Server, msg *Message) {
+func (module *AliasModule) AliasPrivMsg(srv *Server, msg *IRCInputMessage) {
 	var outputMsg string
 
 	if len(msg.Args) == 0 {
@@ -73,7 +73,7 @@ func (module *AliasModule) AliasPrivMsg(srv *Server, msg *Message) {
 			outputMsg = "ok (created)"
 		}
 		creationTime = time.Now()
-		srv.Aliases.Add(newName, newValue, msg.UserID, creationTime)
+		srv.Aliases.Add(newName, newValue, msg.Nickname, creationTime)
 	} else if alias.Value == newValue {
 		outputMsg = "no changes"
 	} else {
@@ -122,7 +122,7 @@ func getPagesOfAliases(aliases []string) []string {
 }
 
 // UnAliasPrivMsg is the message handler for user 'unalias' requests.
-func (module *AliasModule) UnAliasPrivMsg(srv *Server, msg *Message) {
+func (module *AliasModule) UnAliasPrivMsg(srv *Server, msg *IRCInputMessage) {
 	if len(msg.Args) != 1 {
 		srv.IRCPrivMsg(msg.ReplyTo, "usage: unalias name")
 		return
@@ -143,7 +143,7 @@ func (module *AliasModule) UnAliasPrivMsg(srv *Server, msg *Message) {
 
 // AliasesPrivMsg is the message handler for user 'aliases' requests.  It lists
 // all the available aliases.
-func (module *AliasModule) AliasesPrivMsg(srv *Server, msg *Message) {
+func (module *AliasModule) AliasesPrivMsg(srv *Server, msg *IRCInputMessage) {
 	if len(msg.Args) != 0 {
 		srv.IRCPrivMsg(msg.ReplyTo, "usage: aliases")
 		return
@@ -171,7 +171,7 @@ func (module *AliasModule) AliasesPrivMsg(srv *Server, msg *Message) {
 
 // GrepPrivMsg is the message handler for user 'grep' requests.  It lists
 // all the available aliases matching the provided pattern.
-func (module *AliasModule) GrepPrivMsg(srv *Server, msg *Message) {
+func (module *AliasModule) GrepPrivMsg(srv *Server, msg *IRCInputMessage) {
 	if len(msg.Args) != 1 {
 		srv.IRCPrivMsg(msg.ReplyTo, "usage: grep pattern")
 		return
@@ -196,7 +196,7 @@ func (module *AliasModule) GrepPrivMsg(srv *Server, msg *Message) {
 
 // RandomPrivMsg is the message handler for user 'random' requests.  It picks a
 // random alias to execute based on the provided pattern or no pattern at all.
-func (module *AliasModule) RandomPrivMsg(srv *Server, msg *Message) {
+func (module *AliasModule) RandomPrivMsg(srv *Server, msg *IRCInputMessage) {
 	var names []string
 
 	switch len(msg.Args) {
@@ -235,7 +235,7 @@ func (module *AliasModule) RandomPrivMsg(srv *Server, msg *Message) {
 	for _, newmsg := range newmsgs {
 		newmsg.ReplyTo = msg.ReplyTo
 		newmsg.Type = msg.Type
-		newmsg.UserID = msg.UserID
+		newmsg.Nickname = msg.Nickname
 		if newmsg == nil {
 			log.Printf("failed to convert PRIVMSG")
 			return
