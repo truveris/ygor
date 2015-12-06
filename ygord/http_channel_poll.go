@@ -17,12 +17,12 @@ type ChannelPollHandler struct {
 }
 
 type channelPollRequest struct {
-	ClientID string
+	ClientID string `json:"clientID"`
 }
 
 type channelPollResponse struct {
-	Status   string
-	Commands []string
+	Status   string          `json:"status"`
+	Commands []ClientCommand `json:"commands"`
 }
 
 func (handler *ChannelPollHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -54,10 +54,10 @@ func (handler *ChannelPollHandler) ServeHTTP(w http.ResponseWriter, r *http.Requ
 pullChan:
 	for {
 		select {
-		case msg, ok := <-client.Queue:
+		case cmd, ok := <-client.Queue:
 			if ok {
 				response.Status = "command"
-				response.Commands = append(response.Commands, msg)
+				response.Commands = append(response.Commands, cmd)
 			} else {
 				response.Status = "closed"
 				goto end

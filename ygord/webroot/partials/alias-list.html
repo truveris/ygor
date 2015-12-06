@@ -29,10 +29,10 @@
         </thead>
         <tbody>
             <tr ng-repeat="alias in aliases | filter:query | orderBy:orderProp">
-                <td>{{alias.Name}}</td>
-                <td ng-bind-html="alias.Value | linky"></td>
-                <td>{{alias.Author}}</td>
-                <td>{{alias.CreationTime}}</td>
+                <td>{{alias.name}}</td>
+                <td ng-bind-html="alias.value | linky"></td>
+                <td>{{alias.author}}</td>
+                <td>{{alias.creationTime}}</td>
             </tr>
         </tbody>
     </table>

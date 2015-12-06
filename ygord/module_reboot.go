@@ -12,7 +12,8 @@ type RebootModule struct{}
 
 // PrivMsg is the message handler for user requests.
 func (module *RebootModule) PrivMsg(srv *Server, msg *IRCInputMessage) {
-	srv.SendToChannelMinions(msg.ReplyTo, "reboot")
+	srv.SendToChannelMinions(msg.ReplyTo, ClientCommand{"reboot", nil})
+
 	srv.IRCPrivMsg(msg.ReplyTo, "attempting to reboot "+msg.ReplyTo+" minions...")
 }
 

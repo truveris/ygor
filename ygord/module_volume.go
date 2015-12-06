@@ -26,7 +26,10 @@ func (module VolumeModule) PrivMsg(srv *Server, msg *IRCInputMessage) {
 		return
 	}
 
-	srv.SendToChannelMinions(msg.ReplyTo, "volume "+msg.Args[0])
+	srv.SendToChannelMinions(msg.ReplyTo, ClientCommand{
+		Name: "volume",
+		Data: msg.Args[0],
+	})
 }
 
 // PrivMsgPlusPlus is the message handler for user 'volume++' requests, it
@@ -36,7 +39,10 @@ func (module VolumeModule) PrivMsgPlusPlus(srv *Server, msg *IRCInputMessage) {
 		srv.IRCPrivMsg(msg.ReplyTo, "usage: volume++")
 		return
 	}
-	srv.SendToChannelMinions(msg.ReplyTo, "volume 1dB+")
+	srv.SendToChannelMinions(msg.ReplyTo, ClientCommand{
+		Name: "volume",
+		Data: "1dB+",
+	})
 }
 
 // PrivMsgMinusMinus is the message handler for user 'volume--' requests, it
@@ -46,7 +52,10 @@ func (module VolumeModule) PrivMsgMinusMinus(srv *Server, msg *IRCInputMessage) 
 		srv.IRCPrivMsg(msg.ReplyTo, "usage: volume--")
 		return
 	}
-	srv.SendToChannelMinions(msg.ReplyTo, "volume 1dB-")
+	srv.SendToChannelMinions(msg.ReplyTo, ClientCommand{
+		Name: "volume",
+		Data: "1dB-",
+	})
 }
 
 // Init registers all the commands for this module.

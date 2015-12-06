@@ -16,11 +16,11 @@ type ChannelRegisterHandler struct {
 }
 
 type channelRegisterRequest struct {
-	ChannelID string
+	ChannelID string `json:"channelID"`
 }
 
 type channelRegisterResponse struct {
-	ClientID string
+	ClientID string `json:"clientID"`
 }
 
 func (handler *ChannelRegisterHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {

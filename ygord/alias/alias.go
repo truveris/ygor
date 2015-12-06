@@ -14,10 +14,10 @@ import (
 
 // Alias is the definition of a single alias, used for in-memory storage.
 type Alias struct {
-	Name         string
-	Value        string
-	Author       string
-	CreationTime time.Time
+	Name         string    `json:"name"`
+	Value        string    `json:"value"`
+	Author       string    `json:"author"`
+	CreationTime time.Time `json:"creationTime"`
 }
 
 // GetLine generates a single line for writing on file.

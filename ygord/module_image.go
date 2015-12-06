@@ -34,8 +34,7 @@ func (module *ImageModule) PrivMsg(srv *Server, msg *IRCInputMessage) {
 	}
 
 	// Send the command to the connected minions.
-	srv.SendToChannelMinions(msg.ReplyTo,
-		"image "+media.Serialize())
+	srv.SendToChannelMinions(msg.ReplyTo, ClientCommand{"image", media})
 }
 
 // Init registers all the commands for this module.

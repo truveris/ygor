@@ -3,7 +3,7 @@ var ygorMinionControllers = angular.module('ygorMinionControllers', []);
 ygorMinionControllers.controller("ChannelListController", ["$scope", "$http",
     function($scope, $http) {
         $http.get('/channel/list').success(function(data) {
-            $scope.channels = data.Channels;
+            $scope.channels = data.channels;
         });
     }
 ]);
@@ -11,7 +11,7 @@ ygorMinionControllers.controller("ChannelListController", ["$scope", "$http",
 ygorMinionControllers.controller("AliasListController", ["$scope", "$http",
     function($scope, $http) {
         $http.get('/alias/list').success(function(data) {
-            $scope.aliases = data.Aliases;
+            $scope.aliases = data.aliases;
         });
         $scope.orderProp = "Name";
     }
@@ -38,7 +38,7 @@ ygorMinionControllers.controller("ChannelController", [
 
         // imageTrack functions
         $scope.imageTrack.post = function(message) {
-            $scope.imageTrack[0].contentWindow.postMessage(JSON.stringify(message), "*");
+            $scope.imageTrack[0].contentWindow.postMessage(message, "*");
         }
 
         $scope.imageTrack.shutup = function() {
@@ -63,7 +63,7 @@ ygorMinionControllers.controller("ChannelController", [
         }
 
         $scope.playTrack.post = function(message) {
-            $scope.playTrack[0].contentWindow.postMessage(JSON.stringify(message), "*");
+            $scope.playTrack[0].contentWindow.postMessage(message, "*");
         }
 
         $scope.playTrack.setVolume = function(level) {
@@ -117,7 +117,7 @@ ygorMinionControllers.controller("ChannelController", [
             // fade it out, then remove it.
             $popUpDiv.delay(2000).fadeOut({
                 duration: 500,
-                complete: function(){$(this).remove();},
+                complete: function(){$(this).remove();}
             });
         }
 
@@ -146,12 +146,13 @@ ygorMinionControllers.controller("ChannelController", [
         }
 
         $scope.handleChildMessage = function(event) {
-            if (event.origin !== "http://localhost:8181" &&
-                event.origin !== "https://truveris.com"){
+            /* Ignore all messages that are not sent from the parent frame. */
+            if (event.origin !== window.location.origin) {
                 return;
             }
-            msg = $.parseJSON(event.data);
-            srcTrack = event.source.frameElement.id;
+
+            var msg = event.data;
+            var srcTrack = event.source.frameElement.id;
             switch (srcTrack){
                 case "playTrack":
                     switch (msg.playerState) {
@@ -179,23 +180,6 @@ ygorMinionControllers.controller("ChannelController", [
         }
 
         /*
-         * translateCommand will convert a single string into a command object,
-         * parsing out the useful information.  At some point in the future we
-         * will receive commands pre-parsed, but not until the web minions are
-         * predominant.
-         */
-        $scope.translateCommand = function(msg) {
-            var command = {};
-            var tokens = msg.split(" ");
-
-            command.name = tokens[0];
-            tokens.shift();
-            command.args = tokens
-
-            return command;
-        }
-
-        /*
          * handleCommand pushes a fresh command to the stack.  It also captures a
          * few special commands such as "skip" and "stop" and executes them
          * immediately.
@@ -217,7 +201,7 @@ ygorMinionControllers.controller("ChannelController", [
             }
 
             if (command.name == "volume") {
-                var level = command.args[0];
+                var level = command.data;
                 // volume level must be between 100 and 0.0
                 if (level == "1dB+") {
                     level = Math.min(100, volume + increment);
@@ -232,8 +216,7 @@ ygorMinionControllers.controller("ChannelController", [
             }
 
             if (command.name == "play") {
-                media = $.parseJSON(command.args[0]);
-                $scope.playTrack.playlist.push(media);
+                $scope.playTrack.playlist.push(command.data);
                 if (!$scope.playTrack.playing) {
                     $scope.playTrack.playNext()
                 }
@@ -241,9 +224,8 @@ ygorMinionControllers.controller("ChannelController", [
             }
 
             if (command.name == "image") {
-                media = $.parseJSON(command.args[0]);
                 $scope.imageTrack.shutup();
-                $scope.imageTrack.post(media);
+                $scope.imageTrack.post(command.data);
                 return;
             }
         }
@@ -271,17 +253,16 @@ ygorMinionControllers.controller("ChannelController", [
             if (!$scope.clientID)
                 return;
 
-            $http.post("/channel/poll", {"ClientID": $scope.clientID})
+            $http.post("/channel/poll", {"clientID": $scope.clientID})
                 .success(function(data) {
-                    switch (data.Status) {
+                    switch (data.status) {
                         case "empty":
                             $scope.pollQueue();
                             break;
                         case "command":
                             $scope.hideModal();
-                            for (var i = 0; i < data.Commands.length; i++) {
-                                cmd = $scope.translateCommand(data.Commands[i]);
-                                $scope.handleCommand(cmd);
+                            for (var i = 0; i < data.commands.length; i++) {
+                                $scope.handleCommand(data.commands[i]);
                             };
                             $scope.pollQueue();
                             break;
@@ -308,9 +289,9 @@ ygorMinionControllers.controller("ChannelController", [
             $scope.stopReconnectCounter();
             $scope.showModal("connecting");
 
-            $http.post("/channel/register", {"ChannelID": $scope.channelID})
+            $http.post("/channel/register", {"channelID": $scope.channelID})
                 .success(function(data) {
-                    $scope.clientID = data.ClientID;
+                    $scope.clientID = data.clientID;
                     $scope.showModal("waiting");
                     $scope.pollQueue();
                 })

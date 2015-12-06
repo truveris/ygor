@@ -51,8 +51,7 @@ func (module *SayModule) PrivMsg(srv *Server, msg *IRCInputMessage) {
 
 	// Send the command to the connected minions, as though it were the play
 	// command.
-	srv.SendToChannelMinions(msg.ReplyTo,
-		"play "+media.Serialize())
+	srv.SendToChannelMinions(msg.ReplyTo, ClientCommand{"play", media})
 }
 
 // Init registers all the commands for this module.

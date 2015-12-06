@@ -16,12 +16,12 @@ type ChannelListHandler struct {
 }
 
 type channel struct {
-	ID   string
-	Name string
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }
 
 type channelListResponse struct {
-	Channels []channel
+	Channels []channel `json:"channels"`
 }
 
 func (handler *ChannelListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {

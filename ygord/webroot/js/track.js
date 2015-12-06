@@ -12,7 +12,7 @@ function modifyMediaElementPrototypes() {
         this.setAttribute("opacity", 1);
     };
     HTMLAudioElement.prototype.show = function() {
-        // does nothing to prevent audio player becomming visible
+        // does nothing to prevent audio player becoming visible
         return;
     };
     HTMLVideoElement.prototype.hasStarted = function() {
@@ -189,7 +189,9 @@ function modifyYouTubePlayerPrototype() {
     YT.Player.prototype.startTime = 0.0;
     YT.Player.prototype.endTime = false;
     YT.Player.prototype.setReady = function() {
-        this.setVolume(volume * trackVolume);
+        if (!this.media.muted) {
+            this.setVolume(volume * trackVolume);
+        }
         iframe = this.getIframe();
         iframe.player = this;
         if (this.media.muted) {
@@ -230,15 +232,15 @@ function modifyYouTubePlayerPrototype() {
     YT.Player.prototype.loadMedia = function() {
         if (this.isReady) {
             // if the player is ready
-            params = {
-                "videoId": this.media.src,
+            var params = {
+                "videoId": this.media.src
             }
             var end = this.media.end;
             if (end.length > 0) {
                 params.endSeconds = parseFloat(end);
                 this.endTime = end;
             }
-            this.soloLoop = media.loop;
+            this.soloLoop = this.media.loop;
             this.loadVideoById(params);
         }
     };
@@ -274,13 +276,13 @@ function spawnYouTubePlayer(media) {
             "modestbranding": 1,
             "iv_load_policy": 3,
             "enablejsapi": 1,
-            "origin": "https://truveris.com",
+            "origin": "https://ygor.truveris.com"
         },
         events: {
             "onReady": onYTPlayerReady,
             "onStateChange": onYTPlayerStateChange,
-            "onError": onYTPlayerError,
-        },
+            "onError": onYTPlayerError
+        }
     }
     var ytPlayer = new YT.Player(containerId, playerParams);
     ytPlayer.containerId = containerId;
@@ -409,7 +411,6 @@ function modifyVimeoPlayerPrototype() {
         this.post("addEventListener", "finish");
         this.storeDuration();
         this.setReady();
-        
     };
     VimeoPlayer.prototype.setReady = function() {
         this.setVolume(volume * trackVolume);
@@ -429,10 +430,9 @@ function modifyVimeoPlayerPrototype() {
         if (value) {
             data.value = value;
         }
-        var message = JSON.stringify(data);
         if (this.iframe.contentWindow) {
             // player may already be destroyed
-            this.iframe.contentWindow.postMessage(message, "*");
+            this.iframe.contentWindow.postMessage(data, "*");
         }
     };
     VimeoPlayer.prototype.storeDuration = function() {
@@ -451,7 +451,7 @@ function modifyVimeoPlayerPrototype() {
     };
     VimeoPlayer.prototype.loadMedia = function() {
         if (this.isReady) {
-            // if the player is ready 
+            // if the player is ready
             var end = this.media.end;
             if (end.length > 0) {
                 this.endTime = end;
@@ -725,18 +725,19 @@ function spawnSoundCloudPlayer(media) {
 /* ----------------------------- END SOUNDCLOUD ---------------------------- */
 
 function receiveMessage(event) {
+    var media = event.data;
+
     if ((/^https?:\/\/player.vimeo.com/).test(event.origin)) {
-        var message = JSON.parse(event.data);
         vimeoPlayerMessageHandler(message);
-    } else if (event.origin !== "http://localhost:8181" &&
-        event.origin !== "https://truveris.com"){
         return;
     }
-    var message = JSON.parse(event.data);
-    if (message.status == "media") {
-        media = message.media;
-        spawnMedia(media);
+
+    /* Ignore all messages that are not sent from the parent frame. */
+    if (event.origin !== window.location.origin) {
+        return;
     }
+
+    spawnMedia(media);
 }
 
 function spawnMedia(media) {
@@ -821,9 +822,9 @@ function reportError(submessage) {
 function sendMessage(state, submessage) {
     message = {
         playerState: state,
-        submessage: submessage,
+        submessage: submessage
     }
-    parent.postMessage(JSON.stringify(message), "*");
+    parent.postMessage(message, "*");
     return;
 }
 

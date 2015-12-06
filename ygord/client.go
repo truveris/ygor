@@ -20,12 +20,17 @@ const (
 	MaxQueueLength = 1024
 )
 
+type ClientCommand struct {
+	Name string      `json:"name"`
+	Data interface{} `json:"data"`
+}
+
 // Client represents a single ygor client in memory.
 type Client struct {
 	Username string
 	Channel  string
 	ID       string
-	Queue    chan string
+	Queue    chan ClientCommand
 	LastSeen time.Time
 }
 
@@ -49,20 +54,20 @@ func (c *Client) KeepAlive() {
 
 // FlushQueue is a debugging function used to dump the content of the client
 // queue.
-func (c *Client) FlushQueue() []string {
-	var msgs []string
+func (c *Client) FlushQueue() []ClientCommand {
+	var cmds []ClientCommand
 
 	for {
 		select {
-		case msg := <-c.Queue:
-			msgs = append(msgs, msg)
+		case cmd := <-c.Queue:
+			cmds = append(cmds, cmd)
 		default:
 			goto end
 		}
 	}
 
 end:
-	return msgs
+	return cmds
 }
 
 // RegisterClient generates a new ID for this client, using the server salt and
@@ -79,7 +84,7 @@ func (srv *Server) RegisterClient(username, channel string) string {
 		Username: username,
 		Channel:  channel,
 		ID:       ID,
-		Queue:    make(chan string, MaxQueueLength),
+		Queue:    make(chan ClientCommand, MaxQueueLength),
 		LastSeen: time.Now(),
 	}
 	return ID

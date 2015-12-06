@@ -20,7 +20,7 @@ type AliasListHandler struct {
 // AliasListResponse is the struct returned as JSON in response to a request
 // on this endpoint.
 type AliasListResponse struct {
-	Aliases []alias.Alias
+	Aliases []alias.Alias `json:"aliases"`
 }
 
 // ServeHTTP is a standard handler ServeHTTP request as expected by the

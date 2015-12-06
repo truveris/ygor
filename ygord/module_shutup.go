@@ -33,7 +33,7 @@ func (module *ShutUpModule) Toggle(srv *Server, msg *IRCInputMessage) bool {
 
 // PrivMsg is the message handler for user requests.
 func (module *ShutUpModule) PrivMsg(srv *Server, msg *IRCInputMessage) {
-	srv.SendToChannelMinions(msg.ReplyTo, "shutup")
+	srv.SendToChannelMinions(msg.ReplyTo, ClientCommand{"shutup", nil})
 	srv.IRCPrivMsg(msg.ReplyTo, "ok...")
 }
 
