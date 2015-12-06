@@ -19,7 +19,6 @@ import (
 
 // Given a Basic Authorization header value, return the user and password.
 func parseBasicAuth(value string) (string, string, error) {
-	log.Printf("parseBasicAuth: %s", value)
 	authorization, err := base64.StdEncoding.DecodeString(value)
 	if err != nil {
 		return "", "", err

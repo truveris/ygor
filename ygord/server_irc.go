@@ -118,6 +118,8 @@ func (srv *Server) IRCMessageHandler(msg *IRCInputMessage) {
 			continue
 		}
 
+		log.Printf("cmd.PrivMsgFunction %s (rec:%d)", cmd.Name,
+			msg.Recursion)
 		cmd.PrivMsgFunction(srv, msg)
 		return
 	}

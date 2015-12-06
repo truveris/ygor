@@ -45,6 +45,8 @@ func main() {
 	for {
 		select {
 		case msg := <-srv.IRCInputQueue:
+			log.Printf("irc %s <%s> %s", msg.ReplyTo,
+				msg.Nickname, msg.Body)
 			switch msg.Type {
 			case IRCInputMsgTypeIRCChannel:
 				srv.IRCMessageHandler(msg)
@@ -56,6 +58,8 @@ func main() {
 					" '%d'", msg.Type)
 			}
 		case msg := <-srv.IRCOutputQueue:
+			log.Printf("irc %s <%s> %s", msg.Channel,
+				cfg.IRCNickname, msg.Body)
 			switch msg.Type {
 			case IRCOutMsgTypePrivMsg:
 				conn.Privmsg(msg.Channel, msg.Body)
