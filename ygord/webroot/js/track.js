@@ -399,7 +399,7 @@ function modifyVimeoPlayerPrototype() {
         if (this.media.loop) {
             looping = "&loop=1";
         }
-        this.iframe.src = "http://player.vimeo.com/video/" +
+        this.iframe.src = "https://player.vimeo.com/video/" +
             this.media.src + "?player_id=" + this.playerId +
             "&api=1&badge=0&byline=0&portrait=0&title=0" + looping;
         document.body.appendChild(this.iframe);
@@ -451,6 +451,7 @@ function modifyVimeoPlayerPrototype() {
     };
     VimeoPlayer.prototype.loadMedia = function() {
         if (this.isReady) {
+
             // if the player is ready
             var end = this.media.end;
             if (end.length > 0) {
@@ -727,8 +728,9 @@ function spawnSoundCloudPlayer(media) {
 function receiveMessage(event) {
     var media = event.data;
 
-    if ((/^https?:\/\/player.vimeo.com/).test(event.origin)) {
-        vimeoPlayerMessageHandler(message);
+    vimeoRe = /^https?:\/\/player\.vimeo\.com/
+    if (vimeoRe.test(event.origin)) {
+        vimeoPlayerMessageHandler(JSON.parse(media));
         return;
     }
 
