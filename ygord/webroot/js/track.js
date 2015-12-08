@@ -300,7 +300,7 @@ function onYTPlayerStateChange(event) {
             // hide the player so the thumbnail isn't seen while the video
             // isn't playing
 
-            event.target.setPlaybackQuality("highres");
+            event.target.setPlaybackQuality("hd720");
             event.target.hide();
             event.target.playVideo();
             break;
