@@ -264,7 +264,7 @@ func (media *Media) SetSrc(link string) error {
 	if media.isImgur() {
 		isGIF := strings.Contains(strings.ToLower(media.mediaType), "image/gif")
 		hasGIFVExt := media.GetExt() == ".gifv"
-		if isGIF || hasGIFVExt {
+		if (isGIF || hasGIFVExt) && media.hasWebm() {
 			media.replaceSrcExt(".webm")
 			media.Format = "video"
 			media.mediaType = "video/webm"
@@ -466,6 +466,25 @@ func (media *Media) isSoundCloud() bool {
 		}
 	}
 	return false
+}
+
+// hasWebm checks if there is a webm version of the provided URL. It returns
+// true if there is, and false if there isn't.
+func (media *Media) hasWebm() bool {
+	webmURL := media.Src[0:len(media.Src)-len(media.GetExt())] + ".webm"
+	// Check that the URL returns a status code of 200.
+	res, err := http.Head(webmURL)
+	if err != nil {
+		// There likely isn't a webm version.
+		return false
+	}
+	statusCode := strconv.Itoa(res.StatusCode)
+	if statusCode != "200" {
+		// There likely isn't a webm version.
+		return false
+	}
+	// A webm version has been found.
+	return true
 }
 
 // resolveSoundCloudURL attempts to find the track URI of the SoundCloud link
