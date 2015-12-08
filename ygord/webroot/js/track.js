@@ -276,6 +276,7 @@ function spawnYouTubePlayer(media) {
             "modestbranding": 1,
             "iv_load_policy": 3,
             "enablejsapi": 1,
+            "html5": 1,
             "origin": "https://ygor.truveris.com"
         },
         events: {
