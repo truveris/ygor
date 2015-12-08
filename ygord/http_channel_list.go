@@ -16,8 +16,9 @@ type ChannelListHandler struct {
 }
 
 type channel struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	ClientCount int    `json:"clientCount"`
 }
 
 type channelListResponse struct {
@@ -36,10 +37,13 @@ func (handler *ChannelListHandler) ServeHTTP(w http.ResponseWriter, r *http.Requ
 	// Strip the '#' from the channel, that identifier is given to the
 	// tune-in handler.
 	for name := range handler.Server.Config.Channels {
-		response.Channels = append(response.Channels, channel{
-			ID:   strings.TrimPrefix(name, "#"),
-			Name: name,
-		})
+		ch := channel{
+			ID:          strings.TrimPrefix(name, "#"),
+			Name:        name,
+			ClientCount: len(handler.Server.GetClientsByChannel(name)),
+		}
+
+		response.Channels = append(response.Channels, ch)
 	}
 
 	w.Header().Set("Content-Type", "application/json")

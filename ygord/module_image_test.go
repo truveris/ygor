@@ -11,7 +11,7 @@ import (
 
 func TestModuleImage_Usage(t *testing.T) {
 	srv := CreateTestServer()
-	client := srv.GetClientFromID(srv.RegisterClient("dummy", "#test"))
+	client := srv.RegisterClient("dummy", "#test")
 
 	m := &ImageModule{}
 	m.Init(srv)

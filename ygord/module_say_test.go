@@ -11,7 +11,7 @@ import (
 
 func TestModuleSayUsageOnNoParams(t *testing.T) {
 	srv := CreateTestServer()
-	client := srv.GetClientFromID(srv.RegisterClient("dummy", "#test"))
+	client := srv.RegisterClient("dummy", "#test")
 
 	m := &SayModule{}
 	m.Init(srv)
@@ -31,7 +31,7 @@ func TestModuleSayUsageOnNoParams(t *testing.T) {
 
 func TestModuleSayNoConfig(t *testing.T) {
 	srv := CreateTestServer()
-	client := srv.GetClientFromID(srv.RegisterClient("dummy", "#test"))
+	client := srv.RegisterClient("dummy", "#test")
 
 	m := &SayModule{}
 	m.Init(srv)

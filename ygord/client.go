@@ -17,9 +17,11 @@ import (
 const (
 	// MaxQueueLength defines the maximum number of messages we will store
 	// for a client before considering it dead.
-	MaxQueueLength = 1024
+	MaxQueueLength = 64
 )
 
+// ClientCommand is passed to clients in JSON form as a way to transmit
+// commands to the clients.
 type ClientCommand struct {
 	Name string      `json:"name"`
 	Data interface{} `json:"data"`
@@ -27,11 +29,13 @@ type ClientCommand struct {
 
 // Client represents a single ygor client in memory.
 type Client struct {
-	Username string
-	Channel  string
-	ID       string
-	Queue    chan ClientCommand
-	LastSeen time.Time
+	Username  string
+	Channel   string
+	ID        string
+	UserAgent string
+	IPAddress string
+	Queue     chan ClientCommand
+	LastSeen  time.Time
 }
 
 // IsAlive checks if the client is still accepting messages. It will return
@@ -73,21 +77,24 @@ end:
 // RegisterClient generates a new ID for this client, using the server salt and
 // the current time baked into a SHA512 in an attempt to make this identified
 // hard to predict.
-func (srv *Server) RegisterClient(username, channel string) string {
+func (srv *Server) RegisterClient(username, channel string) *Client {
 	hash := sha512.New()
 	hash.Write([]byte(fmt.Sprintf("%s%s%d", username, channel, time.Now().UnixNano())))
 	hash.Write(srv.Salt)
 
 	ID := fmt.Sprintf("%x", hash.Sum(nil))
 
-	srv.ClientRegistry[ID] = &Client{
+	client := &Client{
 		Username: username,
 		Channel:  channel,
 		ID:       ID,
 		Queue:    make(chan ClientCommand, MaxQueueLength),
 		LastSeen: time.Now(),
 	}
-	return ID
+
+	srv.ClientRegistry[ID] = client
+
+	return client
 }
 
 // GetClientFromID returns a client struct from its registered unique ID.

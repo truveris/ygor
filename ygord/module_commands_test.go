@@ -11,7 +11,7 @@ import (
 
 func TestModuleCommands(t *testing.T) {
 	srv := CreateTestServer()
-	client := srv.GetClientFromID(srv.RegisterClient("dummy", "#test"))
+	client := srv.RegisterClient("dummy", "#test")
 
 	// Register a module so it shows up in the listing.
 	(&NopModule{}).Init(srv)

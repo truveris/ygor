@@ -10,6 +10,8 @@
 
 <div>
     <span ng-repeat="channel in channels | filter:query | orderBy:orderProp">
-        <a class="button" href="#/channel/{{channel.id}}">{{channel.name}}</a>
+        <a class="button" href="#/channel/{{channel.id}}">
+            {{channel.name}} ({{channel.clientCount}})
+        </a>
     </span>
 </div>

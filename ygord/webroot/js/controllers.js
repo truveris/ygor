@@ -17,6 +17,15 @@ ygorMinionControllers.controller("AliasListController", ["$scope", "$http",
     }
 ]);
 
+ygorMinionControllers.controller("ClientListController", ["$scope", "$http",
+    function($scope, $http) {
+        $http.get('/client/list').success(function(data) {
+            $scope.clients = data.clients;
+        });
+        $scope.orderProp = "Username";
+    }
+]);
+
 ygorMinionControllers.controller("ChannelController", [
     "$scope", "$http", "$routeParams",
     function($scope, $http, $routeParams) {

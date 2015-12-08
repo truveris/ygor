@@ -38,7 +38,11 @@ func (handler *ChannelRegisterHandler) ServeHTTP(w http.ResponseWriter, r *http.
 		return
 	}
 
-	clientID := handler.Server.RegisterClient(username, "#"+input.ChannelID)
+	client := handler.Server.RegisterClient(username, "#"+input.ChannelID)
+	client.IPAddress = r.RemoteAddr
+	if agent, ok := r.Header["User-Agent"]; ok {
+		client.UserAgent = agent[0]
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 
@@ -46,5 +50,5 @@ func (handler *ChannelRegisterHandler) ServeHTTP(w http.ResponseWriter, r *http.
 	case <-time.After(time.Second * 2):
 	}
 
-	jsonHandler(w, channelRegisterResponse{ClientID: clientID})
+	jsonHandler(w, channelRegisterResponse{ClientID: client.ID})
 }

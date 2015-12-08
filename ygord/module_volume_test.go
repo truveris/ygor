@@ -11,7 +11,7 @@ import (
 
 func TestModuleVolume_UsageNoParams(t *testing.T) {
 	srv := CreateTestServer()
-	client := srv.GetClientFromID(srv.RegisterClient("dummy", "#test"))
+	client := srv.RegisterClient("dummy", "#test")
 
 	m := &VolumeModule{}
 	m.Init(srv)
@@ -31,7 +31,7 @@ func TestModuleVolume_UsageNoParams(t *testing.T) {
 
 func TestModuleVolume_BadValues(t *testing.T) {
 	srv := CreateTestServer()
-	client := srv.GetClientFromID(srv.RegisterClient("dummy", "#test"))
+	client := srv.RegisterClient("dummy", "#test")
 
 	m := &VolumeModule{}
 	m.Init(srv)

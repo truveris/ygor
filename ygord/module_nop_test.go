@@ -11,7 +11,7 @@ import (
 
 func TestModuleNop(t *testing.T) {
 	srv := CreateTestServer()
-	client := srv.GetClientFromID(srv.RegisterClient("dummy", "#test"))
+	client := srv.RegisterClient("dummy", "#test")
 
 	m := &NopModule{}
 	m.Init(srv)

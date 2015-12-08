@@ -12,7 +12,7 @@ import (
 
 func createTestServerClientAndAliasModule() (*Server, *Client, *AliasModule) {
 	srv := CreateTestServer()
-	client := srv.GetClientFromID(srv.RegisterClient("dummy", "#test"))
+	client := srv.RegisterClient("dummy", "#test")
 
 	module := &AliasModule{}
 	module.Init(srv)
