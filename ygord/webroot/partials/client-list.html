@@ -1,0 +1,43 @@
+<div class="row">
+    <div class="three columns">
+        <h4>ygor &middot; client list</h4>
+    </div>
+    <div class="three columns">&nbsp;</div>
+    <div class="three columns">
+        <label for="search-query">Search</label>
+        <input class="u-full-width" placeholder="e.g. #dev" id="search-query" type="text" ng-model="query">
+    </div>
+    <div class="three columns">
+        <label for="order-prop">Sort by</label>
+        <select class="u-full-width" id="order-prop" ng-model="orderProp">
+            <option value="username">Username</option>
+            <option value="channel">Channel</option>
+            <option value="userAgent">User Agent</option>
+            <option value="ipAddress">IP Address</option>
+            <option value="lastSeen">Last Seen</option>
+        </select>
+    </div>
+</div>
+
+<div>
+    <table class="u-full-width">
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th>Channel</th>
+                <th>User Agent</th>
+                <th>IP Address</th>
+                <th>Last Seen</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr ng-repeat="client in clients | filter:query | orderBy:orderProp">
+                <td>{{client.username}}</td>
+                <td>{{client.channel}}</td>
+                <td>{{client.userAgent}}</td>
+                <td>{{client.ipAddress}}</td>
+                <td>{{client.lastSeen}}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
