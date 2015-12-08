@@ -4,9 +4,11 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/url"
 	"path"
@@ -164,6 +166,27 @@ var (
 
 	reYTVideoID = regexp.MustCompile(
 		`^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*`)
+
+	// Reserved private IP address ranges
+	privIPRanges = map[string]map[string][]byte{
+		"RFC 1968 A": {
+			"low": net.ParseIP("10.0.0.0"),
+			"high": net.ParseIP("10.255.255.255"),
+		},
+		"RFC 1968 B": {
+			"low": net.ParseIP("172.16.0.0"),
+			"high": net.ParseIP("172.31.255.255"),
+		},
+		"RFC 1968 C": {
+			"low": net.ParseIP("192.168.0.0"),
+			"high": net.ParseIP("192.168.255.255"),
+		},
+		"RFC 6958": {
+			"low": net.ParseIP("100.64.0.0"),
+			"high": net.ParseIP("100.127.255.255"),
+		},
+	}
+
 )
 
 // Media represents the relevant data that will eventually be passed to
@@ -242,19 +265,30 @@ func (media *Media) SetSrc(link string) error {
 	media.url = link
 	media.host = uri.Host
 
-	// Check that the URL returns a status code of 200.
-	res, err := http.Head(media.Src)
-	if err != nil {
-		errMsg := "error: " + err.Error()
-		return errors.New(errMsg)
-	}
-	statusCode := strconv.Itoa(res.StatusCode)
-	if statusCode != "200" {
-		errMsg := "error: response status code is " + statusCode
-		return errors.New(errMsg)
+	var header map[string][]string
+
+	if !hostIsPrivateIP(media.host) {
+		// Check that the URL returns a status code of 200.
+		res, err := http.Head(media.Src)
+		if err != nil {
+			errMsg := "error: " + err.Error()
+			return errors.New(errMsg)
+		}
+		statusCode := strconv.Itoa(res.StatusCode)
+		if statusCode != "200" {
+			errMsg := "error: response status code is " + statusCode
+			return errors.New(errMsg)
+		}
+		header = res.Header
+	} else {
+		header = map[string][]string{
+			"Content-Type": {
+				"unknown",
+			},
+		}
 	}
 
-	headErr := media.setFormat(res.Header)
+	headErr := media.setFormat(header)
 	if headErr != nil {
 		return headErr
 	}
@@ -298,6 +332,32 @@ func (media *Media) GetSrc() string {
 // function.
 func (media *Media) GetURL() string {
 	return media.url
+}
+
+// hostIsPrivateIP checks if the passed host is an IP address from a private IP
+// address range. If so, it returns true. Otherwise, it returns false.
+// 
+// This function is useful for determining if ygor can make a request at all to
+// the passed URL.
+func hostIsPrivateIP(host string) bool {
+	// Strip the port if there is one.
+	portIndex := strings.Index(host, ":")
+	if portIndex != -1 {
+		// There is a port.
+		host = host[:portIndex]
+	}
+	ip := net.ParseIP(host)
+	if ip.To4() == nil {
+		// This is not an IPv4 address.
+		return false
+	}
+	for _, IPRange := range privIPRanges {
+		if bytes.Compare(ip, IPRange["low"]) >= 0 && bytes.Compare(ip, IPRange["high"]) <= 0 {
+			// This is an IP address that is in a private range.
+			return true
+		}
+	}
+	return false
 }
 
 // setFormat sets the 'Format' attribute of the Media. This tells the
@@ -412,7 +472,20 @@ func (media *Media) IsOfFormat(formats []string) bool {
 // GetExt is a convenience function to get the extension of theMedia's
 // current Src.
 func (media *Media) GetExt() string {
-	return strings.ToLower(path.Ext(media.Src))
+	cleanSrc := media.Src
+	// Strip the fragment if there is one.
+	fragmentIndex := strings.Index(cleanSrc, "#")
+	if fragmentIndex != -1 {
+		// There is a fragment.
+		cleanSrc = cleanSrc[:fragmentIndex]
+	}
+	// Strip the query string if there is one.
+	queryIndex := strings.Index(cleanSrc, "?")
+	if queryIndex != -1 {
+		// There is a query string.
+		cleanSrc = cleanSrc[:queryIndex]
+	}
+	return strings.ToLower(path.Ext(cleanSrc))
 }
 
 // isImgur attempts to determine if the desired content is hosted on imgur.
