@@ -32,28 +32,28 @@ function modifyMediaElementPrototypes() {
         }
     };
     HTMLMediaElement.prototype.hasErrored = function(event) {
-        submessage = "";
-        type = this.nodeName.toLowerCase();
+        var type = this.nodeName.toLowerCase();
         switch (this.error.code) {
             case this.error.MEDIA_ERR_ABORTED:
-                err = " file playback has been aborted";
+                reportError(type + " file playback has been aborted");
                 break;
             case this.error.MEDIA_ERR_NETWORK:
-                err = " file download halted due to network error";
+                reportError(type + " file download halted due to network error");
                 break;
             case this.error.MEDIA_ERR_DECODE:
-                err = " file could not be decoded";
+                reportError(type + " file could not be decoded");
                 break;
             case this.error.MEDIA_ERR_SRC_NOT_SUPPORTED:
                 if (this.networkState == HTMLMediaElement.NETWORK_NO_SOURCE) {
-                    err = " file could not be found";
+                    reportError(type + " file could not be found");
                 } else {
-                    err = " file format is not supported";
+                    reportError(type + " file format is not supported");
                 }
                 break;
+            default:
+                reportError("unknown " + type + "error: " + this.error.MEDIA_ERR_SRC_NOT_SUPPORTED)
+                break;
         }
-        submessage = type + err
-        reportError(submessage);
         this.hasEnded()
     };
     HTMLMediaElement.prototype.setVolume = function(volumeLevel) {
@@ -192,7 +192,7 @@ function modifyYouTubePlayerPrototype() {
         if (!this.media.muted) {
             this.setVolume(volume * trackVolume);
         }
-        iframe = this.getIframe();
+        var iframe = this.getIframe();
         iframe.player = this;
         if (this.media.muted) {
             this.mute();
@@ -226,7 +226,7 @@ function modifyYouTubePlayerPrototype() {
         this.seekTo(this.endTime);
     };
     YT.Player.prototype.destroy = function() {
-        iframe = this.getIframe();
+        var iframe = this.getIframe();
         iframe.destroy();
     };
     YT.Player.prototype.loadMedia = function() {
@@ -266,7 +266,7 @@ function spawnYouTubePlayer(media) {
     // playing
     playerDiv.setAttribute("opacity", 0);
     document.body.appendChild(playerDiv);
-    playerParams = {
+    var playerParams = {
         height: "100%",
         width: "100%",
         playerVars :{
@@ -331,27 +331,27 @@ function onYTPlayerReady(event) {
 
 //Embedded players' error handling
 function onYTPlayerError(event) {
-    submessage = "";
     switch(event.data){
         case 2:
-            submessage = "invalid youtube video parameter"
+            reportError("invalid youtube video parameter");
             break;
         case 5:
-            submessage = "youtube video doesn't work with html5"
+            reportError("youtube video doesn't work with html5");
             break;
         case 100:
-            submessage = "no such youtube video"
+            reportError("no such youtube video");
             break;
         case 101:
-            submessage = "can't embed this youtube video"
+            reportError("can't embed this youtube video");
             break;
         case 150:
-            submessage = "can't embed this youtube video"
+            reportError("can't embed this youtube video");
+            break;
+        default:
+            reportError("unrecognized error code: " + event.data);
             break;
     }
-    submessage = submessage || "unrecognized error code: " + event.data;
     // remove all traces of the player
-    reportError(submessage);
     playerEnded();
     this.destroy();
     return;
@@ -395,7 +395,7 @@ function modifyVimeoPlayerPrototype() {
         // starts actually playing
         this.iframe.show();
         // get trackID of song URL in order to embed the widget properly
-        looping = "";
+        var looping = "";
         if (this.media.loop) {
             looping = "&loop=1";
         }
@@ -609,7 +609,7 @@ var SoundCloudPlayer = function(media) {
         //this.iframe.setAttribute("hidden", "hidden");
         this.iframe.src = "https://w.soundcloud.com/player/?url=" + this.media.src;
         document.body.appendChild(this.iframe);
-        scPlayer = SC.Widget(this.playerId);
+        var scPlayer = SC.Widget(this.playerId);
         this.iframe.player = this;
         this.player = scPlayer;
         modifySoundCloudPlayerPrototype(this.player)
@@ -655,8 +655,7 @@ function modifySoundCloudPlayerPrototype(widget) {
     widget.bind(SC.Widget.Events.READY, widget.onReady);
     widget.onError = function() {
         // remove all traces of the player
-        submessage = "soundcloud player had an error";
-        reportError(submessage);
+        reportError("soundcloud player had an error");
         playerEnded();
         this.destroy();
         return;
@@ -718,7 +717,7 @@ function modifySoundCloudPlayerPrototype(widget) {
 }
 
 function spawnSoundCloudPlayer(media) {
-    scPlayer = new SoundCloudPlayer(media);
+    var scPlayer = new SoundCloudPlayer(media);
 
     scPlayer.spawn();
 }
@@ -728,7 +727,7 @@ function spawnSoundCloudPlayer(media) {
 function receiveMessage(event) {
     var media = event.data;
 
-    vimeoRe = /^https?:\/\/player\.vimeo\.com/
+    var vimeoRe = /^https?:\/\/player\.vimeo\.com/
     if (vimeoRe.test(event.origin)) {
         vimeoPlayerMessageHandler(JSON.parse(media));
         return;
@@ -797,18 +796,18 @@ function playerEnded() {
 }
 
 function getVisibleCount() {
-    count = 0;
+    var count = 0;
     for(el of getAllPlayers()) {
         if(el.getAttribute("opacity") != 0) {
             count++;
         }
     }
-    return count
+    return count;
 }
 
 function getAllPlayers() {
-    collection = document.querySelectorAll("body > *");
-    elementArr = [];
+    var collection = document.querySelectorAll("body > *");
+    var elementArr = [];
     for(i = 0; i < collection.length; i++){
         elementArr.push(collection.item(i));
     }
@@ -816,13 +815,13 @@ function getAllPlayers() {
 }
 
 function reportError(submessage) {
-    submessage = submessage || "";
+    var submessage = submessage || "";
     sendMessage("ERRORED", submessage);
     return;
 }
 
 function sendMessage(state, submessage) {
-    message = {
+    var message = {
         playerState: state,
         submessage: submessage
     }
