@@ -30,7 +30,7 @@ type Config struct {
 	IRCServer string
 
 	// Nickname of the bot. FIXME: this is not currently synchronized
-	IRCNickname string
+	Nickname string
 
 	// Try to send debug information to this channel in lieu of log file.
 	AdminChannel string
@@ -55,6 +55,12 @@ type Config struct {
 	// If defined, it allows SoundCloud URLs to be resolved when passing URLs
 	// to commands that utilize MediaObj.
 	SoundCloudClientID string
+
+	// Mattermost configuration.
+	MattermostToken    string
+	MattermostIconURL  string
+	MattermostUsername string
+	MattermostWebhook  string
 }
 
 // GetAutoJoinChannels returns a list of all the auto-join channels (all unique
@@ -88,12 +94,8 @@ func ParseConfigFile(cmd *CmdLine) (*Config, error) {
 		return nil, err
 	}
 
-	if cfg.IRCServer == "" {
-		return cfg, errors.New("'IRCServer' is not defined")
-	}
-
-	if cfg.IRCNickname == "" {
-		return cfg, errors.New("'IRCNickname' is not defined")
+	if cfg.Nickname == "" {
+		return cfg, errors.New("'Nickname' is not defined")
 	}
 
 	if cfg.AliasFilePath == "" {

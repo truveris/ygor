@@ -34,9 +34,11 @@ func main() {
 		log.Fatal("failed to start http server: ", err.Error())
 	}
 
-	err = srv.StartIRCClient()
-	if err != nil {
-		log.Fatal("failed to start IRC client: ", err.Error())
+	if cfg.IRCServer != "" {
+		err = srv.StartIRCClient()
+		if err != nil {
+			log.Fatal("failed to start IRC client: ", err.Error())
+		}
 	}
 
 	go waitForTraceRequest()
@@ -44,27 +46,32 @@ func main() {
 	log.Printf("ready, entering main loop")
 	for {
 		select {
-		case msg := <-srv.IRCInputQueue:
+		case msg := <-srv.InputQueue:
 			log.Printf("irc %s <%s> %s", msg.ReplyTo,
 				msg.Nickname, msg.Body)
 			switch msg.Type {
-			case IRCInputMsgTypeIRCChannel:
+			case InputMsgTypeIRCChannel:
 				srv.IRCMessageHandler(msg)
-			case IRCInputMsgTypeIRCPrivate:
+			case InputMsgTypeIRCPrivate:
+				srv.IRCMessageHandler(msg)
+			case InputMsgTypeMattermost:
 				srv.IRCMessageHandler(msg)
 			default:
 				log.Printf("main loop: un-handled "+
 					"IRC input message type"+
 					" '%d'", msg.Type)
 			}
-		case msg := <-srv.IRCOutputQueue:
+		case msg := <-srv.OutputQueue:
 			log.Printf("irc %s <%s> %s", msg.Channel,
-				cfg.IRCNickname, msg.Body)
+				cfg.Nickname, msg.Body)
 			switch msg.Type {
-			case IRCOutMsgTypePrivMsg:
+			case OutputMsgTypePrivMsg:
 				conn.Privmsg(msg.Channel, msg.Body)
-			case IRCOutMsgTypeAction:
+			case OutputMsgTypeAction:
 				conn.Action(msg.Channel, msg.Body)
+			case OutputMsgTypeMattermost:
+				srv.SendToMattermost(srv.NewMattermostResponse(msg.Channel,
+					msg.Body))
 			default:
 				log.Printf("main loop: un-handled "+
 					"IRC output message type"+

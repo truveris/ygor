@@ -9,14 +9,14 @@ type PlayModule struct {
 }
 
 // PrivMsg is the message handler for user 'play' requests.
-func (module *PlayModule) PrivMsg(srv *Server, msg *IRCInputMessage) {
+func (module *PlayModule) PrivMsg(srv *Server, msg *InputMessage) {
 	usage := "usage: play url [end]"
 
 	// Validate the command's usage, and get back a map representing the media
 	// item that was passed, along with it's start and end bounds.
 	mediaItem, err := parseArgList(msg.Args)
 	if err != nil {
-		srv.IRCPrivMsg(msg.ReplyTo, usage)
+		srv.Reply(msg, usage)
 		return
 	}
 
@@ -29,7 +29,7 @@ func (module *PlayModule) PrivMsg(srv *Server, msg *IRCInputMessage) {
 			"audio",
 		})
 	if err != nil {
-		srv.IRCPrivMsg(msg.ReplyTo, err.Error())
+		srv.Reply(msg, err.Error())
 		return
 	}
 

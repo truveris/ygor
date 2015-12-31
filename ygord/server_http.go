@@ -87,6 +87,7 @@ func HTTPServer(srv *Server, address string) {
 	http.Handle("/channel/register", &ChannelRegisterHandler{srv})
 	http.Handle("/channel/poll", &ChannelPollHandler{srv})
 	http.Handle("/client/list", &ClientListHandler{srv})
+	http.Handle("/mattermost", &MattermostHandler{srv})
 
 	err := http.ListenAndServe(address, nil)
 	if err != nil {

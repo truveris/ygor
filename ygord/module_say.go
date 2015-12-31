@@ -19,18 +19,18 @@ type SayCmdLine struct {
 type SayModule struct{}
 
 // PrivMsg is the message handler for user requests.
-func (module *SayModule) PrivMsg(srv *Server, msg *IRCInputMessage) {
+func (module *SayModule) PrivMsg(srv *Server, msg *InputMessage) {
 	cmd := SayCmdLine{}
 
 	flagParser := flags.NewParser(&cmd, flags.PassDoubleDash)
 	args, err := flagParser.ParseArgs(msg.Args)
 	if err != nil || len(args) == 0 {
-		srv.IRCPrivMsg(msg.ReplyTo, "usage: say [-v voice] sentence")
+		srv.Reply(msg, "usage: say [-v voice] sentence")
 		return
 	}
 
 	if srv.Config.SaydURL == "" {
-		srv.IRCPrivMsg(msg.ReplyTo, "error: SaydURL is not configured")
+		srv.Reply(msg, "error: SaydURL is not configured")
 		return
 	}
 
@@ -41,7 +41,7 @@ func (module *SayModule) PrivMsg(srv *Server, msg *IRCInputMessage) {
 	media, err := NewMedia(srv, mediaItem, "playTrack", false, false,
 		[]string{})
 	if err != nil {
-		srv.IRCPrivMsg(msg.ReplyTo, err.Error())
+		srv.Reply(msg, err.Error())
 		return
 	}
 

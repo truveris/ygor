@@ -15,12 +15,12 @@ func TestModulePlayUsageOnNoParams(t *testing.T) {
 
 	m := &PlayModule{}
 	m.Init(srv)
-	m.PrivMsg(srv, &IRCInputMessage{
+	m.PrivMsg(srv, &InputMessage{
 		ReplyTo: "#test",
 		Args:    []string{},
 	})
 
-	msgs := srv.FlushIRCOutputQueue()
+	msgs := srv.FlushOutputQueue()
 	if assert.Len(t, msgs, 1) {
 		assert.Equal(t, "#test", msgs[0].Channel)
 		assert.Equal(t, "usage: play url [end]", msgs[0].Body)

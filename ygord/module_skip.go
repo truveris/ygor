@@ -7,7 +7,7 @@ package main
 type SkipModule struct{}
 
 // PrivMsg is the message handler for user requests.
-func (module *SkipModule) PrivMsg(srv *Server, msg *IRCInputMessage) {
+func (module *SkipModule) PrivMsg(srv *Server, msg *InputMessage) {
 	srv.SendToChannelMinions(msg.ReplyTo, ClientCommand{"skip", nil})
 }
 

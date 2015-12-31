@@ -4,12 +4,12 @@
 package main
 
 // IRCMessageFunction is used as a type of function that receives a message from IRC
-type IRCMessageFunction func(*Server, *IRCInputMessage)
+type IRCMessageFunction func(*Server, *InputMessage)
 
 // ToggleFunction is a type of function that is used to check if a module
 // should be executed based on the provided Message.  It should return a
 // boolean.
-type ToggleFunction func(*Server, *IRCInputMessage) bool
+type ToggleFunction func(*Server, *InputMessage) bool
 
 // Command is the definition of a command to be executed either when a message
 // is received from users (IRC) or from minions.
@@ -35,7 +35,7 @@ type Command struct {
 }
 
 // IRCMessageMatches checks if the given Message matches the command.
-func (cmd Command) IRCMessageMatches(srv *Server, msg *IRCInputMessage) bool {
+func (cmd Command) IRCMessageMatches(srv *Server, msg *InputMessage) bool {
 	// Not even the right command.
 	if cmd.ToggleFunction != nil {
 		if !cmd.ToggleFunction(srv, msg) {
@@ -46,7 +46,7 @@ func (cmd Command) IRCMessageMatches(srv *Server, msg *IRCInputMessage) bool {
 	}
 
 	// Check if the command forbids private messages.
-	if !cmd.AllowPrivate && msg.Type == IRCInputMsgTypeIRCPrivate {
+	if !cmd.AllowPrivate && msg.Type == InputMsgTypeIRCPrivate {
 		return false
 	}
 

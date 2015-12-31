@@ -27,11 +27,11 @@ const (
 type AliasModule struct{}
 
 // AliasPrivMsg is the message handler for user 'alias' requests.
-func (module *AliasModule) AliasPrivMsg(srv *Server, msg *IRCInputMessage) {
+func (module *AliasModule) AliasPrivMsg(srv *Server, msg *InputMessage) {
 	var outputMsg string
 
 	if len(msg.Args) == 0 {
-		srv.IRCPrivMsg(msg.ReplyTo, "usage: alias name [expr ...]")
+		srv.Reply(msg, "usage: alias name [expr ...]")
 		return
 	}
 
@@ -41,10 +41,10 @@ func (module *AliasModule) AliasPrivMsg(srv *Server, msg *IRCInputMessage) {
 	// Request the value of an alias.
 	if len(msg.Args) == 1 {
 		if alias == nil {
-			srv.IRCPrivMsg(msg.ReplyTo, "error: unknown alias")
+			srv.Reply(msg, "error: unknown alias")
 			return
 		}
-		srv.IRCPrivMsg(msg.ReplyTo, fmt.Sprintf("%s=\"%s\" (created by %s on %s)",
+		srv.Reply(msg, fmt.Sprintf("%s=\"%s\" (created by %s on %s)",
 			alias.Name, alias.Value, alias.Author, alias.HumanTime()))
 		return
 	}
@@ -52,7 +52,7 @@ func (module *AliasModule) AliasPrivMsg(srv *Server, msg *IRCInputMessage) {
 	// Set a new alias.
 	cmd := srv.GetCommand(name)
 	if cmd != nil {
-		srv.IRCPrivMsg(msg.ReplyTo, fmt.Sprintf("error: '%s' is a"+
+		srv.Reply(msg, fmt.Sprintf("error: '%s' is a"+
 			" command", name))
 		return
 	}
@@ -64,7 +64,7 @@ func (module *AliasModule) AliasPrivMsg(srv *Server, msg *IRCInputMessage) {
 
 		newName, err := srv.Aliases.GetIncrementedName(name, newValue)
 		if err != nil {
-			srv.IRCPrivMsg(msg.ReplyTo, "error: "+err.Error())
+			srv.Reply(msg, "error: "+err.Error())
 			return
 		}
 		if newName != name {
@@ -86,7 +86,7 @@ func (module *AliasModule) AliasPrivMsg(srv *Server, msg *IRCInputMessage) {
 		outputMsg = "error: " + err.Error()
 	}
 
-	srv.IRCPrivMsg(msg.ReplyTo, outputMsg)
+	srv.Reply(msg, outputMsg)
 }
 
 // getPagesOfAliases takes a list of aliases and returns joined pages of them.
@@ -122,9 +122,9 @@ func getPagesOfAliases(aliases []string) []string {
 }
 
 // UnAliasPrivMsg is the message handler for user 'unalias' requests.
-func (module *AliasModule) UnAliasPrivMsg(srv *Server, msg *IRCInputMessage) {
+func (module *AliasModule) UnAliasPrivMsg(srv *Server, msg *InputMessage) {
 	if len(msg.Args) != 1 {
-		srv.IRCPrivMsg(msg.ReplyTo, "usage: unalias name")
+		srv.Reply(msg, "usage: unalias name")
 		return
 	}
 
@@ -132,27 +132,27 @@ func (module *AliasModule) UnAliasPrivMsg(srv *Server, msg *IRCInputMessage) {
 	alias := srv.Aliases.Get(name)
 
 	if alias == nil {
-		srv.IRCPrivMsg(msg.ReplyTo, "error: unknown alias")
+		srv.Reply(msg, "error: unknown alias")
 		return
 	}
 
 	srv.Aliases.Delete(name)
 	srv.Aliases.Save()
-	srv.IRCPrivMsg(msg.ReplyTo, "ok (deleted)")
+	srv.Reply(msg, "ok (deleted)")
 }
 
 // AliasesPrivMsg is the message handler for user 'aliases' requests.  It lists
 // all the available aliases.
-func (module *AliasModule) AliasesPrivMsg(srv *Server, msg *IRCInputMessage) {
+func (module *AliasModule) AliasesPrivMsg(srv *Server, msg *InputMessage) {
 	if len(msg.Args) != 0 {
-		srv.IRCPrivMsg(msg.ReplyTo, "usage: aliases")
+		srv.Reply(msg, "usage: aliases")
 		return
 	}
 
 	aliases := srv.Aliases.Names()
 
 	if len(aliases) > MaxAliasesForFullList {
-		srv.IRCPrivMsg(msg.ReplyTo, "error: too many results, use grep")
+		srv.Reply(msg, "error: too many results, use grep")
 		return
 	}
 
@@ -160,10 +160,10 @@ func (module *AliasModule) AliasesPrivMsg(srv *Server, msg *IRCInputMessage) {
 	first := true
 	for _, page := range getPagesOfAliases(aliases) {
 		if first {
-			srv.IRCPrivMsg(msg.ReplyTo, "known aliases: "+page)
+			srv.Reply(msg, "known aliases: "+page)
 			first = false
 		} else {
-			srv.IRCPrivMsg(msg.ReplyTo, "... "+page)
+			srv.Reply(msg, "... "+page)
 		}
 		time.Sleep(500 * time.Millisecond)
 	}
@@ -171,9 +171,9 @@ func (module *AliasModule) AliasesPrivMsg(srv *Server, msg *IRCInputMessage) {
 
 // GrepPrivMsg is the message handler for user 'grep' requests.  It lists
 // all the available aliases matching the provided pattern.
-func (module *AliasModule) GrepPrivMsg(srv *Server, msg *IRCInputMessage) {
+func (module *AliasModule) GrepPrivMsg(srv *Server, msg *InputMessage) {
 	if len(msg.Args) != 1 {
-		srv.IRCPrivMsg(msg.ReplyTo, "usage: grep pattern")
+		srv.Reply(msg, "usage: grep pattern")
 		return
 	}
 
@@ -181,22 +181,22 @@ func (module *AliasModule) GrepPrivMsg(srv *Server, msg *IRCInputMessage) {
 	sort.Strings(results)
 
 	if len(results) == 0 {
-		srv.IRCPrivMsg(msg.ReplyTo, "error: no matches found")
+		srv.Reply(msg, "error: no matches found")
 		return
 	}
 
 	found := strings.Join(results, ", ")
 	if len(found) > MaxCharsPerPage {
-		srv.IRCPrivMsg(msg.ReplyTo, "error: too many matches, refine your search")
+		srv.Reply(msg, "error: too many matches, refine your search")
 		return
 	}
 
-	srv.IRCPrivMsg(msg.ReplyTo, found)
+	srv.Reply(msg, found)
 }
 
 // RandomPrivMsg is the message handler for user 'random' requests.  It picks a
 // random alias to execute based on the provided pattern or no pattern at all.
-func (module *AliasModule) RandomPrivMsg(srv *Server, msg *IRCInputMessage) {
+func (module *AliasModule) RandomPrivMsg(srv *Server, msg *InputMessage) {
 	var names []string
 
 	switch len(msg.Args) {
@@ -205,12 +205,12 @@ func (module *AliasModule) RandomPrivMsg(srv *Server, msg *IRCInputMessage) {
 	case 1:
 		names = srv.Aliases.Find(msg.Args[0])
 	default:
-		srv.IRCPrivMsg(msg.ReplyTo, "usage: random [pattern]")
+		srv.Reply(msg, "usage: random [pattern]")
 		return
 	}
 
 	if len(names) <= 0 {
-		srv.IRCPrivMsg(msg.ReplyTo, "error: no matches found")
+		srv.Reply(msg, "error: no matches found")
 		return
 	}
 
@@ -218,19 +218,19 @@ func (module *AliasModule) RandomPrivMsg(srv *Server, msg *IRCInputMessage) {
 
 	body, err := srv.Aliases.Resolve(names[idx], 0)
 	if err != nil {
-		srv.IRCPrivMsg(msg.ReplyTo, "error: failed to resolve aliases: "+
+		srv.Reply(msg, "error: failed to resolve aliases: "+
 			err.Error())
 		return
 	}
 
 	newmsgs, err := srv.NewMessagesFromBody(body, msg.Recursion+1)
 	if err != nil {
-		srv.IRCPrivMsg(msg.ReplyTo, "error: failed to expand chosen alias '"+
+		srv.Reply(msg, "error: failed to expand chosen alias '"+
 			names[idx]+"': "+err.Error())
 		return
 	}
 
-	srv.IRCPrivAction(msg.ReplyTo, "chooses "+names[idx])
+	srv.Reply(msg, "/me chooses "+names[idx])
 
 	for _, newmsg := range newmsgs {
 		newmsg.ReplyTo = msg.ReplyTo

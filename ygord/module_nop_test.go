@@ -15,7 +15,7 @@ func TestModuleNop(t *testing.T) {
 
 	m := &NopModule{}
 	m.Init(srv)
-	m.PrivMsg(srv, &IRCInputMessage{ReplyTo: "#test"})
+	m.PrivMsg(srv, &InputMessage{ReplyTo: "#test"})
 
 	assert.Empty(t, srv.FlushIRCOutputQueue())
 	assert.Empty(t, client.FlushQueue())

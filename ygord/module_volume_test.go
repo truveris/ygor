@@ -15,12 +15,12 @@ func TestModuleVolume_UsageNoParams(t *testing.T) {
 
 	m := &VolumeModule{}
 	m.Init(srv)
-	m.PrivMsg(srv, &IRCInputMessage{
+	m.PrivMsg(srv, &InputMessage{
 		ReplyTo: "#test",
 		Args:    []string{},
 	})
 
-	msgs := srv.FlushIRCOutputQueue()
+	msgs := srv.FlushOutputQueue()
 	if assert.Len(t, msgs, 1) {
 		assert.Equal(t, "#test", msgs[0].Channel)
 		assert.Equal(t, "usage: volume percent", msgs[0].Body)
@@ -36,24 +36,24 @@ func TestModuleVolume_BadValues(t *testing.T) {
 	m := &VolumeModule{}
 	m.Init(srv)
 
-	m.PrivMsg(srv, &IRCInputMessage{
+	m.PrivMsg(srv, &InputMessage{
 		ReplyTo: "#test",
 		Args:    []string{"-10%"},
 	})
 
-	msgs := srv.FlushIRCOutputQueue()
+	msgs := srv.FlushOutputQueue()
 	if assert.Len(t, msgs, 1) {
 		assert.Equal(t, "#test", msgs[0].Channel)
 		assert.Equal(t, "error: bad input, must be absolute rounded percent value (e.g. 42%)", msgs[0].Body)
 	}
 	assert.Empty(t, client.FlushQueue())
 
-	m.PrivMsg(srv, &IRCInputMessage{
+	m.PrivMsg(srv, &InputMessage{
 		ReplyTo: "#test",
 		Args:    []string{"wat"},
 	})
 
-	msgs = srv.FlushIRCOutputQueue()
+	msgs = srv.FlushOutputQueue()
 	if assert.Len(t, msgs, 1) {
 		assert.Equal(t, "#test", msgs[0].Channel)
 		assert.Equal(t, "error: bad input, must be absolute rounded percent value (e.g. 42%)", msgs[0].Body)

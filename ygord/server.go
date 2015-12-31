@@ -17,8 +17,8 @@ import (
 type Server struct {
 	Aliases            *alias.File
 	ClientRegistry     map[string]*Client
-	IRCInputQueue      chan *IRCInputMessage
-	IRCOutputQueue     chan *IRCOutputMessage
+	InputQueue         chan *InputMessage
+	OutputQueue        chan *OutputMessage
 	Modules            []Module
 	RegisteredCommands map[string]Command
 	Salt               []byte
@@ -37,8 +37,8 @@ func CreateServer(config *Config) *Server {
 	}
 
 	srv.RegisteredCommands = make(map[string]Command)
-	srv.IRCInputQueue = make(chan *IRCInputMessage, 128)
-	srv.IRCOutputQueue = make(chan *IRCOutputMessage, 128)
+	srv.InputQueue = make(chan *InputMessage, 128)
+	srv.OutputQueue = make(chan *OutputMessage, 128)
 
 	srv.ClientRegistry = make(map[string]*Client)
 
@@ -84,14 +84,14 @@ func (srv *Server) GetCommand(name string) *Command {
 	return nil
 }
 
-// FlushIRCOutputQueue removes every single messages from the
-// IRCOutputQueue and returns them in the form of an array.
-func (srv *Server) FlushIRCOutputQueue() []*IRCOutputMessage {
-	var msgs []*IRCOutputMessage
+// FlushOutputQueue removes every single messages from the
+// OutputQueue and returns them in the form of an array.
+func (srv *Server) FlushOutputQueue() []*OutputMessage {
+	var msgs []*OutputMessage
 
 	for {
 		select {
-		case msg := <-srv.IRCOutputQueue:
+		case msg := <-srv.OutputQueue:
 			msgs = append(msgs, msg)
 		default:
 			goto end
@@ -102,14 +102,14 @@ end:
 	return msgs
 }
 
-// FlushIRCInputQueue removes every single messages from the InputQueue and
+// FlushInputQueue removes every single messages from the InputQueue and
 // returns them in the form of an array.
-func (srv *Server) FlushIRCInputQueue() []*IRCInputMessage {
-	var msgs []*IRCInputMessage
+func (srv *Server) FlushInputQueue() []*InputMessage {
+	var msgs []*InputMessage
 
 	for {
 		select {
-		case msg := <-srv.IRCInputQueue:
+		case msg := <-srv.InputQueue:
 			msgs = append(msgs, msg)
 		default:
 			goto end

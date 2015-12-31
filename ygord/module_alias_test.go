@@ -23,12 +23,12 @@ func createTestServerClientAndAliasModule() (*Server, *Client, *AliasModule) {
 func TestModuleAliasUsageOnNoParams(t *testing.T) {
 	srv, client, module := createTestServerClientAndAliasModule()
 
-	module.AliasPrivMsg(srv, &IRCInputMessage{
+	module.AliasPrivMsg(srv, &InputMessage{
 		ReplyTo: "#test",
 		Args:    []string{},
 	})
 
-	msgs := srv.FlushIRCOutputQueue()
+	msgs := srv.FlushOutputQueue()
 	if assert.Len(t, msgs, 1) {
 		assert.Equal(t, "#test", msgs[0].Channel)
 		assert.Equal(t, "usage: alias name [expr ...]", msgs[0].Body)
@@ -40,12 +40,12 @@ func TestModuleAliasUsageOnNoParams(t *testing.T) {
 func TestModuleAliasValueNotFound(t *testing.T) {
 	srv, client, module := createTestServerClientAndAliasModule()
 
-	module.AliasPrivMsg(srv, &IRCInputMessage{
+	module.AliasPrivMsg(srv, &InputMessage{
 		ReplyTo: "#test",
 		Args:    []string{"key"},
 	})
 
-	msgs := srv.FlushIRCOutputQueue()
+	msgs := srv.FlushOutputQueue()
 	if assert.Len(t, msgs, 1) {
 		assert.Equal(t, "#test", msgs[0].Channel)
 		assert.Equal(t, "error: unknown alias", msgs[0].Body)
@@ -59,12 +59,12 @@ func TestModuleAliasValueFound(t *testing.T) {
 
 	srv.Aliases.Add("key", "value", "human", fakeNow)
 
-	module.AliasPrivMsg(srv, &IRCInputMessage{
+	module.AliasPrivMsg(srv, &InputMessage{
 		ReplyTo: "#test",
 		Args:    []string{"key"},
 	})
 
-	msgs := srv.FlushIRCOutputQueue()
+	msgs := srv.FlushOutputQueue()
 	if assert.Len(t, msgs, 1) {
 		assert.Equal(t, "#test", msgs[0].Channel)
 		assert.Equal(t, "key=\"value\" (created by human on 1982-10-20T19:00:00Z)", msgs[0].Body)
@@ -78,12 +78,12 @@ func TestModuleAliasValueFoundWithPercent(t *testing.T) {
 
 	srv.Aliases.Add("60%", "value", "human", fakeNow)
 
-	module.AliasPrivMsg(srv, &IRCInputMessage{
+	module.AliasPrivMsg(srv, &InputMessage{
 		ReplyTo: "#test",
 		Args:    []string{"60%"},
 	})
 
-	msgs := srv.FlushIRCOutputQueue()
+	msgs := srv.FlushOutputQueue()
 	if assert.Len(t, msgs, 1) {
 		assert.Equal(t, "#test", msgs[0].Channel)
 		assert.Equal(t, "60%=\"value\" (created by human on 1982-10-20T19:00:00Z)", msgs[0].Body)
@@ -98,12 +98,12 @@ func TestModuleAliasValueFoundNested(t *testing.T) {
 	srv.Aliases.Add("key", "value", "human", fakeNow)
 	srv.Aliases.Add("value", "null", "robot", fakeNow)
 
-	module.AliasPrivMsg(srv, &IRCInputMessage{
+	module.AliasPrivMsg(srv, &InputMessage{
 		ReplyTo: "#test",
 		Args:    []string{"key"},
 	})
 
-	msgs := srv.FlushIRCOutputQueue()
+	msgs := srv.FlushOutputQueue()
 	if assert.Len(t, msgs, 1) {
 		assert.Equal(t, "#test", msgs[0].Channel)
 		assert.Equal(t, "key=\"value\" (created by human on 1982-10-20T19:00:00Z)", msgs[0].Body)
@@ -117,12 +117,12 @@ func TestModuleAliasChange(t *testing.T) {
 
 	srv.Aliases.Add("key", "value", "human", fakeNow)
 
-	module.AliasPrivMsg(srv, &IRCInputMessage{
+	module.AliasPrivMsg(srv, &InputMessage{
 		ReplyTo: "#test",
 		Args:    []string{"key", "other value"},
 	})
 
-	msgs := srv.FlushIRCOutputQueue()
+	msgs := srv.FlushOutputQueue()
 	if assert.Len(t, msgs, 1) {
 		assert.Equal(t, "#test", msgs[0].Channel)
 		assert.Equal(t, "ok (replaces \"value\")", msgs[0].Body)
@@ -134,12 +134,12 @@ func TestModuleAliasChange(t *testing.T) {
 func TestModuleAliasCreate(t *testing.T) {
 	srv, client, module := createTestServerClientAndAliasModule()
 
-	module.AliasPrivMsg(srv, &IRCInputMessage{
+	module.AliasPrivMsg(srv, &InputMessage{
 		ReplyTo: "#test",
 		Args:    []string{"key", "value"},
 	})
 
-	msgs := srv.FlushIRCOutputQueue()
+	msgs := srv.FlushOutputQueue()
 	if assert.Len(t, msgs, 1) {
 		assert.Equal(t, "#test", msgs[0].Channel)
 		assert.Equal(t, "ok (created)", msgs[0].Body)
@@ -151,16 +151,16 @@ func TestModuleAliasCreate(t *testing.T) {
 func TestModuleAliasCreateIncremental(t *testing.T) {
 	srv, client, module := createTestServerClientAndAliasModule()
 
-	module.AliasPrivMsg(srv, &IRCInputMessage{
+	module.AliasPrivMsg(srv, &InputMessage{
 		ReplyTo: "#test",
 		Args:    []string{"key#", "value1"},
 	})
-	module.AliasPrivMsg(srv, &IRCInputMessage{
+	module.AliasPrivMsg(srv, &InputMessage{
 		ReplyTo: "#test",
 		Args:    []string{"key#", "value2"},
 	})
 
-	msgs := srv.FlushIRCOutputQueue()
+	msgs := srv.FlushOutputQueue()
 	if assert.Len(t, msgs, 2) {
 		assert.Equal(t, "#test", msgs[0].Channel)
 		assert.Equal(t, "ok (created as \"key1\")", msgs[0].Body)
@@ -174,16 +174,16 @@ func TestModuleAliasCreateIncremental(t *testing.T) {
 func TestModuleAliasCreateIncrementalDupeValue(t *testing.T) {
 	srv, client, module := createTestServerClientAndAliasModule()
 
-	module.AliasPrivMsg(srv, &IRCInputMessage{
+	module.AliasPrivMsg(srv, &InputMessage{
 		ReplyTo: "#test",
 		Args:    []string{"key#", "value"},
 	})
-	module.AliasPrivMsg(srv, &IRCInputMessage{
+	module.AliasPrivMsg(srv, &InputMessage{
 		ReplyTo: "#test",
 		Args:    []string{"key#", "value"},
 	})
 
-	msgs := srv.FlushIRCOutputQueue()
+	msgs := srv.FlushOutputQueue()
 	if assert.Len(t, msgs, 2) {
 		assert.Equal(t, "#test", msgs[0].Channel)
 		assert.Equal(t, "ok (created as \"key1\")", msgs[0].Body)
@@ -197,12 +197,12 @@ func TestModuleAliasCreateIncrementalDupeValue(t *testing.T) {
 func TestModuleAliasCreateIncrementalTooManyHashes(t *testing.T) {
 	srv, client, module := createTestServerClientAndAliasModule()
 
-	module.AliasPrivMsg(srv, &IRCInputMessage{
+	module.AliasPrivMsg(srv, &InputMessage{
 		ReplyTo: "#test",
 		Args:    []string{"key##", "value"},
 	})
 
-	msgs := srv.FlushIRCOutputQueue()
+	msgs := srv.FlushOutputQueue()
 	if assert.Len(t, msgs, 1) {
 		assert.Equal(t, "#test", msgs[0].Channel)
 		assert.Equal(t, "error: too many '#'", msgs[0].Body)
@@ -218,12 +218,12 @@ func TestModuleAliases(t *testing.T) {
 	srv.Aliases.Add("bar", "bar-value", "human", fakeNow)
 	srv.Aliases.Add("zzz", "zzz-value", "human", fakeNow)
 
-	module.AliasesPrivMsg(srv, &IRCInputMessage{
+	module.AliasesPrivMsg(srv, &InputMessage{
 		ReplyTo: "#test",
 		Args:    []string{},
 	})
 
-	msgs := srv.FlushIRCOutputQueue()
+	msgs := srv.FlushOutputQueue()
 	if assert.Len(t, msgs, 1) {
 		assert.Equal(t, "#test", msgs[0].Channel)
 		assert.Equal(t, "known aliases: bar, foo, zzz", msgs[0].Body)
@@ -240,12 +240,12 @@ func TestModuleAliasesPages(t *testing.T) {
 		srv.Aliases.Add(key, "foo-value", "human", fakeNow)
 	}
 
-	module.AliasesPrivMsg(srv, &IRCInputMessage{
+	module.AliasesPrivMsg(srv, &InputMessage{
 		ReplyTo: "#test",
 		Args:    []string{},
 	})
 
-	msgs := srv.FlushIRCOutputQueue()
+	msgs := srv.FlushOutputQueue()
 	if assert.Len(t, msgs, 2) {
 		assert.Equal(t, "#test", msgs[0].Channel)
 		assert.Equal(t, "known aliases: foobarfoobar0, foobarfoobar1, foobarfoobar10, foobarfoobar11, foobarfoobar12, foobarfoobar13, foobarfoobar14, foobarfoobar15, foobarfoobar16, foobarfoobar17, foobarfoobar18, foobarfoobar19, foobarfoobar2, foobarfoobar20, foobarfoobar21, foobarfoobar22, foobarfoobar23, foobarfoobar24, foobarfoobar25, foobarfoobar26, foobarfoobar27, foobarfoobar28, foobarfoobar29, foobarfoobar3, foobarfoobar30, foobarfoobar31, foobarfoobar32, foobarfoobar33", msgs[0].Body)
@@ -264,12 +264,12 @@ func TestModuleAliasesTooMany(t *testing.T) {
 		srv.Aliases.Add(key, "foo-value", "human", fakeNow)
 	}
 
-	module.AliasesPrivMsg(srv, &IRCInputMessage{
+	module.AliasesPrivMsg(srv, &InputMessage{
 		ReplyTo: "#test",
 		Args:    []string{},
 	})
 
-	msgs := srv.FlushIRCOutputQueue()
+	msgs := srv.FlushOutputQueue()
 	if assert.Len(t, msgs, 1) {
 		assert.Equal(t, "#test", msgs[0].Channel)
 		assert.Equal(t, "error: too many results, use grep", msgs[0].Body)
@@ -283,12 +283,12 @@ func TestModuleUnaliasUsage(t *testing.T) {
 
 	srv.Aliases.Add("foo", "foo-value", "human", fakeNow)
 
-	module.UnAliasPrivMsg(srv, &IRCInputMessage{
+	module.UnAliasPrivMsg(srv, &InputMessage{
 		ReplyTo: "#test",
 		Args:    []string{},
 	})
 
-	msgs := srv.FlushIRCOutputQueue()
+	msgs := srv.FlushOutputQueue()
 	if assert.Len(t, msgs, 1) {
 		assert.Equal(t, "#test", msgs[0].Channel)
 		assert.Equal(t, "usage: unalias name", msgs[0].Body)
@@ -302,12 +302,12 @@ func TestModuleUnaliasExisting(t *testing.T) {
 
 	srv.Aliases.Add("foo", "foo-value", "human", fakeNow)
 
-	module.UnAliasPrivMsg(srv, &IRCInputMessage{
+	module.UnAliasPrivMsg(srv, &InputMessage{
 		ReplyTo: "#test",
 		Args:    []string{"foo"},
 	})
 
-	msgs := srv.FlushIRCOutputQueue()
+	msgs := srv.FlushOutputQueue()
 	if assert.Len(t, msgs, 1) {
 		assert.Equal(t, "#test", msgs[0].Channel)
 		assert.Equal(t, "ok (deleted)", msgs[0].Body)
@@ -323,12 +323,12 @@ func TestModuleUnaliasNonExisting(t *testing.T) {
 
 	srv.Aliases.Add("foo", "foo-value", "human", fakeNow)
 
-	module.UnAliasPrivMsg(srv, &IRCInputMessage{
+	module.UnAliasPrivMsg(srv, &InputMessage{
 		ReplyTo: "#test",
 		Args:    []string{"bar"},
 	})
 
-	msgs := srv.FlushIRCOutputQueue()
+	msgs := srv.FlushOutputQueue()
 	if assert.Len(t, msgs, 1) {
 		assert.Equal(t, "#test", msgs[0].Channel)
 		assert.Equal(t, "error: unknown alias", msgs[0].Body)
@@ -340,12 +340,12 @@ func TestModuleUnaliasNonExisting(t *testing.T) {
 func TestModuleGrepUsage(t *testing.T) {
 	srv, client, module := createTestServerClientAndAliasModule()
 
-	module.GrepPrivMsg(srv, &IRCInputMessage{
+	module.GrepPrivMsg(srv, &InputMessage{
 		ReplyTo: "#test",
 		Args:    []string{},
 	})
 
-	msgs := srv.FlushIRCOutputQueue()
+	msgs := srv.FlushOutputQueue()
 	if assert.Len(t, msgs, 1) {
 		assert.Equal(t, "#test", msgs[0].Channel)
 		assert.Equal(t, "usage: grep pattern", msgs[0].Body)
@@ -361,12 +361,12 @@ func TestModuleGrep(t *testing.T) {
 	srv.Aliases.Add("baz", "baz-value", "human", fakeNow)
 	srv.Aliases.Add("zzz", "zzz-value", "human", fakeNow)
 
-	module.GrepPrivMsg(srv, &IRCInputMessage{
+	module.GrepPrivMsg(srv, &InputMessage{
 		ReplyTo: "#test",
 		Args:    []string{"z"},
 	})
 
-	msgs := srv.FlushIRCOutputQueue()
+	msgs := srv.FlushOutputQueue()
 	if assert.Len(t, msgs, 1) {
 		assert.Equal(t, "#test", msgs[0].Channel)
 		assert.Equal(t, "baz, zzz", msgs[0].Body)
@@ -381,12 +381,12 @@ func TestModuleGrepNoResult(t *testing.T) {
 	srv.Aliases.Add("foo", "foo-value", "human", fakeNow)
 	srv.Aliases.Add("bar", "bar-value", "human", fakeNow)
 
-	module.GrepPrivMsg(srv, &IRCInputMessage{
+	module.GrepPrivMsg(srv, &InputMessage{
 		ReplyTo: "#test",
 		Args:    []string{"z"},
 	})
 
-	msgs := srv.FlushIRCOutputQueue()
+	msgs := srv.FlushOutputQueue()
 	if assert.Len(t, msgs, 1) {
 		assert.Equal(t, "#test", msgs[0].Channel)
 		assert.Equal(t, "error: no matches found", msgs[0].Body)
@@ -403,12 +403,12 @@ func TestModuleGrepTooManyResults(t *testing.T) {
 		srv.Aliases.Add(key, "foo-value", "human", fakeNow)
 	}
 
-	module.GrepPrivMsg(srv, &IRCInputMessage{
+	module.GrepPrivMsg(srv, &InputMessage{
 		ReplyTo: "#test",
 		Args:    []string{"foo"},
 	})
 
-	msgs := srv.FlushIRCOutputQueue()
+	msgs := srv.FlushOutputQueue()
 	if assert.Len(t, msgs, 1) {
 		assert.Equal(t, "#test", msgs[0].Channel)
 		assert.Equal(t, "error: too many matches, refine your search", msgs[0].Body)
@@ -424,12 +424,12 @@ func TestModuleRandom(t *testing.T) {
 	srv.Aliases.Add("bar", "play bar.mp3", "human", fakeNow)
 	srv.Aliases.Add("zzz", "play zzz.mp3", "human", fakeNow)
 
-	module.RandomPrivMsg(srv, &IRCInputMessage{
+	module.RandomPrivMsg(srv, &InputMessage{
 		ReplyTo: "#test",
 		Args:    []string{"o"},
 	})
 
-	msgs := srv.FlushIRCOutputQueue()
+	msgs := srv.FlushOutputQueue()
 	if assert.Len(t, msgs, 2) {
 		assert.Equal(t, "#test", msgs[0].Channel)
 		assert.Equal(t, "chooses foo", msgs[0].Body)
@@ -446,12 +446,12 @@ func TestModuleRandomNotFound(t *testing.T) {
 	srv.Aliases.Add("foo", "play foo.mp3", "human", fakeNow)
 	srv.Aliases.Add("bar", "play bar.mp3", "human", fakeNow)
 
-	module.RandomPrivMsg(srv, &IRCInputMessage{
+	module.RandomPrivMsg(srv, &InputMessage{
 		ReplyTo: "#test",
 		Args:    []string{"w"},
 	})
 
-	msgs := srv.FlushIRCOutputQueue()
+	msgs := srv.FlushOutputQueue()
 	if assert.Len(t, msgs, 1) {
 		assert.Equal(t, "#test", msgs[0].Channel)
 		assert.Equal(t, "error: no matches found", msgs[0].Body)

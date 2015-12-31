@@ -38,7 +38,7 @@ func (handler *ChannelRegisterHandler) ServeHTTP(w http.ResponseWriter, r *http.
 		return
 	}
 
-	client := handler.Server.RegisterClient(username, "#"+input.ChannelID)
+	client := handler.Server.RegisterClient(username, input.ChannelID)
 	client.IPAddress = r.RemoteAddr
 	if agent, ok := r.Header["User-Agent"]; ok {
 		client.UserAgent = agent[0]

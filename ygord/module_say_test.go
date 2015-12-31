@@ -15,12 +15,12 @@ func TestModuleSayUsageOnNoParams(t *testing.T) {
 
 	m := &SayModule{}
 	m.Init(srv)
-	m.PrivMsg(srv, &IRCInputMessage{
+	m.PrivMsg(srv, &InputMessage{
 		ReplyTo: "#test",
 		Args:    []string{},
 	})
 
-	msgs := srv.FlushIRCOutputQueue()
+	msgs := srv.FlushOutputQueue()
 	if assert.Len(t, msgs, 1) {
 		assert.Equal(t, "#test", msgs[0].Channel)
 		assert.Equal(t, "usage: say [-v voice] sentence", msgs[0].Body)
@@ -35,12 +35,12 @@ func TestModuleSayNoConfig(t *testing.T) {
 
 	m := &SayModule{}
 	m.Init(srv)
-	m.PrivMsg(srv, &IRCInputMessage{
+	m.PrivMsg(srv, &InputMessage{
 		ReplyTo: "#test",
 		Args:    []string{"hello"},
 	})
 
-	msgs := srv.FlushIRCOutputQueue()
+	msgs := srv.FlushOutputQueue()
 	if assert.Len(t, msgs, 1) {
 		assert.Equal(t, "#test", msgs[0].Channel)
 		assert.Equal(t, "error: SaydURL is not configured", msgs[0].Body)

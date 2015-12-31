@@ -15,14 +15,14 @@ var (
 type VolumeModule struct{}
 
 // PrivMsg is the message handler for user 'volume' requests.
-func (module VolumeModule) PrivMsg(srv *Server, msg *IRCInputMessage) {
+func (module VolumeModule) PrivMsg(srv *Server, msg *InputMessage) {
 	if len(msg.Args) != 1 {
-		srv.IRCPrivMsg(msg.ReplyTo, "usage: volume percent")
+		srv.Reply(msg, "usage: volume percent")
 		return
 	}
 
 	if !rePercentage.MatchString(msg.Args[0]) {
-		srv.IRCPrivMsg(msg.ReplyTo, "error: bad input, must be absolute rounded percent value (e.g. 42%)")
+		srv.Reply(msg, "error: bad input, must be absolute rounded percent value (e.g. 42%)")
 		return
 	}
 
@@ -34,9 +34,9 @@ func (module VolumeModule) PrivMsg(srv *Server, msg *IRCInputMessage) {
 
 // PrivMsgPlusPlus is the message handler for user 'volume++' requests, it
 // increments the volume by 1dB.
-func (module VolumeModule) PrivMsgPlusPlus(srv *Server, msg *IRCInputMessage) {
+func (module VolumeModule) PrivMsgPlusPlus(srv *Server, msg *InputMessage) {
 	if len(msg.Args) != 0 {
-		srv.IRCPrivMsg(msg.ReplyTo, "usage: volume++")
+		srv.Reply(msg, "usage: volume++")
 		return
 	}
 	srv.SendToChannelMinions(msg.ReplyTo, ClientCommand{
@@ -47,9 +47,9 @@ func (module VolumeModule) PrivMsgPlusPlus(srv *Server, msg *IRCInputMessage) {
 
 // PrivMsgMinusMinus is the message handler for user 'volume--' requests, it
 // decrements the volume by 1dB.
-func (module VolumeModule) PrivMsgMinusMinus(srv *Server, msg *IRCInputMessage) {
+func (module VolumeModule) PrivMsgMinusMinus(srv *Server, msg *InputMessage) {
 	if len(msg.Args) != 0 {
-		srv.IRCPrivMsg(msg.ReplyTo, "usage: volume--")
+		srv.Reply(msg, "usage: volume--")
 		return
 	}
 	srv.SendToChannelMinions(msg.ReplyTo, ClientCommand{

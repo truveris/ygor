@@ -14,7 +14,7 @@ var (
 // CreateTestServer creates an ygor server for testing.
 func CreateTestServer() *Server {
 	srv := CreateServer(&Config{
-		IRCNickname:   "whygore",
+		Nickname:      "whygore",
 		AliasFilePath: ":memory:",
 		Channels: map[string]ChannelCfg{
 			"#test": ChannelCfg{},

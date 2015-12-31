@@ -15,7 +15,7 @@ func TestModuleImage_Usage(t *testing.T) {
 
 	m := &ImageModule{}
 	m.Init(srv)
-	m.PrivMsg(srv, &IRCInputMessage{
+	m.PrivMsg(srv, &InputMessage{
 		ReplyTo: "#test",
 		Args:    []string{},
 	})
