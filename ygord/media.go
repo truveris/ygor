@@ -243,7 +243,7 @@ func (media *Media) checkFormatIsAcceptable() error {
 }
 
 // SetSrc takes in a string that represents a URL. This function determines if
-// the URL is a valid URL, formats imgur links to use .webm instead of .gif(v),
+// the URL is a valid URL, formats imgur links to use .mp4 instead of .gif(v),
 // and determines the Format that the URL represents.
 //
 // The Media's 'Src' attribute will either be set to the passed URL, or the
@@ -294,22 +294,22 @@ func (media *Media) SetSrc(link string) error {
 	}
 
 	// If it's an imgur link, and the content-type contains "image/gif", modify
-	// the Media so minions embed the far more efficient webm version.
+	// the Media so minions embed the far more efficient mp4 version.
 	if media.isImgur() {
 		isGIF := strings.Contains(strings.ToLower(media.mediaType), "image/gif")
 		hasGIFVExt := media.GetExt() == ".gifv"
-		if (isGIF || hasGIFVExt) && media.hasWebm() {
-			media.replaceSrcExt(".webm")
+		if (isGIF || hasGIFVExt) && media.hasMP4() {
+			media.replaceSrcExt(".mp4")
 			media.Format = "video"
-			media.mediaType = "video/webm"
+			media.mediaType = "video/mp4"
 		}
 	}
 
-	// If it's a Gfycat link, and the content-type isn't "video/webm", attempt
-	// to find a webm version of this link using the Gfycat API.
+	// If it's a Gfycat link, and the content-type isn't "video/mp4", attempt
+	// to find a mp4 version of this link using the Gfycat API.
 	if media.isGfycat() {
-		isWEBM := strings.Contains(strings.ToLower(media.mediaType), "video/webm")
-		if !isWEBM {
+		isMP4 := strings.Contains(strings.ToLower(media.mediaType), "video/mp4")
+		if !isMP4 {
 			media.resolveGfycatURL()
 		}
 	}
@@ -541,22 +541,22 @@ func (media *Media) isSoundCloud() bool {
 	return false
 }
 
-// hasWebm checks if there is a webm version of the provided URL. It returns
+// hasMP4 checks if there is an mp4 version of the provided URL. It returns
 // true if there is, and false if there isn't.
-func (media *Media) hasWebm() bool {
-	webmURL := media.Src[0:len(media.Src)-len(media.GetExt())] + ".webm"
+func (media *Media) hasMP4() bool {
+	mp4URL := media.Src[0:len(media.Src)-len(media.GetExt())] + ".mp4"
 	// Check that the URL returns a status code of 200.
-	res, err := http.Head(webmURL)
+	res, err := http.Head(mp4URL)
 	if err != nil {
-		// There likely isn't a webm version.
+		// There likely isn't a mp4 version.
 		return false
 	}
 	statusCode := strconv.Itoa(res.StatusCode)
 	if statusCode != "200" {
-		// There likely isn't a webm version.
+		// There likely isn't an mp4 version.
 		return false
 	}
-	// A webm version has been found.
+	// An mp4 version has been found.
 	return true
 }
 
@@ -612,10 +612,10 @@ func (media *Media) resolveSoundCloudURL() error {
 	return nil
 }
 
-// resolveGfycatURL attempts to find get the URL of the webm version of the
-// provided Gfycat URL. If there is no webm URL, it falls back to the mp4 URL.
-// If there is no mp4 URL, it then falls back to the gif URL. If the Gfycat API
-// doesn't return any JSON to be parsed, then it isn't a link to a Gfycat
+// resolveGfycatURL attempts to find get the URL of the mp4 version of the
+// provided Gfycat URL. If there is no mp4 URL, it falls back to the webm URL.
+// If there is no webm URL, it then falls back to the gif URL. If the Gfycat
+// API doesn't return any JSON to be parsed, then it isn't a link to a Gfycat
 // image/video, so nothing should be changed in the Media.
 func (media *Media) resolveGfycatURL() error {
 	gfyName := path.Base(media.Src)
@@ -640,20 +640,20 @@ func (media *Media) resolveGfycatURL() error {
 		return errors.New(errMsg)
 	}
 	if gfyItem, hasGfyItem := dat["gfyItem"]; hasGfyItem {
-		if webmURL, hasWebmURL := gfyItem["webmUrl"]; hasWebmURL {
-			media.Src = webmURL.(string)
-			media.Format = "video"
-			media.mediaType = "video/webm"
-			return nil
-		} else if mp4URL, hasMp4URL := gfyItem["mp4Url"]; hasMp4URL {
-			// If, for some reason, there isn't a webm URL, fallback to the mp4
-			// URL.
+		if mp4URL, hasMp4URL := gfyItem["mp4Url"]; hasMp4URL {
 			media.Src = mp4URL.(string)
 			media.Format = "video"
 			media.mediaType = "video/mp4"
 			return nil
+		} else if webmURL, hasWebmURL := gfyItem["webmUrl"]; hasWebmURL {
+			// If, for some reason, there isn't an mp4 URL, fallback to the
+			// webm URL.
+			media.Src = webmURL.(string)
+			media.Format = "video"
+			media.mediaType = "video/webm"
+			return nil
 		} else if gifURL, hasGifURL := gfyItem["gifUrl"]; hasGifURL {
-			// If, for some reason, there isn't an mp4 URL either, fallback to
+			// If, for some reason, there isn't a webm URL either, fallback to
 			// the gif URL.
 			media.Src = gifURL.(string)
 			media.Format = "image"
