@@ -1,7 +1,11 @@
-// Copyright 2015, Truveris Inc. All Rights Reserved.
+// Copyright 2015-2016, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 
 package main
+
+import (
+	"fmt"
+)
 
 // ImageModule controls the 'image' command.
 type ImageModule struct {
@@ -31,6 +35,16 @@ func (module *ImageModule) PrivMsg(srv *Server, msg *InputMessage) {
 	if err != nil {
 		srv.Reply(msg, err.Error())
 		return
+	}
+
+	// If a Mattermost message requests an image, it will be displayed in
+	// the channel.  We also check the Depth to make sure we are not
+	// displaying images right after Mattermost parsed a URL.  So if a user
+	// calls ygor: image directly, that should be Depth 1, however if a
+	// user uses an alias, that should be at least Depth 2 which will
+	// trigger the following.
+	if media.Format == "img" && msg.IsMattermost() && msg.Depth > 1 {
+		srv.Reply(msg, fmt.Sprintf("![](%s)", media.Src))
 	}
 
 	// Send the command to the connected minions.

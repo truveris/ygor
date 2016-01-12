@@ -1,4 +1,4 @@
-// Copyright 2014-2015, Truveris Inc. All Rights Reserved.
+// Copyright 2014-2016, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 
 package main
@@ -50,11 +50,11 @@ type InputMessage struct {
 	ReplyTo string
 	Args    []string
 
-	// Recursion tracks the recursion level in case commands create/call
-	// other commands and produce more messages.  A message create out of
-	// the IRC handler will have 0 recursion but modules generating more
-	// messages from it should increment it.
-	Recursion int
+	// Depth tracks the recursion and depth level in case commands
+	// create/call other commands and produce more messages.  A message
+	// create out of the IRC handler will have 0 recursion but modules
+	// generating more messages from it should increment it.
+	Depth int
 }
 
 // NewInputMessage allocates a new message without type.
@@ -101,6 +101,13 @@ func (msg *InputMessage) NewResponse(text string) *OutputMessage {
 		Channel: replyTo,
 		Body:    text,
 	}
+}
+
+func (msg *InputMessage) IsMattermost() bool {
+	if msg.Type == InputMsgTypeMattermost {
+		return true
+	}
+	return false
 }
 
 // Reply sends a reply based on the given message (same channel, mirror messag)

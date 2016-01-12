@@ -1,4 +1,4 @@
-// Copyright 2015, Truveris Inc. All Rights Reserved.
+// Copyright 2015-2016, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 //
 // This server_mattermost file contains the mattermost server code, responsible

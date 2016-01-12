@@ -1,4 +1,4 @@
-// Copyright 2014-2015, Truveris Inc. All Rights Reserved.
+// Copyright 2014-2016, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 //
 // The io_irc portion of the ygor code base defines the adapter used to receive
@@ -24,7 +24,7 @@ var (
 )
 
 // NewMessagesFromBody creates a new ygor message from a plain string.
-func (srv *Server) NewMessagesFromBody(body string, recursion int) ([]*InputMessage, error) {
+func (srv *Server) NewMessagesFromBody(body string, depth int) ([]*InputMessage, error) {
 	var msgs []*InputMessage
 
 	sentences, err := lexer.Split(body)
@@ -33,7 +33,7 @@ func (srv *Server) NewMessagesFromBody(body string, recursion int) ([]*InputMess
 	}
 
 	for i := 0; i < 3; i++ {
-		sentences, err = srv.Aliases.ExpandSentences(sentences, recursion)
+		sentences, err = srv.Aliases.ExpandSentences(sentences, depth)
 		if err != nil {
 			return nil, err
 		}
@@ -45,7 +45,7 @@ func (srv *Server) NewMessagesFromBody(body string, recursion int) ([]*InputMess
 		}
 
 		msg := NewInputMessage()
-		msg.Recursion = recursion + 1
+		msg.Depth = depth + 1
 		msg.Body = strings.Join(words, " ")
 		msg.Command = words[0]
 
@@ -116,8 +116,7 @@ func (srv *Server) IRCMessageHandler(msg *InputMessage) {
 			continue
 		}
 
-		log.Printf("cmd.PrivMsgFunction %s (rec:%d)", cmd.Name,
-			msg.Recursion)
+		log.Printf("cmd.PrivMsgFunction %s (rec:%d)", cmd.Name, msg.Depth)
 		cmd.PrivMsgFunction(srv, msg)
 		return
 	}

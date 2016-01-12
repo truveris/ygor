@@ -1,4 +1,4 @@
-// Copyright 2014-2015, Truveris Inc. All Rights Reserved.
+// Copyright 2014-2016, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 //
 // This file contains all the tools to handle the aliases registry.  The
@@ -26,9 +26,8 @@ var (
 )
 
 const (
-	// MaxRecursionLevel defines the number or run allowed while resolving
-	// an alias.
-	MaxRecursion = 16
+	// MaxDepth defines the number or run allowed while resolving an alias.
+	MaxDepth = 16
 
 	// MaxAliasIncrements defines how far we should check for increments
 	// within the same namespace.  This is really just here to avoid abuse
@@ -196,11 +195,11 @@ func (file *File) reload() error {
 	return nil
 }
 
-// Resolve recursively resolves aliases from a given line. Error out if the
-// MaxRecursionLevel is reached and we're not getting anywhere.
-func (file *File) Resolve(line string, recursion int) (string, error) {
-	if recursion >= MaxRecursion {
-		return line, errors.New("max recursion reached")
+// Resolve depth resolves aliases from a given line. Error out if the
+// MaxDepth is reached and we're not getting anywhere.
+func (file *File) Resolve(line string, depth int) (string, error) {
+	if depth >= MaxDepth {
+		return line, errors.New("max depth reached")
 	}
 
 	// Only resolve the first word of a line.
@@ -219,7 +218,7 @@ func (file *File) Resolve(line string, recursion int) (string, error) {
 		line = alias.Value
 	}
 
-	line, err := file.Resolve(line, recursion+1)
+	line, err := file.Resolve(line, depth+1)
 	if err != nil {
 		return "", err
 	}
@@ -263,11 +262,11 @@ func (file *File) Find(pattern string) []string {
 	return results
 }
 
-func (file *File) ExpandSentence(words []string, recursion int) ([][]string, error) {
+func (file *File) ExpandSentence(words []string, depth int) ([][]string, error) {
 	sentences := make([][]string, len(words))
 
 	// Resolve any alias found as first word.
-	expanded, err := file.Resolve(words[0], recursion)
+	expanded, err := file.Resolve(words[0], depth)
 	if err != nil {
 		return nil, err
 	}
@@ -284,7 +283,7 @@ func (file *File) ExpandSentence(words []string, recursion int) ([][]string, err
 }
 
 // Expand sentences through aliases.
-func (file *File) ExpandSentences(ss [][]string, recursion int) ([][]string, error) {
+func (file *File) ExpandSentences(ss [][]string, depth int) ([][]string, error) {
 	sentences := make([][]string, len(ss))
 
 	for _, words := range ss {
@@ -292,7 +291,7 @@ func (file *File) ExpandSentences(ss [][]string, recursion int) ([][]string, err
 			continue
 		}
 
-		newsentences, err := file.ExpandSentence(words, recursion)
+		newsentences, err := file.ExpandSentence(words, depth)
 		if err != nil {
 			return nil, err
 		}

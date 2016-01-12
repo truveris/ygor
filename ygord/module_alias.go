@@ -1,4 +1,4 @@
-// Copyright 2014-2015, Truveris Inc. All Rights Reserved.
+// Copyright 2014-2016, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 //
 // This module allows channel users to configure aliases themselves.
@@ -223,7 +223,7 @@ func (module *AliasModule) RandomPrivMsg(srv *Server, msg *InputMessage) {
 		return
 	}
 
-	newmsgs, err := srv.NewMessagesFromBody(body, msg.Recursion+1)
+	newmsgs, err := srv.NewMessagesFromBody(body, msg.Depth+1)
 	if err != nil {
 		srv.Reply(msg, "error: failed to expand chosen alias '"+
 			names[idx]+"': "+err.Error())
