@@ -13,7 +13,6 @@ import (
 // ScreensaverModule controls the 'image' command.
 type ScreensaverModule struct {
 	*Server
-	Clients map[string]bool
 }
 
 // PrivMsg is the message handler for user 'image' requests.
@@ -22,13 +21,7 @@ func (module *ScreensaverModule) PrivMsg(srv *Server, msg *InputMessage) {
 }
 
 func (module *ScreensaverModule) StartScreensaver(srv *Server, client *Client, alias *alias.Alias) {
-	// Screen saver is already running.
-	if running, ok := module.Clients[client.ID]; running && ok {
-		return
-	}
-
 	log.Printf("screensaver: start client=%s alias=%s", client.ID, alias.Name)
-	module.Clients[client.ID] = true
 
 	msgs, err := srv.NewMessagesFromBody(alias.Value, 0)
 	if err != nil {
@@ -37,29 +30,23 @@ func (module *ScreensaverModule) StartScreensaver(srv *Server, client *Client, a
 	}
 
 	for _, msg := range msgs {
-		msg.Type = InputMsgTypeInternal
+		msg.Type = InputMsgTypeScreensaver
 		msg.Nickname = srv.Nickname
 		msg.ReplyTo = client.ID
 		srv.InputQueue <- msg
 	}
 }
 
-func (module *ScreensaverModule) StopScreensaver(srv *Server, clientID string) {
-	module.Clients[clientID] = false
-}
-
 // Tick runs every X seconds and checks for client screensaver delays.
 func (module *ScreensaverModule) Tick(srv *Server) {
 	for _, client := range srv.ClientRegistry {
-		alias := srv.Aliases.Get("screensaver/" + client.Channel)
-		if alias == nil {
-			module.StopScreensaver(srv, client.Channel)
+		age := time.Now().Sub(client.LastCommand)
+		if age < time.Duration(srv.Config.ScreensaverDelay)*time.Second {
 			continue
 		}
 
-		age := time.Now().Sub(client.LastCommand)
-		if age < time.Duration(srv.Config.ScreensaverDelay)*time.Seconds {
-			module.StopScreensaver(srv, client.Channel)
+		alias := srv.Aliases.Get("screensaver/" + client.Channel)
+		if alias == nil {
 			continue
 		}
 
@@ -80,8 +67,6 @@ func (module *ScreensaverModule) Loop(srv *Server) {
 
 // Init registers all the commands for this module.
 func (module ScreensaverModule) Init(srv *Server) {
-	module.Clients = make(map[string]bool)
-
 	if srv.Config.ScreensaverDelay > 0 {
 		go module.Loop(srv)
 	}

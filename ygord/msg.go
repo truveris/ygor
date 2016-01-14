@@ -23,16 +23,16 @@ type OutputMsgType int
 // chat system, the second (Output*) represent a message traveling out of ygor
 // to the chat system.
 const (
-	InputMsgTypeUnknown    InputMsgType = iota
-	InputMsgTypeIRCChannel InputMsgType = iota
-	InputMsgTypeIRCPrivate InputMsgType = iota
-	InputMsgTypeMattermost InputMsgType = iota
-	InputMsgTypeInternal   InputMsgType = iota
+	InputMsgTypeUnknown     InputMsgType = iota
+	InputMsgTypeIRCChannel  InputMsgType = iota
+	InputMsgTypeIRCPrivate  InputMsgType = iota
+	InputMsgTypeMattermost  InputMsgType = iota
+	InputMsgTypeScreensaver InputMsgType = iota
 
-	OutputMsgTypePrivMsg    OutputMsgType = iota
-	OutputMsgTypeAction     OutputMsgType = iota
-	OutputMsgTypeMattermost OutputMsgType = iota
-	OutputMsgTypeInternal   OutputMsgType = iota
+	OutputMsgTypePrivMsg     OutputMsgType = iota
+	OutputMsgTypeAction      OutputMsgType = iota
+	OutputMsgTypeMattermost  OutputMsgType = iota
+	OutputMsgTypeScreensaver OutputMsgType = iota
 )
 
 // OutputMessage is the representation of an outbound IRC message.
@@ -96,8 +96,8 @@ func (msg *InputMessage) NewResponse(text string) *OutputMessage {
 		if strings.HasPrefix(text, "/me ") {
 			text = "*" + strings.TrimPrefix(text, "/me ") + "*"
 		}
-	case InputMsgTypeInternal:
-		outputType = OutputMsgTypeInternal
+	case InputMsgTypeScreensaver:
+		outputType = OutputMsgTypeScreensaver
 	}
 
 	return &OutputMessage{

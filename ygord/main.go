@@ -57,7 +57,7 @@ func main() {
 				srv.IRCMessageHandler(msg)
 			case InputMsgTypeMattermost:
 				srv.IRCMessageHandler(msg)
-			case InputMsgTypeInternal:
+			case InputMsgTypeScreensaver:
 				srv.IRCMessageHandler(msg)
 			default:
 				log.Printf("main loop: un-handled "+
@@ -75,7 +75,7 @@ func main() {
 			case OutputMsgTypeMattermost:
 				srv.SendToMattermost(srv.NewMattermostResponse(msg.Channel,
 					msg.Body))
-			case OutputMsgTypeInternal:
+			case OutputMsgTypeScreensaver:
 				// nothing to do
 			default:
 				log.Printf("main loop: un-handled "+
