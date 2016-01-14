@@ -1,4 +1,4 @@
-// Copyright 2015, Truveris Inc. All Rights Reserved.
+// Copyright 2015-2016, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 //
 // A Client is a single web browser connected and registered to the server.
@@ -29,13 +29,14 @@ type ClientCommand struct {
 
 // Client represents a single ygor client in memory.
 type Client struct {
-	Username  string
-	Channel   string
-	ID        string
-	UserAgent string
-	IPAddress string
-	Queue     chan ClientCommand
-	LastSeen  time.Time
+	Username    string
+	Channel     string
+	ID          string
+	UserAgent   string
+	IPAddress   string
+	Queue       chan ClientCommand
+	LastSeen    time.Time
+	LastCommand time.Time
 }
 
 // IsAlive checks if the client is still accepting messages. It will return
@@ -85,11 +86,12 @@ func (srv *Server) RegisterClient(username, channel string) *Client {
 	ID := fmt.Sprintf("%x", hash.Sum(nil))
 
 	client := &Client{
-		Username: username,
-		Channel:  channel,
-		ID:       ID,
-		Queue:    make(chan ClientCommand, MaxQueueLength),
-		LastSeen: time.Now(),
+		Username:    username,
+		Channel:     channel,
+		ID:          ID,
+		Queue:       make(chan ClientCommand, MaxQueueLength),
+		LastSeen:    time.Now(),
+		LastCommand: time.Now(),
 	}
 
 	srv.ClientRegistry[ID] = client

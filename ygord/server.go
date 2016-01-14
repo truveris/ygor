@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Bertrand Janin <b@janin.com>
+// Copyright (c) 2015-2016 Bertrand Janin <b@janin.com>
 // Use of this source code is governed by the ISC license in the LICENSE file.
 
 package main
@@ -7,6 +7,7 @@ import (
 	"crypto/rand"
 	"io"
 	"log"
+	"strings"
 
 	"github.com/truveris/ygor/ygord/alias"
 )
@@ -51,15 +52,28 @@ func CreateServer(config *Config) *Server {
 	return srv
 }
 
+func (srv *Server) SendToClient(client *Client, cmd ClientCommand) {
+	if client.IsAlive() {
+		client.Queue <- cmd
+	} else {
+		srv.UnregisterClient(client)
+	}
+}
+
 // SendToChannelMinions sends a message to all the minions of the given
 // channel.
 func (srv *Server) SendToChannelMinions(channel string, cmd ClientCommand) {
+	// If that channel is really just a client ID, just send it there (this
+	// is done by the screensaver module for example to reach a particular
+	// client).
+	if client, ok := srv.ClientRegistry[channel]; ok {
+		srv.SendToClient(client, cmd)
+		return
+	}
+
+	channel = strings.TrimPrefix(channel, "#")
 	for _, client := range srv.GetClientsByChannel(channel) {
-		if client.IsAlive() {
-			client.Queue <- cmd
-		} else {
-			srv.UnregisterClient(client)
-		}
+		srv.SendToClient(client, cmd)
 	}
 }
 

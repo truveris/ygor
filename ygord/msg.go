@@ -18,19 +18,21 @@ type InputMsgType int
 // OutputMsgType is used to categorize the outgoing message type constants below.
 type OutputMsgType int
 
-// Types of messages received from any various source (IRC, minions, etc.).
-// The first types are used for communication between the different components.
-// The Exit and Fatal types are used for flow control and are mostly triggered
-// internally (e.g. IO error).
+// Types of messages to/from any various source (IRC, Mattermost, etc.).  The
+// first constants (Input*) are used to represent a message ingested from the
+// chat system, the second (Output*) represent a message traveling out of ygor
+// to the chat system.
 const (
 	InputMsgTypeUnknown    InputMsgType = iota
 	InputMsgTypeIRCChannel InputMsgType = iota
 	InputMsgTypeIRCPrivate InputMsgType = iota
 	InputMsgTypeMattermost InputMsgType = iota
+	InputMsgTypeInternal   InputMsgType = iota
 
 	OutputMsgTypePrivMsg    OutputMsgType = iota
 	OutputMsgTypeAction     OutputMsgType = iota
 	OutputMsgTypeMattermost OutputMsgType = iota
+	OutputMsgTypeInternal   OutputMsgType = iota
 )
 
 // OutputMessage is the representation of an outbound IRC message.
@@ -94,6 +96,8 @@ func (msg *InputMessage) NewResponse(text string) *OutputMessage {
 		if strings.HasPrefix(text, "/me ") {
 			text = "*" + strings.TrimPrefix(text, "/me ") + "*"
 		}
+	case InputMsgTypeInternal:
+		outputType = OutputMsgTypeInternal
 	}
 
 	return &OutputMessage{

@@ -1,4 +1,4 @@
-// Copyright 2014-2015, Truveris Inc. All Rights Reserved.
+// Copyright 2014-2016, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 
 package main
@@ -25,6 +25,7 @@ func main() {
 	srv.RegisterModule(&PingModule{})
 	srv.RegisterModule(&PlayModule{})
 	srv.RegisterModule(&SayModule{})
+	srv.RegisterModule(&ScreensaverModule{})
 	srv.RegisterModule(&SkipModule{})
 	srv.RegisterModule(&ShutUpModule{})
 	srv.RegisterModule(&VolumeModule{})
@@ -47,7 +48,7 @@ func main() {
 	for {
 		select {
 		case msg := <-srv.InputQueue:
-			log.Printf("irc %s <%s> %s", msg.ReplyTo,
+			log.Printf("chat in  %s <%s> %s", msg.ReplyTo,
 				msg.Nickname, msg.Body)
 			switch msg.Type {
 			case InputMsgTypeIRCChannel:
@@ -56,13 +57,15 @@ func main() {
 				srv.IRCMessageHandler(msg)
 			case InputMsgTypeMattermost:
 				srv.IRCMessageHandler(msg)
+			case InputMsgTypeInternal:
+				srv.IRCMessageHandler(msg)
 			default:
 				log.Printf("main loop: un-handled "+
-					"IRC input message type"+
+					"input message type"+
 					" '%d'", msg.Type)
 			}
 		case msg := <-srv.OutputQueue:
-			log.Printf("irc %s <%s> %s", msg.Channel,
+			log.Printf("chat out %s <%s> %s", msg.Channel,
 				cfg.Nickname, msg.Body)
 			switch msg.Type {
 			case OutputMsgTypePrivMsg:
@@ -72,9 +75,11 @@ func main() {
 			case OutputMsgTypeMattermost:
 				srv.SendToMattermost(srv.NewMattermostResponse(msg.Channel,
 					msg.Body))
+			case OutputMsgTypeInternal:
+				// nothing to do
 			default:
 				log.Printf("main loop: un-handled "+
-					"IRC output message type"+
+					"output message type"+
 					" '%d'", msg.Type)
 			}
 		}

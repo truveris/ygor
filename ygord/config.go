@@ -1,4 +1,4 @@
-// Copyright 2014-2015, Truveris Inc. All Rights Reserved.
+// Copyright 2014-2016, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 
 package main
@@ -56,6 +56,10 @@ type Config struct {
 	// to commands that utilize MediaObj.
 	SoundCloudClientID string
 
+	// If that value exist and is non-zero, ygor will automatically run the
+	// "screensaver" alias if it exists.
+	ScreensaverDelay int
+
 	// Mattermost configuration.
 	MattermostToken    string
 	MattermostIconURL  string
@@ -107,6 +111,11 @@ func ParseConfigFile(cmd *CmdLine) (*Config, error) {
 		if cfg.WebRoot == "" {
 			return cfg, errors.New("'WebRoot' is not defined")
 		}
+	}
+
+	// No delay configured == 15 minutes
+	if cfg.ScreensaverDelay == 0 {
+		cfg.ScreensaverDelay = 900
 	}
 
 	return cfg, nil

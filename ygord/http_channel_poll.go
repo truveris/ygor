@@ -1,4 +1,4 @@
-// Copyright 2015, Truveris Inc. All Rights Reserved.
+// Copyright 2015-2016, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 
 package main
@@ -58,6 +58,7 @@ pullChan:
 			if ok {
 				response.Status = "command"
 				response.Commands = append(response.Commands, cmd)
+				client.LastCommand = time.Now()
 			} else {
 				response.Status = "closed"
 				goto end
@@ -73,6 +74,7 @@ pullChan:
 		case msg := <-client.Queue:
 			response.Status = "command"
 			response.Commands = append(response.Commands, msg)
+			client.LastCommand = time.Now()
 		case <-time.After(time.Second * 20):
 			response.Status = "empty"
 		}
