@@ -29,4 +29,4 @@ directory=/tmp
 command=ygord
 ```
 
-By default, ygord look for its configuration in /etc/ygord.conf.
+By default, ygord looks for its configuration in /etc/ygord.conf.
