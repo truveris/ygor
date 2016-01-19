@@ -5,6 +5,7 @@ package main
 
 import (
 	"log"
+	"math"
 	"time"
 
 	"github.com/truveris/ygor/ygord/alias"
@@ -13,6 +14,7 @@ import (
 // ScreensaverModule controls the 'image' command.
 type ScreensaverModule struct {
 	*Server
+	Count uint32
 }
 
 // PrivMsg is the message handler for user 'image' requests.
@@ -39,13 +41,26 @@ func (module *ScreensaverModule) StartScreensaver(srv *Server, client *Client, a
 
 // Tick runs every X seconds and checks for client screensaver delays.
 func (module *ScreensaverModule) Tick(srv *Server) {
+	// Every second since the beginning of time (1970) is put into a time
+	// slot.  The division of these time slots is based on the configured
+	// screensaver delay.  Which screensaver is started is based on that
+	// slot of time.
+	slot := time.Now().Unix() / int64(srv.Config.ScreensaverDelay)
+
 	for _, client := range srv.ClientRegistry {
 		age := time.Now().Sub(client.LastCommand)
 		if age < time.Duration(srv.Config.ScreensaverDelay)*time.Second {
 			continue
 		}
 
-		alias := srv.Aliases.Get("screensaver/" + client.Channel)
+		names := srv.Aliases.Find("screensaver/" + client.Channel + "/")
+		if len(names) == 0 {
+			continue
+		}
+
+		idx := int(math.Mod(float64(slot), float64(len(names))))
+
+		alias := srv.Aliases.Get(names[idx])
 		if alias == nil {
 			continue
 		}
