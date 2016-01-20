@@ -89,38 +89,6 @@ func (module *AliasModule) AliasPrivMsg(srv *Server, msg *InputMessage) {
 	srv.Reply(msg, outputMsg)
 }
 
-// getPagesOfAliases takes a list of aliases and returns joined pages of them.
-func getPagesOfAliases(aliases []string) []string {
-	var pages []string
-	length := 0
-
-	for i := 0; i < len(aliases); {
-		var page []string
-
-		if length > 0 {
-			length += len(", ")
-		}
-
-		length += len(aliases[i])
-
-		if length > MaxCharsPerPage {
-			page, aliases = aliases[:i], aliases[i:]
-			pages = append(pages, strings.Join(page, ", "))
-			length = 0
-			i = 0
-			continue
-		}
-
-		i++
-	}
-
-	if length > 0 {
-		pages = append(pages, strings.Join(aliases, ", "))
-	}
-
-	return pages
-}
-
 // UnAliasPrivMsg is the message handler for user 'unalias' requests.
 func (module *AliasModule) UnAliasPrivMsg(srv *Server, msg *InputMessage) {
 	if len(msg.Args) != 1 {
@@ -139,34 +107,6 @@ func (module *AliasModule) UnAliasPrivMsg(srv *Server, msg *InputMessage) {
 	srv.Aliases.Delete(name)
 	srv.Aliases.Save()
 	srv.Reply(msg, "ok (deleted)")
-}
-
-// AliasesPrivMsg is the message handler for user 'aliases' requests.  It lists
-// all the available aliases.
-func (module *AliasModule) AliasesPrivMsg(srv *Server, msg *InputMessage) {
-	if len(msg.Args) != 0 {
-		srv.Reply(msg, "usage: aliases")
-		return
-	}
-
-	aliases := srv.Aliases.Names()
-
-	if len(aliases) > MaxAliasesForFullList {
-		srv.Reply(msg, "error: too many results, use grep")
-		return
-	}
-
-	sort.Strings(aliases)
-	first := true
-	for _, page := range getPagesOfAliases(aliases) {
-		if first {
-			srv.Reply(msg, "known aliases: "+page)
-			first = false
-		} else {
-			srv.Reply(msg, "... "+page)
-		}
-		time.Sleep(500 * time.Millisecond)
-	}
 }
 
 // GrepPrivMsg is the message handler for user 'grep' requests.  It lists
@@ -280,7 +220,7 @@ func (module *AliasModule) Init(srv *Server) {
 
 	srv.RegisterCommand(Command{
 		Name:            "aliases",
-		PrivMsgFunction: module.AliasesPrivMsg,
+		PrivMsgFunction: module.GrepPrivMsg,
 		Addressed:       true,
 		AllowPrivate:    true,
 		AllowChannel:    true,

@@ -1,10 +1,7 @@
 # TODO
  - rename alias.Name to alias.Key?
- - switch all protocols to json
  - send the capabilities to the master
  - implement volume as a stateful system (pass the volume to all the players)
- - find out why omxplayer can't be killed...
- - double check for QueueName in ygord/config.go
  - implement a temporary and permanent voting system.
     - permanent would be something like "Light in the engineering room" and you can change your opinion constantly.
     - temporary would be "Should we go get cheese steak sandwiches for lunch?".
@@ -12,17 +9,10 @@
     - one could request a vote status with "vote light"
     - you can create a new poll with "add-vote http://stuff/vote-config.json"
  - make AliasFile and MinionsFile thread safe.
- - Remember the user id and refuse all messages for this minion.
- - run a routine to check the validity of the URL before sending it to the
-   minion.
  - Validate the configuration (e.g. minion name should be [a-z0-9]+..)
  - LogFile parameter to dump everything to disk as well.
  - Imdb module (find film, get title from URL, etc.)
  - Count how many people are online.
- - play youtube
- - Look for 403 forbidden when caching.
- - aliases should take an argument to filter results
- - differentiate "command not found" and "access denied"-type issues.
 
 # test:
 #  - toggle function
