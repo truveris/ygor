@@ -1,4 +1,4 @@
-// Copyright 2014-2015, Truveris Inc. All Rights Reserved.
+// Copyright 2014-2016, Truveris Inc. All Rights Reserved.
 // Use of this source code is governed by the ISC license in the LICENSE file.
 
 package main
@@ -6,6 +6,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -38,8 +39,16 @@ func (handler *ChannelRegisterHandler) ServeHTTP(w http.ResponseWriter, r *http.
 		return
 	}
 
+	// Extract the IP address, attempting first to get it from the
+	// X-Forwarded-For header which is generally populated by reverse
+	// proxies.
+	ip := r.Header.Get("X-Forwarded-For")
+	if ip == "" {
+		ip = strings.SplitN(r.RemoteAddr, ":", 2)[0]
+	}
+
 	client := handler.Server.RegisterClient(username, input.ChannelID)
-	client.IPAddress = r.RemoteAddr
+	client.IPAddress = ip
 	if agent, ok := r.Header["User-Agent"]; ok {
 		client.UserAgent = agent[0]
 	}
